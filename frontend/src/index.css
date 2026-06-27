@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------------------
+   Noontree brand font
+   Files live in /public/fonts/Noontree and are served statically by Vite.
+--------------------------------------------------------------------------- */
+@font-face {
+  font-family: 'Noontree';
+  src: url('/fonts/Noontree/Noontree-Light.woff2') format('woff2'),
+       url('/fonts/Noontree/Noontree-Light.woff') format('woff'),
+       url('/fonts/Noontree/Noontree-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noontree';
+  src: url('/fonts/Noontree/Noontree-Regular.woff2') format('woff2'),
+       url('/fonts/Noontree/Noontree-Regular.woff') format('woff'),
+       url('/fonts/Noontree/Noontree-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noontree';
+  src: url('/fonts/Noontree/Noontree-Medium.woff2') format('woff2'),
+       url('/fonts/Noontree/Noontree-Medium.woff') format('woff'),
+       url('/fonts/Noontree/Noontree-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noontree';
+  src: url('/fonts/Noontree/Noontree-SemiBold.woff2') format('woff2'),
+       url('/fonts/Noontree/Noontree-SemiBold.woff') format('woff'),
+       url('/fonts/Noontree/Noontree-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noontree';
+  src: url('/fonts/Noontree/Noontree-Bold.woff2') format('woff2'),
+       url('/fonts/Noontree/Noontree-Bold.woff') format('woff'),
+       url('/fonts/Noontree/Noontree-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noontree';
+  src: url('/fonts/Noontree/Noontree-ExtraBold.woff2') format('woff2'),
+       url('/fonts/Noontree/Noontree-ExtraBold.woff') format('woff'),
+       url('/fonts/Noontree/Noontree-ExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Noontree';
+  src: url('/fonts/Noontree/Noontree-Black.woff2') format('woff2'),
+       url('/fonts/Noontree/Noontree-Black.woff') format('woff'),
+       url('/fonts/Noontree/Noontree-Black.otf') format('opentype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply font-sans bg-white text-noon-dark antialiased;
+  margin: 0;
+}
+
+/* Hide scrollbars while keeping scroll behaviour (horizontal rails, etc.). */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE / legacy Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome / Safari */
+}

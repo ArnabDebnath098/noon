@@ -1,0 +1,63 @@
+import { useState } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
+import { AnimatePresence } from 'framer-motion'
+import MobileLayout from '../components/layout/MobileLayout.jsx'
+import PageTransition from '../components/layout/PageTransition.jsx'
+import FloatingTabs from '../components/layout/FloatingTabs.jsx'
+import Home from '../pages/Home.jsx'
+import Profile from '../pages/Profile.jsx'
+import Placeholder from '../pages/Placeholder.jsx'
+
+// Combo card style options shown in the Home floating tabs.
+const COMBO_STYLES = [
+  { value: 'type', label: 'Type' },
+  { value: 'slide', label: 'Slide' },
+  { value: 'reveal', label: 'Reveal' },
+]
+
+export default function AppRoutes() {
+  const location = useLocation()
+  const [comboStyle, setComboStyle] = useState('type')
+  const isHome = location.pathname === '/'
+
+  return (
+    <>
+      <MobileLayout>
+        <AnimatePresence mode="wait" initial={false}>
+          <Routes location={location} key={location.pathname}>
+            <Route
+              path="/"
+              element={<PageTransition><Home comboAnim={comboStyle} /></PageTransition>}
+            />
+            <Route
+              path="/categories"
+              element={<PageTransition><Placeholder title="Categories" /></PageTransition>}
+            />
+            <Route
+              path="/deals"
+              element={<PageTransition><Placeholder title="Deals" /></PageTransition>}
+            />
+            <Route
+              path="/profile"
+              element={<PageTransition><Profile /></PageTransition>}
+            />
+            <Route
+              path="/cart"
+              element={<PageTransition><Placeholder title="Cart" /></PageTransition>}
+            />
+          </Routes>
+        </AnimatePresence>
+      </MobileLayout>
+
+      {/* Floating style switcher — Home only, kept outside the page transform. */}
+      {isHome && (
+        <FloatingTabs
+          dataId="home-style-tabs"
+          tabs={COMBO_STYLES}
+          value={comboStyle}
+          onChange={setComboStyle}
+        />
+      )}
+    </>
+  )
+}

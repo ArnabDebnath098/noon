@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+
+# Storage: keep folder structure, ignore actual binary assets
+storage/products/images/*
+storage/uploads/*
+!storage/**/.gitkeep
