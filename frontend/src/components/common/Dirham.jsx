@@ -24,7 +24,7 @@ export function Dirham({ className = '' }) {
 export function withDirham(text) {
   return text.split('AED').map((part, i) => (
     <Fragment key={i}>
-      {i > 0 && <Dirham className="inline-block align-[-0.04em]" />}
+      {i > 0 && <Dirham className="ml-1 inline-block align-[-0.04em]" />}
       {i > 0 ? part.replace(/^\s+/, '') : part}
     </Fragment>
   ))

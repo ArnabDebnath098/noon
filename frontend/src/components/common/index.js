@@ -6,4 +6,5 @@ export { AddToCartButton } from './AddToCartButton';
 export { SectionCard } from './SectionCard';
 export { Accordion } from './Accordion';
 export { ProductCard } from './ProductCard';
+export { BentoProductCard } from './BentoProductCard';
 export { colour, space } from './tokens';

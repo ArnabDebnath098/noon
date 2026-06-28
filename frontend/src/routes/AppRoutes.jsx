@@ -18,6 +18,8 @@ const COMBO_STYLES = [
   { value: 'counter', label: '4' },
   { value: 'slide', label: '5' },
   { value: 'reveal', label: '6' },
+  // Bento grid card
+  { value: 'bento', label: '7' },
 ]
 
 export default function AppRoutes() {

@@ -204,7 +204,7 @@ export function ProductCard({
             <ComboChipOnce
               bare
               count={productCount}
-              delay={700}
+              delay={2000}
               dataId={did('combo-chip')}
             />
           </div>
@@ -220,7 +220,7 @@ export function ProductCard({
           {productCount && comboAnim === 'chiptop' && (
             <ComboChipOnce
               count={productCount}
-              delay={700}
+              delay={2000}
               dataId={did('combo-chip')}
             />
           )}

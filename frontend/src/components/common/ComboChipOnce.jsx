@@ -4,7 +4,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 
-export function ComboChipOnce({ count, delay = 700, dataId, bare = false }) {
+export function ComboChipOnce({ count, delay = 2000, dataId, bare = false }) {
   const [showCount, setShowCount] = useState(false)
 
   useEffect(() => {

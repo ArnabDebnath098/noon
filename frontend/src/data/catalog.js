@@ -28,7 +28,7 @@ export const combos = [
   {
     id: 'korean-glass',
     title: 'SKIN1004 Korean Glass Skin Routine',
-    productCount: '5 products',
+    productCount: '2 products',
     images: [
       // Hero: shared SKIN1004 tray image.
       koreanGlassHero,
@@ -47,7 +47,7 @@ export const combos = [
   {
     id: 'youli-diapers',
     title: 'Youli Baby Diapers Size 4 (9-14 kg), 126 Pack',
-    productCount: '4 products',
+    productCount: '3 products',
     images: [
       // Hero: gift-bow pack shot (126 diapers) — set as first slide.
       'https://f.nooncdn.com/p/pzsku/ZA7F951B633012647419AZ/45/_/1774358924/210d0574-b918-4fb4-a27d-ebec06bf4cf8.jpg',
@@ -65,7 +65,7 @@ export const combos = [
   {
     id: 'molto-tv-bundle',
     title: 'Impex 50" Full HD QLED Smart TV + Bluetooth Speaker',
-    productCount: '2 products',
+    productCount: '5 products',
     images: [
       // Hero: TV + speaker "BUNDLE OFFER" key visual — set as first slide.
       'https://f.nooncdn.com/p/pzsku/ZA5110FCBA70068D0481FZ/45/_/1771404113/b33985fd-ff43-4915-9da6-8246275b41db.jpg',
@@ -88,7 +88,7 @@ export const combos = [
   {
     id: 'centella-duo',
     title: 'SKIN1004 Centella Hydration Duo',
-    productCount: '2 products',
+    productCount: '4 products',
     images: [koreanGlassHero],
     price: '129',
     originalPrice: '299',
@@ -99,7 +99,7 @@ export const combos = [
   {
     id: 'impex-tv-soundbar',
     title: 'Impex 50" QLED TV + Soundbar Combo',
-    productCount: '2 products',
+    productCount: '8 products',
     images: [
       'https://f.nooncdn.com/p/pzsku/ZA5110FCBA70068D0481FZ/45/1764050741/06876790-8d4b-4e17-8656-860b6cb4af28.jpg',
     ],

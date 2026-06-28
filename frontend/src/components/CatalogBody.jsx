@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { SectionCard, Accordion, ProductCard } from './common'
+import { SectionCard, Accordion, ProductCard, BentoProductCard } from './common'
 import { combos, similar, productDetails } from '../data/catalog'
 import bestCombo from '../assets/icons/bestcombo.svg'
 
@@ -26,6 +26,20 @@ export default function CatalogBody({
     />
   ))
 
+  const bentoCards = combos.map((c) => (
+    <BentoProductCard
+      key={c.id}
+      dataId={id(`bento-${c.id}`)}
+      images={c.images}
+      title={c.title}
+      itemCount={parseInt(c.productCount, 10) || c.images.length}
+      price={c.price}
+      originalPrice={c.originalPrice}
+      discount={c.discount}
+      badge={c.badge}
+    />
+  ))
+
   return (
     <div
       data-id={id('page')}
@@ -39,7 +53,18 @@ export default function CatalogBody({
         <Accordion items={productDetails} dataId={id('accordion')} />
       </SectionCard>
 
-      {['chiptop', 'mediatag', 'static'].includes(comboAnim) ? (
+      {comboAnim === 'bento' ? (
+        <SectionCard
+          dataId={id('section-combos')}
+          title="Save more with combos"
+          actionLabel="View all 6"
+          onAction={() => {}}
+        >
+          <div className="scrollbar-hide -mx-3 flex gap-3 overflow-x-auto px-3 pb-1">
+            {bentoCards}
+          </div>
+        </SectionCard>
+      ) : ['chiptop', 'mediatag', 'static'].includes(comboAnim) ? (
         /* Gradient-green banner variants: gradient bg, SVG title + count tag. */
         <div
           data-id={id('section-combos')}
