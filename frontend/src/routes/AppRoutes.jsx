@@ -10,15 +10,16 @@ import Placeholder from '../pages/Placeholder.jsx'
 
 // Combo card style options shown in the Home floating tabs.
 const COMBO_STYLES = [
-  { value: 'type', label: 'Type' },
+  { value: 'counter', label: 'Count' },
   { value: 'slide', label: 'Slide' },
   { value: 'reveal', label: 'Reveal' },
+  { value: 'type', label: 'Type' },
   { value: 'static', label: 'Static' },
 ]
 
 export default function AppRoutes() {
   const location = useLocation()
-  const [comboStyle, setComboStyle] = useState('type')
+  const [comboStyle, setComboStyle] = useState('counter')
   const isHome = location.pathname === '/'
 
   return (

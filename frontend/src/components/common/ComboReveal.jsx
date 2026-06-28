@@ -36,7 +36,7 @@ export function ComboReveal({ count, interval = 2600, delay = 0, dataId }) {
           initial={clip.initial}
           animate={clip.animate}
           exit={clip.exit}
-          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
         >
           {showCombo ? 'Combo' : count}
         </motion.span>

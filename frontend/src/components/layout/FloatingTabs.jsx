@@ -12,7 +12,7 @@ export default function FloatingTabs({ tabs, value, onChange, dataId }) {
         bottom: 'calc(85px + 72px + env(safe-area-inset-bottom, 0px) + 12px)',
       }}
     >
-      <div className="pointer-events-auto flex gap-1 rounded-full border border-[#EAECF0] bg-white p-1 shadow-[0px_6px_20px_rgba(0,0,0,0.12)]">
+      <div className="pointer-events-auto flex gap-0.5 rounded-full border border-[#EAECF0] bg-white p-1 shadow-[0px_6px_20px_rgba(0,0,0,0.12)]">
         {tabs.map((t) => {
           const active = t.value === value
           return (
@@ -21,7 +21,7 @@ export default function FloatingTabs({ tabs, value, onChange, dataId }) {
               type="button"
               data-id={`${dataId}-${t.value}`}
               onClick={() => onChange(t.value)}
-              className="relative rounded-full px-4 py-2"
+              className="relative rounded-full px-2.5 py-2"
             >
               {active && (
                 <motion.span
@@ -31,7 +31,7 @@ export default function FloatingTabs({ tabs, value, onChange, dataId }) {
                 />
               )}
               <span
-                className={`relative z-10 font-noontree text-[13px] font-semibold transition-colors ${
+                className={`relative z-10 font-noontree text-[12px] font-semibold transition-colors ${
                   active ? 'text-white' : 'text-[#404553]'
                 }`}
               >

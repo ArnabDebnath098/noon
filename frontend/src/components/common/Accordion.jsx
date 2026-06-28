@@ -1,6 +1,6 @@
-// Accordion — stack of collapsible rows (light grey pill, label + chevron).
-// Each row toggles independently; content expands/collapses with a height
-// animation and the chevron rotates.
+// Accordion — collapsible rows for the Product Details card. Each row is a
+// 44px #F9F9FB pill (12px radius) with a Label3/SemiBold title and a 20px
+// chevron; rows are stacked with an 8px gap. Expanding reveals the detail text.
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 
@@ -30,14 +30,14 @@ function Chevron({ open }) {
 function AccordionRow({ title, content }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="w-full overflow-hidden rounded-xl bg-[#F7F8FA]">
+    <div className="w-full overflow-hidden rounded-[12px] bg-[#F9F9FB]">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center justify-between px-4 py-4 text-left"
+        className="flex h-[44px] w-full items-center justify-between px-3 text-left"
       >
-        <span className="font-noontree text-[16px] font-semibold text-[#1D2539]">
+        <span className="font-noontree text-[14px] font-semibold leading-[18px] tracking-[-0.14px] text-[rgba(2,6,12,0.92)]">
           {title}
         </span>
         <Chevron open={open} />
@@ -50,7 +50,7 @@ function AccordionRow({ title, content }) {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           >
-            <p className="px-4 pb-4 font-noontree text-[14px] leading-[20px] text-[#666D85]">
+            <p className="px-3 pb-3 font-noontree text-[14px] leading-[20px] text-[#666D85]">
               {content}
             </p>
           </motion.div>
@@ -62,7 +62,7 @@ function AccordionRow({ title, content }) {
 
 export function Accordion({ items, dataId }) {
   return (
-    <div data-id={dataId} className="flex w-full flex-col gap-3">
+    <div data-id={dataId} className="flex w-full flex-col gap-2">
       {items.map((it) => (
         <AccordionRow key={it.id} title={it.title} content={it.content} />
       ))}

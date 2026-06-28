@@ -24,6 +24,7 @@ import { ComboType } from './ComboType'
 import { ComboSlide } from './ComboSlide'
 import { ComboReveal } from './ComboReveal'
 import { ComboStatic } from './ComboStatic'
+import { ComboCounter } from './ComboCounter'
 
 const TONE = {
   red: 'text-[#D92626]',
@@ -87,7 +88,9 @@ export function ProductCard({
         ? ComboReveal
         : comboAnim === 'static'
           ? ComboStatic
-          : ComboType
+          : comboAnim === 'counter'
+            ? ComboCounter
+            : ComboType
 
   return (
     <div
