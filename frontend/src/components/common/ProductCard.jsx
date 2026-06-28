@@ -25,6 +25,7 @@ import { ComboSlide } from './ComboSlide'
 import { ComboReveal } from './ComboReveal'
 import { ComboStatic } from './ComboStatic'
 import { ComboCounter } from './ComboCounter'
+import { ComboChipOnce } from './ComboChipOnce'
 
 const TONE = {
   red: 'text-[#D92626]',
@@ -70,6 +71,7 @@ export function ProductCard({
 }) {
   const did = (s) => `${dataId}-${s}`
   const hero = image ?? images[0]
+  const isMediaTag = comboAnim === 'mediatag'
 
   const [liked, setLiked] = useState(false)
   const [burst, setBurst] = useState(0) // bumps on each "like" to retrigger fx
@@ -98,7 +100,14 @@ export function ProductCard({
       className="relative flex shrink-0 flex-col gap-2"
       style={{ width }}
     >
-      {/* Media header with overlays */}
+      {/* Media header with overlays. Option 7 wraps it in a blue parent with a
+          combo-tag strip below the image. */}
+      <div
+        data-id={isMediaTag ? did('media-wrap') : undefined}
+        className={
+          isMediaTag ? 'overflow-hidden rounded-xl bg-[#F5FAFF]' : 'contents'
+        }
+      >
       <div
         data-id={did('media')}
         className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#F2F3F7]"
@@ -189,10 +198,33 @@ export function ProductCard({
         <AddToCartButton onPress={onAdd} dataId={did('atc')} />
       </div>
 
+        {/* option 7: combo tag strip below the image, on the blue parent */}
+        {isMediaTag && productCount && (
+          <div data-id={did('media-combo')} className="flex items-center justify-center py-1">
+            <ComboChipOnce
+              bare
+              count={productCount}
+              delay={700 + comboDelay}
+              dataId={did('combo-chip')}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Content */}
       <div data-id={did('content')} className="flex flex-col gap-2.5">
         {/* Title + count grouped together, no gap */}
-        <div data-id={did('title-group')} className="flex flex-col gap-2.5">
+        <div data-id={did('title-group')} className="flex flex-col gap-1">
+          {/* chip-top variant: blue combo chip ABOVE the title that reveals the
+              count once ("Combo" -> count). */}
+          {productCount && comboAnim === 'chiptop' && (
+            <ComboChipOnce
+              count={productCount}
+              delay={700 + comboDelay}
+              dataId={did('combo-chip')}
+            />
+          )}
+
           <h3
             data-id={did('title')}
             className="line-clamp-2 font-noontree text-[14px] font-medium leading-[20px] tracking-[-0.1px] text-[#1D2539]"
@@ -200,8 +232,8 @@ export function ProductCard({
             {title}
           </h3>
 
-          {/* combos: animated "Combo" chip / count */}
-          {productCount && (
+          {/* combos: animated "Combo" chip / count (below title) */}
+          {productCount && comboAnim !== 'chiptop' && comboAnim !== 'mediatag' && (
             <ComboCount
               count={productCount}
               delay={comboDelay}

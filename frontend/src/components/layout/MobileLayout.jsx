@@ -1,13 +1,12 @@
 import Header from './Header.jsx'
-import BottomNav from './BottomNav.jsx'
 import ActionBar from './ActionBar.jsx'
 
 /**
  * MobileLayout
- * Persistent mobile-first shell: a centered column capped at a phone-ish width.
- * Header, action bar and bottom nav stay mounted across route changes; the
- * routed page is rendered as children inside <main> (which clips horizontal
- * overflow so page slide transitions don't cause a scrollbar).
+ * Persistent PDP shell: a centered column capped at a phone-ish width. Header
+ * and the sticky add-to-cart bar stay mounted; the routed page renders inside
+ * <main> (which clips horizontal overflow so page slides don't cause a
+ * scrollbar). No bottom nav — this is a product details page.
  */
 export default function MobileLayout({ children }) {
   return (
@@ -23,7 +22,6 @@ export default function MobileLayout({ children }) {
         </main>
 
         <ActionBar data-id="mobile-layout-action-bar" />
-        <BottomNav data-id="mobile-layout-bottom-nav" />
       </div>
     </div>
   )

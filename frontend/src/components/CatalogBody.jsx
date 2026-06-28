@@ -32,16 +32,15 @@ export default function CatalogBody({
       className="flex flex-col gap-3 px-3"
       style={{
         paddingTop: 'calc(env(safe-area-inset-top, 47px) + 56px + 12px)',
-        paddingBottom: 'calc(85px + 72px + env(safe-area-inset-bottom, 0px) + 12px)',
+        paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
       }}
     >
       <SectionCard dataId={id('section-details')} title="Product Details">
         <Accordion items={productDetails} dataId={id('accordion')} />
       </SectionCard>
 
-      {comboAnim === 'static' ? (
-        /* Full-bleed combos banner: white→pale-green gradient, 20px padding,
-           SVG title + gradient count tag. */
+      {['chiptop', 'mediatag', 'static'].includes(comboAnim) ? (
+        /* Gradient-green banner variants: gradient bg, SVG title + count tag. */
         <div
           data-id={id('section-combos')}
           className="-mx-3 pb-4 pt-4"

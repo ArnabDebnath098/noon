@@ -9,7 +9,7 @@ export default function FloatingTabs({ tabs, value, onChange, dataId }) {
       data-id={dataId}
       className="pointer-events-none fixed inset-x-0 z-20 flex justify-center px-3"
       style={{
-        bottom: 'calc(85px + 72px + env(safe-area-inset-bottom, 0px) + 12px)',
+        bottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
       }}
     >
       <div className="pointer-events-auto flex gap-0.5 rounded-full border border-[#EAECF0] bg-white p-1 shadow-[0px_6px_20px_rgba(0,0,0,0.12)]">
@@ -21,7 +21,7 @@ export default function FloatingTabs({ tabs, value, onChange, dataId }) {
               type="button"
               data-id={`${dataId}-${t.value}`}
               onClick={() => onChange(t.value)}
-              className="relative rounded-full px-2.5 py-2"
+              className="relative flex h-9 w-9 items-center justify-center rounded-full"
             >
               {active && (
                 <motion.span

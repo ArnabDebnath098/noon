@@ -7,8 +7,8 @@ export default function ActionBar({ qty = 1, onAdd, onQty, state = 'default' }) 
   return (
     <div
       data-id="action-bar"
-      className="fixed left-1/2 z-30 w-full max-w-md -translate-x-1/2 rounded-t-2xl bg-white shadow-[0px_-2px_8px_rgba(0,0,0,0.05)]"
-      style={{ bottom: 'calc(85px + env(safe-area-inset-bottom, 0px))' }}
+      className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2 rounded-t-2xl bg-white shadow-[0px_-2px_8px_rgba(0,0,0,0.05)]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {/* 72px action row */}
       <div data-id="action-bar-row" className="flex h-[72px] items-center gap-3 px-3">
