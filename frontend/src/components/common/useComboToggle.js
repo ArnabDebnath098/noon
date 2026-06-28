@@ -1,32 +1,23 @@
 import { useEffect, useState } from 'react'
 
-// Drives the Combo <-> count alternation with ASYMMETRIC timing: the count
-// stays visible for `countMs` (long) and the "Combo" tag flashes for `comboMs`
-// (short). `delay` phase-shifts the start so cards toggle at different times.
-export function useComboToggle(delay = 0, comboMs = 1400, countMs = 4200) {
+// Drives the Combo <-> count alternation with SYMMETRIC timing: the "Combo" tag
+// and the count each stay visible for `interval` ms. `delay` phase-shifts the
+// start so cards can toggle at different times (staggered).
+export function useComboToggle(delay = 0, interval = 3000) {
   const [showCombo, setShowCombo] = useState(true)
 
   useEffect(() => {
-    let current = true
-    let timer
+    let intervalId
+    const startId = setTimeout(() => {
+      setShowCombo((s) => !s)
+      intervalId = setInterval(() => setShowCombo((s) => !s), interval)
+    }, delay + interval)
 
-    const tick = () => {
-      timer = setTimeout(
-        () => {
-          current = !current
-          setShowCombo(current)
-          tick()
-        },
-        current ? comboMs : countMs
-      )
-    }
-
-    const startTimer = setTimeout(tick, delay)
     return () => {
-      clearTimeout(startTimer)
-      clearTimeout(timer)
+      clearTimeout(startId)
+      if (intervalId) clearInterval(intervalId)
     }
-  }, [delay, comboMs, countMs])
+  }, [delay, interval])
 
   return showCombo
 }

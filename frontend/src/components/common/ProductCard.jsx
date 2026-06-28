@@ -190,9 +190,9 @@ export function ProductCard({
       </div>
 
       {/* Content */}
-      <div data-id={did('content')} className="flex flex-col gap-1">
+      <div data-id={did('content')} className="flex flex-col gap-2.5">
         {/* Title + count grouped together, no gap */}
-        <div data-id={did('title-group')} className="flex flex-col gap-0">
+        <div data-id={did('title-group')} className="flex flex-col gap-2.5">
           <h3
             data-id={did('title')}
             className="line-clamp-2 font-noontree text-[14px] font-medium leading-[20px] tracking-[-0.1px] text-[#1D2539]"
