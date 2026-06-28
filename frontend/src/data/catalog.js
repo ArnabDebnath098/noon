@@ -42,6 +42,7 @@ export const combos = [
     originalPrice: '444.44',
     discount: '59% OFF',
     badge: 'Save AED 263 extra',
+    delivery: { label: 'Get in', time: '42 Min' },
   },
   {
     id: 'youli-diapers',
@@ -82,6 +83,31 @@ export const combos = [
     originalPrice: '1639',
     discount: '54% OFF',
     badge: 'Save AED 900 extra',
+    delivery: { label: 'Get in', time: '55 Min' },
+  },
+  {
+    id: 'centella-duo',
+    title: 'SKIN1004 Centella Hydration Duo',
+    productCount: '2 products',
+    images: [koreanGlassHero],
+    price: '129',
+    originalPrice: '299',
+    discount: '57% OFF',
+    badge: 'Save AED 170 extra',
+    delivery: { label: 'Get in', time: '38 Min' },
+  },
+  {
+    id: 'impex-tv-soundbar',
+    title: 'Impex 50" QLED TV + Soundbar Combo',
+    productCount: '2 products',
+    images: [
+      'https://f.nooncdn.com/p/pzsku/ZA5110FCBA70068D0481FZ/45/1764050741/06876790-8d4b-4e17-8656-860b6cb4af28.jpg',
+    ],
+    price: '849',
+    originalPrice: '1799',
+    discount: '53% OFF',
+    badge: 'Save AED 950 extra',
+    delivery: { label: 'Get in', time: '60 Min' },
   },
 ]
 

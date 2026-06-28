@@ -10,13 +10,20 @@ import { Dirham, withDirham } from './Dirham'
 import { AddToCartButton } from './AddToCartButton'
 import expressTodayTag from '../../assets/icons/express-today.svg'
 import ratingStar from '../../assets/icons/rating-star.svg'
+import thunderIcon from '../../assets/icons/thunder.svg'
 import wishlistHeartRaw from '../../assets/icons/wishlist.svg?raw'
+import heartFillRaw from '../../assets/icons/heart-fill.svg?raw'
 
-// Heart markup recoloured to inherit currentColor.
+// Heart markup recoloured to inherit currentColor (outline + filled variants).
 const HEART_HTML = wishlistHeartRaw.replace(/fill="black"/gi, 'fill="currentColor"')
+const HEART_FILL_HTML = heartFillRaw.replace(
+  /fill="#[0-9a-f]{3,8}"/gi,
+  'fill="currentColor"'
+)
 import { ComboType } from './ComboType'
 import { ComboSlide } from './ComboSlide'
 import { ComboReveal } from './ComboReveal'
+import { ComboStatic } from './ComboStatic'
 
 const TONE = {
   red: 'text-[#D92626]',
@@ -44,9 +51,10 @@ export function ProductCard({
   originalPrice,
   discount,
   discountTone = 'red',
-  // combos: savings badge
+  // combos: savings badge + delivery banner
   badge,
   badgeTone = 'red',
+  delivery,
   // similar: nudge + flags
   nudge,
   bestSeller = false,
@@ -77,7 +85,9 @@ export function ProductCard({
       ? ComboSlide
       : comboAnim === 'reveal'
         ? ComboReveal
-        : ComboType
+        : comboAnim === 'static'
+          ? ComboStatic
+          : ComboType
 
   return (
     <div
@@ -109,15 +119,17 @@ export function ProductCard({
           </span>
         )}
 
-        {/* Ripple over the image, clipped to the media box. */}
+        {/* Heart-shaped ripple — grows from the wishlist icon out to the image
+            edges while fading. Clipped to the media box. */}
         {burst > 0 && (
           <motion.span
             key={burst}
             aria-hidden="true"
-            className="pointer-events-none absolute right-2 top-2 z-10 h-7 w-7 rounded-full bg-[#D92626]"
-            initial={{ scale: 0.3, opacity: 0.4 }}
-            animate={{ scale: 5, opacity: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="pointer-events-none absolute right-2 top-2 z-[1] h-5 w-5 text-[#D92626] [&>svg]:h-full [&>svg]:w-full"
+            initial={{ scale: 0.5, opacity: 0.55 }}
+            animate={{ scale: 12, opacity: 0 }}
+            transition={{ duration: 0.7, ease: 'easeOut' }}
+            dangerouslySetInnerHTML={{ __html: HEART_FILL_HTML }}
           />
         )}
 
@@ -132,10 +144,16 @@ export function ProductCard({
         >
           <motion.span
             aria-hidden="true"
-            className="h-5 w-5 [&>svg]:h-full [&>svg]:w-full"
+            className={`flex h-5 w-5 items-center justify-center ${
+              liked
+                ? '[&>svg]:h-[15px] [&>svg]:w-[15px]'
+                : '[&>svg]:h-5 [&>svg]:w-5'
+            }`}
             animate={{ scale: liked ? [1, 1.35, 0.85, 1.15, 1] : 1 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
-            dangerouslySetInnerHTML={{ __html: HEART_HTML }}
+            dangerouslySetInnerHTML={{
+              __html: liked ? HEART_FILL_HTML : HEART_HTML,
+            }}
           />
         </button>
 
@@ -211,6 +229,8 @@ export function ProductCard({
           </div>
         )}
 
+        {/* Price + savings badge group */}
+        <div data-id={did('pricing')} className="flex flex-col gap-1">
         {/* Price line */}
         <div
           data-id={did('price')}
@@ -254,6 +274,46 @@ export function ProductCard({
             </span>
           </div>
         )}
+        </div>
+
+        {/* delivery ETA banner */}
+        {delivery && (
+          <div
+            data-id={did('delivery')}
+            className="flex h-6 w-fit items-center gap-1 rounded-[6px] bg-[#2122B8] px-1 shadow-[0px_2px_0px_#12136D]"
+          >
+            <span className="flex h-3.5 w-3.5 items-center justify-center">
+              <img
+                src={thunderIcon}
+                alt=""
+                aria-hidden="true"
+                className="h-[13px] w-auto"
+              />
+            </span>
+            <span className="font-noontree text-[12px] leading-[18px] tracking-[-0.1px] text-white">
+              {delivery.label}{' '}
+              <span className="font-semibold text-[#FEEE00]">
+                {delivery.time}
+              </span>
+            </span>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden="true"
+              className="shrink-0"
+            >
+              <path
+                d="M5.5 3.5L9 7L5.5 10.5"
+                stroke="#FFFFFF"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        )}
 
         {/* similar: lowest-price nudge */}
         {nudge && (
@@ -291,13 +351,18 @@ export function ProductCard({
           aria-hidden="true"
           className="pointer-events-none absolute right-2 top-2 z-20 flex h-7 w-7 items-center justify-center"
         >
-          {[-1, 0, 1].map((dx, i) => (
+          {[
+            { x: -20, y: -30, s: 0.75 },
+            { x: 4, y: -40, s: 0.55 },
+            { x: 22, y: -24, s: 0.9 },
+            { x: -10, y: -18, s: 0.5 },
+          ].map((h, i) => (
             <motion.span
               key={i}
-              className="absolute text-[14px] leading-none text-[#D92626]"
-              initial={{ x: 0, y: 0, opacity: 0, scale: 0.4 }}
-              animate={{ x: dx * 16, y: -32 - i * 6, opacity: [0, 1, 0], scale: 1 }}
-              transition={{ duration: 0.9, delay: i * 0.05, ease: 'easeOut' }}
+              className="absolute text-[11px] leading-none text-[#D92626]"
+              initial={{ x: 0, y: 0, opacity: 0, scale: 0.3 }}
+              animate={{ x: h.x, y: h.y, opacity: [0, 1, 0], scale: h.s }}
+              transition={{ duration: 0.85, delay: i * 0.04, ease: 'easeOut' }}
             >
               ♥
             </motion.span>

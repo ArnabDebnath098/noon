@@ -13,6 +13,7 @@ const COMBO_STYLES = [
   { value: 'type', label: 'Type' },
   { value: 'slide', label: 'Slide' },
   { value: 'reveal', label: 'Reveal' },
+  { value: 'static', label: 'Static' },
 ]
 
 export default function AppRoutes() {
