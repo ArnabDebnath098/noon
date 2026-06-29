@@ -25,7 +25,7 @@ export function SectionCard({
       >
         <h2
           data-id="section-card-title"
-          className="text-sm font-semibold text-[#0E0E0E]"
+          className="text-base font-semibold text-[#0E0E0E]"
         >
           {title}
         </h2>

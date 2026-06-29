@@ -1,17 +1,19 @@
-// ComboChipOnce — blue combo chip with a ONE-TIME reveal: shows "Combo" first,
-// then slides up and changes to the product count. Chip width animates (layout);
-// runs once and settles on the count.
-import { AnimatePresence, motion } from 'framer-motion'
+// ComboChipOnce — a ONE-TIME "Combo" → product-count reveal, done as a vertical
+// odometer reel: both lines are stacked in a track and the track slides up by
+// one line, masked to a single line. No crossfade/ghosting — a clean slide.
+import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
+
+const H = 20 // line height of the masked window
 
 export function ComboChipOnce({
   count,
   delay = 2000,
   dataId,
   bare = false,
-  countColor = '#0F61FF', // colour of the "count" state ("Combo" stays blue)
-  countWeight = 600, // font-weight of the "count" state ("Combo" stays 600)
-  centered = false, // grow/shrink from the centre instead of the left edge
+  countColor = '#0F61FF', // colour of the "count" line ("Combo" stays blue)
+  countWeight = 600, // font-weight of the "count" line ("Combo" stays 600)
+  centered = false, // centre-align the lines instead of left
 }) {
   const [showCount, setShowCount] = useState(false)
 
@@ -21,32 +23,38 @@ export function ComboChipOnce({
   }, [delay])
 
   // `bare` drops the chip background/padding (the parent already provides it).
-  // No `layout` width morph. `centered` stacks both states in one grid cell so
-  // the swap stays anchored on the centre; otherwise it's left-anchored.
-  const base = `relative h-[20px] w-fit overflow-hidden font-noontree text-[12px] font-semibold leading-none ${
-    centered ? 'inline-grid place-items-center' : 'inline-flex items-center'
+  const base = `relative inline-block w-fit overflow-hidden font-noontree text-[12px] font-semibold ${
+    bare ? '' : 'rounded-md bg-[#F5FAFF] px-1.5'
   }`
+  const lineAlign = centered ? 'items-center justify-center text-center' : 'items-center justify-start text-left'
 
   return (
-    <span data-id={dataId} className={bare ? base : `${base} rounded-md bg-[#F5FAFF] px-1.5`}>
-      <AnimatePresence mode={centered ? 'sync' : 'popLayout'} initial={false}>
+    <span data-id={dataId} className={base} style={{ height: H }}>
+      <motion.span
+        className="flex flex-col"
+        animate={{ y: showCount ? -H : 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {/* "Combo" fades out as it rises, so it's gone before the masked edge
+            (no hard cut); the count fades in as it arrives */}
         <motion.span
-          key={showCount ? 'count' : 'combo'}
-          className={`whitespace-nowrap ${centered ? 'col-start-1 row-start-1 text-center' : ''}`}
-          style={{ color: showCount ? countColor : '#0F61FF', fontWeight: showCount ? countWeight : 600 }}
-          initial={{ y: 12, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -12, opacity: 0 }}
-          // opacity fades fast (front-loaded) so the text is invisible before it
-          // slides past the container edge → no clipping; the y move stays smooth
-          transition={{
-            y: { duration: 0.36, ease: [0.22, 0.61, 0.36, 1] },
-            opacity: { duration: 0.16, ease: 'easeOut' },
-          }}
+          className={`flex whitespace-nowrap ${lineAlign}`}
+          style={{ height: H, color: '#0F61FF', fontWeight: 600 }}
+          animate={{ opacity: showCount ? 0 : 1 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
         >
-          {showCount ? count : 'Combo'}
+          Combo
         </motion.span>
-      </AnimatePresence>
+        <motion.span
+          className={`flex whitespace-nowrap ${lineAlign}`}
+          style={{ height: H, color: countColor, fontWeight: countWeight }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showCount ? 1 : 0 }}
+          transition={{ duration: 0.42, ease: 'easeOut' }}
+        >
+          {count}
+        </motion.span>
+      </motion.span>
     </span>
   )
 }

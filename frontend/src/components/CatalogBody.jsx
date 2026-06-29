@@ -80,7 +80,7 @@ export default function CatalogBody({
             <div data-id={id('combos-header-text')} className="flex flex-1 flex-col gap-0.5">
               <span
                 data-id={id('combos-header-title')}
-                className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[rgba(2,6,12,0.92)]"
+                className="font-noontree text-[16px] font-semibold leading-5 tracking-[-0.1px] text-[rgba(2,6,12,0.92)]"
               >
                 Save more with combos
               </span>
@@ -132,7 +132,7 @@ export default function CatalogBody({
           {blue ? (
             /* Variation 1: simple two-line text header */
             <div data-id={id('combos-header')} className="flex flex-col gap-0.5 px-5">
-              <span className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[rgba(2,6,12,0.92)]">
+              <span className="font-noontree text-[16px] font-semibold leading-5 tracking-[-0.1px] text-[rgba(2,6,12,0.92)]">
                 Save more with combos
               </span>
               <span className="font-noontree text-[12px] font-normal leading-[14px] tracking-[-0.12px] text-[#666D85]">
