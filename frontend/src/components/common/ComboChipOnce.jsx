@@ -10,6 +10,8 @@ export function ComboChipOnce({
   dataId,
   bare = false,
   countColor = '#0F61FF', // colour of the "count" state ("Combo" stays blue)
+  countWeight = 600, // font-weight of the "count" state ("Combo" stays 600)
+  centered = false, // grow/shrink from the centre instead of the left edge
 }) {
   const [showCount, setShowCount] = useState(false)
 
@@ -19,29 +21,32 @@ export function ComboChipOnce({
   }, [delay])
 
   // `bare` drops the chip background/padding (the parent already provides it).
-  const base =
-    'inline-flex h-[20px] w-fit items-center overflow-hidden font-noontree text-[12px] font-semibold leading-none'
+  // No `layout` width morph. `centered` stacks both states in one grid cell so
+  // the swap stays anchored on the centre; otherwise it's left-anchored.
+  const base = `relative h-[20px] w-fit overflow-hidden font-noontree text-[12px] font-semibold leading-none ${
+    centered ? 'inline-grid place-items-center' : 'inline-flex items-center'
+  }`
 
   return (
-    <motion.span
-      layout
-      data-id={dataId}
-      className={bare ? base : `${base} rounded-md bg-[#F5FAFF] px-1.5`}
-      transition={{ layout: { duration: 0.55, ease: [0.16, 1, 0.3, 1] } }}
-    >
-      <AnimatePresence mode="wait" initial={false}>
+    <span data-id={dataId} className={bare ? base : `${base} rounded-md bg-[#F5FAFF] px-1.5`}>
+      <AnimatePresence mode={centered ? 'sync' : 'popLayout'} initial={false}>
         <motion.span
           key={showCount ? 'count' : 'combo'}
-          className="whitespace-nowrap"
-          style={{ color: showCount ? countColor : '#0F61FF' }}
-          initial={{ y: 7, opacity: 0 }}
+          className={`whitespace-nowrap ${centered ? 'col-start-1 row-start-1 text-center' : ''}`}
+          style={{ color: showCount ? countColor : '#0F61FF', fontWeight: showCount ? countWeight : 600 }}
+          initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -7, opacity: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          exit={{ y: -12, opacity: 0 }}
+          // opacity fades fast (front-loaded) so the text is invisible before it
+          // slides past the container edge → no clipping; the y move stays smooth
+          transition={{
+            y: { duration: 0.36, ease: [0.22, 0.61, 0.36, 1] },
+            opacity: { duration: 0.16, ease: 'easeOut' },
+          }}
         >
           {showCount ? count : 'Combo'}
         </motion.span>
       </AnimatePresence>
-    </motion.span>
+    </span>
   )
 }

@@ -113,56 +113,66 @@ export default function CatalogBody({
           </div>
         </SectionCard>
       ) : ['chiptop', 'mediatag', 'static'].includes(comboAnim) ? (
-        /* Gradient-green banner variants: gradient bg, SVG title + count tag. */
+        /* Gradient banner variants: variation 1 (chiptop) uses a blue theme;
+           the others keep the green theme. */
+        (() => {
+          // variations 1 (chiptop) and 2 (mediatag) share the blue theme + text header
+          const blue = comboAnim === 'chiptop' || comboAnim === 'mediatag'
+          return (
         <div
           data-id={id('section-combos')}
-          className="-mx-3 pb-4 pt-4"
+          className="-mx-3 flex flex-col gap-5 pb-4 pt-4"
           style={{
-            background: 'linear-gradient(360deg, #FFFFFF 0%, #FAFFF3 100%)',
+            background:
+              comboAnim === 'mediatag'
+                ? '#FFFFFF' // variation 2: pure white, no gradient
+                : 'linear-gradient(360deg, #FFFFFF 0%, #F0F7FF 100%)',
           }}
         >
-          <div className="mb-3 flex h-[46px] items-center justify-between px-5">
-            <img
-              src={bestCombo}
-              alt="Best Value combos"
-              className="h-[31px] w-auto"
-            />
-            <span
-              className="relative flex h-6 items-center gap-1 overflow-hidden rounded-[99px] py-0.5 pl-0.5 pr-2"
-              style={{
-                background:
-                  'linear-gradient(90deg, #598E04 -1.63%, #A0C80F 101.06%)',
-              }}
-            >
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 font-noontree text-[12px] font-bold text-[#598E04]">
-                {combos.length}
+          {blue ? (
+            /* Variation 1: simple two-line text header */
+            <div data-id={id('combos-header')} className="flex flex-col gap-0.5 px-5">
+              <span className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[rgba(2,6,12,0.92)]">
+                Save more with combos
               </span>
-              <span className="font-noontree text-[12px] font-semibold text-white">
-                Combos available
+              <span className="font-noontree text-[12px] font-normal leading-[14px] tracking-[-0.12px] text-[#666D85]">
+                buy together and unlock extra savings
               </span>
-              {/* shimmer sweep */}
-              <motion.span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-[45deg]"
-                style={{
-                  background:
-                    'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-                }}
-                initial={{ x: 0 }}
-                animate={{ x: ['0%', '500%'] }}
-                transition={{
-                  duration: 4,
-                  repeat: Infinity,
-                  repeatDelay: 1.5,
-                  ease: 'easeInOut',
-                }}
-              />
-            </span>
-          </div>
+            </div>
+          ) : (
+            <div className="flex h-[46px] items-center justify-between px-5">
+              <img src={bestCombo} alt="Best Value combos" className="h-[31px] w-auto" />
+              <span
+                className="relative flex h-6 items-center gap-1 overflow-hidden rounded-[99px] py-0.5 pl-0.5 pr-2"
+                style={{ background: 'linear-gradient(90deg, #598E04 -1.63%, #A0C80F 101.06%)' }}
+              >
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1.5 font-noontree text-[12px] font-bold text-[#598E04]">
+                  {combos.length}
+                </span>
+                <span className="font-noontree text-[12px] font-semibold text-white">
+                  Combos available
+                </span>
+                {/* shimmer sweep */}
+                <motion.span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-[45deg]"
+                  style={{
+                    background:
+                      'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+                  }}
+                  initial={{ x: 0 }}
+                  animate={{ x: ['0%', '500%'] }}
+                  transition={{ duration: 4, repeat: Infinity, repeatDelay: 1.5, ease: 'easeInOut' }}
+                />
+              </span>
+            </div>
+          )}
           <div className="scrollbar-hide flex gap-3 overflow-x-auto px-5 pb-1">
             {comboCards}
           </div>
         </div>
+          )
+        })()
       ) : (
         <SectionCard
           dataId={id('section-combos')}

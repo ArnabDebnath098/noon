@@ -203,8 +203,10 @@ export function ProductCard({
           <div data-id={did('media-combo')} className="flex items-center justify-center py-1">
             <ComboChipOnce
               bare
+              centered
               count={productCount}
               delay={2000}
+              countColor="#666D85"
               dataId={did('combo-chip')}
             />
           </div>
@@ -214,8 +216,15 @@ export function ProductCard({
       {/* Content */}
       <div data-id={did('content')} className="flex flex-col gap-2.5">
         {/* Title + count grouped together, no gap */}
-        <div data-id={did('title-group')} className="flex flex-col gap-1">
-          {/* chip-top variant: plain text above the title — blue "Combo" reveals
+        <div data-id={did('title-group')} className="flex flex-col gap-0.5">
+          <h3
+            data-id={did('title')}
+            className="line-clamp-2 font-noontree text-[14px] font-medium leading-[20px] tracking-[-0.1px] text-[#1D2539]"
+          >
+            {title}
+          </h3>
+
+          {/* chip-top variant: plain text BELOW the title — blue "Combo" reveals
               once into the product count in secondary colour (no tag/chip bg). */}
           {productCount && comboAnim === 'chiptop' && (
             <ComboChipOnce
@@ -223,16 +232,10 @@ export function ProductCard({
               count={productCount}
               delay={2000}
               countColor="#666D85"
+              countWeight={500}
               dataId={did('combo-chip')}
             />
           )}
-
-          <h3
-            data-id={did('title')}
-            className="line-clamp-2 font-noontree text-[14px] font-medium leading-[20px] tracking-[-0.1px] text-[#1D2539]"
-          >
-            {title}
-          </h3>
 
           {/* combos: animated "Combo" chip / count (below title) */}
           {productCount && comboAnim !== 'chiptop' && comboAnim !== 'mediatag' && (
