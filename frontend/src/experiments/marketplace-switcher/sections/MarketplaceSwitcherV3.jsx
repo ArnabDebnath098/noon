@@ -13,18 +13,19 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const ICON = 72
+const ICON = 76
 const GAP = 8
 const ROW_TOP = 8
 const RADIUS = 20
 
 const BIG_N = 3 // row marketplace tiles
 const PREVIEW_N = 4 // icons shown in the 2×2 grid tile
-const MINI = 28
+const MINI = 31
 const MINI_SCALE = MINI / ICON
 
-// expanded panel (4 columns)
+// expanded panel (4 columns) — tighter gap between circular icons
 const PADP = 14
+const EXP_GAP = 8
 const COLS = 4
 
 function Mark({ m, white, size = 72 }) {
@@ -67,6 +68,10 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
   const [W, setW] = useState(375)
   const [expanded, setExpanded] = useState(false)
   const [pressed, setPressed] = useState(false)
+  // which marketplace sits in each slot (slot 2 is the swappable "row" tile)
+  const [slotOrder, setSlotOrder] = useState(() => items.map((m) => m.id))
+  const byId = (id) => items.find((m) => m.id === id)
+  const SWAP_SLOT = 2 // the "noon food" row slot
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -88,8 +93,8 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
   const gtCy = ROW_TOP + ICON / 2
 
   // 2×2 preview cells inside the grid tile
-  const MP = 6
-  const MG = (ICON - 2 * MP - 2 * MINI) // gap between the two mini columns
+  const MP = 5
+  const MG = (ICON - 2 * MP - 2 * MINI) // gap between the two mini columns (tight)
   const miniCenter = (k) => {
     const r = Math.floor(k / 2)
     const c = k % 2
@@ -97,15 +102,15 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
   }
 
   // ---- expanded grid geometry ----
-  const panelW = COLS * ICON + (COLS - 1) * GAP + 2 * PADP
+  const panelW = COLS * ICON + (COLS - 1) * EXP_GAP + 2 * PADP
   const EL = (W - panelW) / 2
   const ET = ROW_TOP
   const ROWS = Math.ceil(items.length / COLS)
-  const panelH = ROWS * ICON + (ROWS - 1) * GAP + 2 * PADP
+  const panelH = ROWS * ICON + (ROWS - 1) * EXP_GAP + 2 * PADP
   const expCenter = (i) => {
     const r = Math.floor(i / COLS)
     const c = i % COLS
-    return { x: EL + PADP + ICON / 2 + c * (ICON + GAP), y: ET + PADP + ICON / 2 + r * (ICON + GAP) }
+    return { x: EL + PADP + ICON / 2 + c * (ICON + EXP_GAP), y: ET + PADP + ICON / 2 + r * (ICON + EXP_GAP) }
   }
 
   // collapsed state per icon: big tiles in the row, preview icons in the grid
@@ -139,7 +144,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
   const order = [...dists.keys()].sort((p, q) => dists[p] - dists[q])
   const delayOf = {}
   order.forEach((idx, rank) => {
-    delayOf[idx] = rank * 0.025
+    delayOf[idx] = rank * 0.014 // tighter stagger → snappier
   })
 
   const open = () => {
@@ -147,9 +152,22 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
     setTimeout(() => {
       setPressed(false)
       setExpanded(true)
-    }, 70)
+    }, 45)
   }
   const close = () => setExpanded(false)
+
+  // pick a marketplace from the grid → swap it into the row slot, then close
+  const handleSelect = (slot) => {
+    onChange(slotOrder[slot])
+    if (slot !== SWAP_SLOT) {
+      setSlotOrder((prev) => {
+        const next = [...prev]
+        ;[next[SWAP_SLOT], next[slot]] = [next[slot], next[SWAP_SLOT]]
+        return next
+      })
+    }
+    setTimeout(() => setExpanded(false), 420) // let the swap flip play, then close
+  }
 
   return (
     <div ref={ref} data-id="mp-switcher" className="relative w-full" style={{ height: ROW_TOP + ICON + 8 }}>
@@ -183,26 +201,27 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
               ? { left: EL, top: ET, width: panelW, height: panelH, borderRadius: 26, backgroundColor: '#FFFFFF' }
               : { left: gtLeft, top: ROW_TOP, width: ICON, height: ICON, borderRadius: RADIUS, backgroundColor: '#E8F2FB' }
           }
-          transition={{ type: 'spring', stiffness: 120, damping: 18, mass: 1 }}
-          style={{ position: 'absolute', border: '1px solid #C5E7FB' }}
+          transition={{ type: 'spring', stiffness: 260, damping: 28, mass: 0.9 }}
+          style={{ position: 'absolute' }}
           className={expanded ? 'shadow-[0_18px_50px_rgba(16,24,40,0.22)] backdrop-blur-xl' : ''}
         />
 
-        {/* every icon — same element collapsed → expanded */}
-        {items.map((m, i) => {
+        {/* every slot is positioned by index; its marketplace can swap (flip) */}
+        {slotOrder.map((id, i) => {
+          const m = byId(id)
           const isGridPart = i >= BIG_N
           const active = m.id === activeId
+          const radius = i < BIG_N || expanded ? ICON * 0.28 : ICON / 2
           return (
             <motion.div
-              key={m.id}
+              key={i}
               onClick={(e) => {
                 e.stopPropagation()
                 if (!expanded) {
                   if (isGridPart) return open()
-                  return onChange(m.id)
+                  return onChange(id)
                 }
-                onChange(m.id)
-                close()
+                handleSelect(i)
               }}
               style={{
                 position: 'absolute',
@@ -211,6 +230,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
                 width: ICON,
                 height: ICON,
                 zIndex: 30,
+                perspective: 700,
                 offsetPath: pathFor(i),
                 offsetRotate: '0deg',
                 offsetAnchor: '50% 50%',
@@ -223,23 +243,36 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
                 filter: !expanded && collOpacity(i) === 0 ? 'blur(4px)' : 'blur(0px)',
               }}
               transition={{
-                offsetDistance: { type: 'spring', stiffness: 170, damping: 18, mass: 1, delay: delayOf[i] },
-                scale: { type: 'spring', stiffness: 220, damping: 16, delay: delayOf[i] },
-                opacity: { duration: 0.22, delay: delayOf[i] },
-                filter: { duration: 0.22, delay: delayOf[i] },
+                offsetDistance: { type: 'spring', stiffness: 300, damping: 30, mass: 0.7, delay: delayOf[i] },
+                scale: { type: 'spring', stiffness: 320, damping: 26, mass: 0.7, delay: delayOf[i] },
+                opacity: { duration: 0.16, delay: delayOf[i] },
+                filter: { duration: 0.16, delay: delayOf[i] },
               }}
             >
-              <div
-                style={{
-                  borderRadius: ICON * 0.28,
-                  border: '1px solid #C5E7FB',
-                  background: active ? m.accent : '#FFFFFF',
-                  boxShadow: '0px 2px 4px rgba(0,0,0,0.05)',
-                }}
-                className="flex h-full w-full items-center justify-center"
-              >
-                <Mark m={m} white={active && !m.lightAccent} size={ICON * 0.78} />
-              </div>
+              {/* marketplace content — flips when this slot's marketplace swaps */}
+              <AnimatePresence initial={false}>
+                <motion.div
+                  key={m.id}
+                  initial={{ rotateY: -110, opacity: 0, borderRadius: radius }}
+                  animate={{ rotateY: 0, opacity: 1, borderRadius: radius }}
+                  exit={{ rotateY: 110, opacity: 0 }}
+                  transition={{
+                    rotateY: { type: 'spring', stiffness: 260, damping: 22 },
+                    opacity: { duration: 0.18 },
+                    borderRadius: { type: 'spring', stiffness: 260, damping: 28 },
+                  }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: active ? m.accent : '#FFFFFF',
+                    border: '1px solid #E5E7EB',
+                    backfaceVisibility: 'hidden',
+                  }}
+                  className="flex items-center justify-center"
+                >
+                  <Mark m={m} white={active && !m.lightAccent} size={ICON} />
+                </motion.div>
+              </AnimatePresence>
             </motion.div>
           )
         })}
