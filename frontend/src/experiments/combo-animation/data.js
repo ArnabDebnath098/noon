@@ -1,6 +1,6 @@
 // Shared product data scraped from noon.com (uae-en) product pages.
 // Consumed by the Home and Categories routes.
-import koreanGlassHero from '../assets/products/korean-glass-hero.png'
+import koreanGlassHero from '../../assets/products/korean-glass-hero.png'
 
 // "Product Details" accordion rows.
 export const productDetails = [

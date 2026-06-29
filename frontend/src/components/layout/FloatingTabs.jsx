@@ -3,14 +3,19 @@ import { motion } from 'framer-motion'
 // FloatingTabs — a floating rounded segmented control (pill) that sits above the
 // action bar. The active segment is a sliding highlight animated with Framer
 // Motion (shared layoutId). Used on Home to switch the combo card style.
-export default function FloatingTabs({ tabs, value, onChange, dataId }) {
+export default function FloatingTabs({
+  tabs,
+  value,
+  onChange,
+  dataId,
+  accent = '#0F61FF',
+  offset = 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
+}) {
   return (
     <div
       data-id={dataId}
       className="pointer-events-none fixed inset-x-0 z-20 flex justify-center px-3"
-      style={{
-        bottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
-      }}
+      style={{ bottom: offset }}
     >
       <div className="pointer-events-auto flex gap-0.5 rounded-full border border-[#EAECF0] bg-white p-1 shadow-[0px_6px_20px_rgba(0,0,0,0.12)]">
         {tabs.map((t) => {
@@ -26,7 +31,8 @@ export default function FloatingTabs({ tabs, value, onChange, dataId }) {
               {active && (
                 <motion.span
                   layoutId="floating-tab-indicator"
-                  className="absolute inset-0 rounded-full bg-[#0F61FF]"
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: accent }}
                   transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                 />
               )}

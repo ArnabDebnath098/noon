@@ -1,14 +1,17 @@
 import { motion } from 'framer-motion'
 import { SectionCard, Accordion, ProductCard, BentoProductCard } from './common'
-import { combos, similar, productDetails } from '../data/catalog'
 import bestCombo from '../assets/icons/bestcombo.svg'
 
 /**
- * CatalogBody — the shared page body (Product Details + combos + similar rails),
- * reused by Home / Categories / Deals. Each route passes a different combo count
- * animation via `comboAnim` and a `idPrefix` to keep data-ids unique.
+ * CatalogBody — presentational PDP body (Product Details + combos + similar
+ * rails). Data is passed in by the experiment (no direct data import), so the
+ * data layer stays owned by each experiment. `comboAnim` picks the combo-tag
+ * style and `idPrefix` keeps data-ids unique.
  */
 export default function CatalogBody({
+  combos = [],
+  similar = [],
+  productDetails = [],
   comboAnim = 'type',
   comboStagger = 0,
   idPrefix = '',
