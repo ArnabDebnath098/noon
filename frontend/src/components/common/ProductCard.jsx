@@ -215,12 +215,14 @@ export function ProductCard({
       <div data-id={did('content')} className="flex flex-col gap-2.5">
         {/* Title + count grouped together, no gap */}
         <div data-id={did('title-group')} className="flex flex-col gap-1">
-          {/* chip-top variant: blue combo chip ABOVE the title that reveals the
-              count once ("Combo" -> count). */}
+          {/* chip-top variant: plain text above the title — blue "Combo" reveals
+              once into the product count in secondary colour (no tag/chip bg). */}
           {productCount && comboAnim === 'chiptop' && (
             <ComboChipOnce
+              bare
               count={productCount}
               delay={2000}
+              countColor="#666D85"
               dataId={did('combo-chip')}
             />
           )}

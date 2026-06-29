@@ -1,6 +1,16 @@
 import { motion } from 'framer-motion'
-import { SectionCard, Accordion, ProductCard, BentoProductCard } from './common'
+import { SectionCard, Accordion, ProductCard, BentoProductCard, HorizontalComboCard } from './common'
 import bestCombo from '../assets/icons/bestcombo.svg'
+
+// Small lavender "combo" mark used in the stacked-list header.
+function ComboIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <rect x="3.5" y="3" width="9" height="13" rx="2.6" transform="rotate(-10 8 9.5)" fill="#C7D6FF" />
+      <rect x="7" y="4" width="9" height="13" rx="2.6" fill="#9FB6FF" />
+    </svg>
+  )
+}
 
 /**
  * CatalogBody — presentational PDP body (Product Details + combos + similar
@@ -56,7 +66,42 @@ export default function CatalogBody({
         <Accordion items={productDetails} dataId={id('accordion')} />
       </SectionCard>
 
-      {comboAnim === 'bento' ? (
+      {comboAnim === 'list' ? (
+        /* Stacked list of horizontal combo cards (Figma Variant5). */
+        <div
+          data-id={id('section-combos')}
+          className="flex flex-col gap-3 rounded-2xl bg-white p-3"
+        >
+          <div data-id={id('combos-header')} className="flex items-center gap-4 px-2">
+            <span data-id={id('combos-header-icon')}>
+              <ComboIcon />
+            </span>
+            <span data-id={id('combos-header-divider')} className="h-4 w-px bg-[#D0D4DD]" />
+            <div data-id={id('combos-header-text')} className="flex flex-1 flex-col gap-0.5">
+              <span
+                data-id={id('combos-header-title')}
+                className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[rgba(2,6,12,0.92)]"
+              >
+                Save more with combos
+              </span>
+              <span
+                data-id={id('combos-header-subtitle')}
+                className="font-noontree text-[12px] font-normal leading-[14px] tracking-[-0.12px] text-[#666D85]"
+              >
+                buy together and unlock extra savings
+              </span>
+            </div>
+          </div>
+
+          <span data-id={id('combos-divider')} className="h-px w-full border-t border-dashed border-[#F2F3F7]" />
+
+          <div data-id={id('combos-list')} className="flex flex-col gap-3">
+            {combos.slice(0, 1).map((c) => (
+              <HorizontalComboCard key={c.id} dataId={id(`combo-${c.id}`)} {...c} />
+            ))}
+          </div>
+        </div>
+      ) : comboAnim === 'bento' ? (
         <SectionCard
           dataId={id('section-combos')}
           title="Save more with combos"

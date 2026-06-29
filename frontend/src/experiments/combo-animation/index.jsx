@@ -12,13 +12,12 @@ const COMBO_STYLES = [
   // Gradient-green banner variants
   { value: 'chiptop', label: '1' },
   { value: 'mediatag', label: '2' },
-  { value: 'static', label: '3' },
-  // Plain white card variants
-  { value: 'counter', label: '4' },
-  { value: 'slide', label: '5' },
-  { value: 'reveal', label: '6' },
+  // Plain white card variant
+  { value: 'slide', label: '3' },
+  // Stacked list of horizontal combo cards
+  { value: 'list', label: '4' },
   // Bento grid card
-  { value: 'bento', label: '7' },
+  { value: 'bento', label: '5' },
 ]
 
 /**
