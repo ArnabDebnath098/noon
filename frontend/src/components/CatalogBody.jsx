@@ -186,6 +186,33 @@ export default function CatalogBody({
         </SectionCard>
       )}
 
+      {/* Variations 1 & 2: a second combo section with a single horizontal combo
+          card (as used in variation 4). Variation 1 uses the blue banner; 2 white. */}
+      {(comboAnim === 'chiptop' || comboAnim === 'mediatag') && combos[0] && (
+        <div
+          data-id={id('section-combos-horizontal')}
+          className="-mx-3 flex flex-col gap-5 pb-4 pt-4"
+          style={{
+            background:
+              comboAnim === 'mediatag'
+                ? '#FFFFFF'
+                : 'linear-gradient(360deg, #FFFFFF 0%, #F0F7FF 100%)',
+          }}
+        >
+          <div data-id={id('combos-h-header')} className="flex flex-col gap-0.5 px-5">
+            <span className="font-noontree text-[16px] font-semibold leading-5 tracking-[-0.1px] text-[rgba(2,6,12,0.92)]">
+              Save more with combos
+            </span>
+            <span className="font-noontree text-[12px] font-normal leading-[14px] tracking-[-0.12px] text-[#666D85]">
+              buy together and unlock extra savings
+            </span>
+          </div>
+          <div className="px-5">
+            <HorizontalComboCard dataId={id(`combo-h-${combos[0].id}`)} {...combos[0]} />
+          </div>
+        </div>
+      )}
+
       <SectionCard dataId={id('section-similar')} title="Similar Products">
         <div className="scrollbar-hide -mx-3 flex gap-3 overflow-x-auto px-3 pb-1">
           {similar.map((p) => (

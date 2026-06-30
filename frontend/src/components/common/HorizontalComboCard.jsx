@@ -22,7 +22,7 @@ export function HorizontalComboCard({
   return (
     <div
       data-id={dataId}
-      className="flex w-full items-stretch gap-2 rounded-2xl bg-white"
+      className="flex w-full items-stretch gap-2 rounded-2xl"
       style={{ minHeight: 136 }}
     >
       {/* Image */}
