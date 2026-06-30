@@ -102,7 +102,7 @@ export default function AddressSheet({ open, addresses, selectedId, onSelect, on
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={springs.panel}
+            transition={springs.sheet}
             className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-md"
           >
             <div

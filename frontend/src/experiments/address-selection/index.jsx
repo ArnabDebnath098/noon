@@ -1,18 +1,19 @@
 import { useState, useRef, useEffect } from 'react'
-import { useMotionValue } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import BottomNav from '../../components/layout/BottomNav'
-// Home screen reuses the marketplace-switcher home, locked to variation 1.
+// The switcher is the one constant across marketplaces (variation 1); the rest
+// of the header is themed per marketplace (MarketHeader + marketplaceViews).
 import MarketplaceSwitcher from '../marketplace-switcher/sections/MarketplaceSwitcher'
-import LocationBar from '../marketplace-switcher/sections/LocationBar'
-import SearchBar from '../marketplace-switcher/sections/SearchBar'
 import PromoBanner from '../marketplace-switcher/sections/PromoBanner'
 import CategoryGrid from '../marketplace-switcher/sections/CategoryGrid'
 import CombosSection from '../marketplace-switcher/sections/CombosSection'
+import MarketHeader from './sections/MarketHeader'
 import AddressSheet from './sections/AddressSheet'
 import RecentAddressSheet from './sections/RecentAddressSheet'
 import HomeSkeleton from './sections/HomeSkeleton'
+import { viewFor } from './marketplaceViews'
 import { marketplaces, categories, addresses, recentMinutesAddress } from './data'
 
 /**
@@ -30,6 +31,7 @@ export default function AddressExperiment() {
   const [addressId, setAddressId] = useState(addresses[0].id)
   const [override, setOverride] = useState(null) // address chosen from the recent-address island
   const current = override ?? addresses.find((a) => a.id === addressId) ?? addresses[0]
+  const view = viewFor(activeId) // per-marketplace theme + header content
 
   const timers = useRef([])
   const clearTimers = () => {
@@ -75,28 +77,38 @@ export default function AddressExperiment() {
           className="sticky top-0 z-20"
           style={{ paddingTop: 'env(safe-area-inset-top, 47px)' }}
         >
-          {/* Gradient is a pinned, fixed-height layer anchored to the very top
-              (covering the status-bar safe area). It sits behind the controls
-              and does NOT scroll or collapse with the header, so it reads as a
-              fixed backdrop flowing continuously from the top. */}
+          {/* Theme background — a pinned, fixed-height layer anchored to the very
+              top (covering the status-bar safe area). It crossfades when the
+              marketplace changes and does not scroll or collapse with the
+              header, so it reads as a fixed, themed backdrop from the top. */}
           <div
             aria-hidden="true"
-            data-id="addr-header-gradient"
-            className="pointer-events-none absolute inset-x-0 top-0 -z-10 rounded-b-[12px]"
-            style={{
-              height: 'calc(env(safe-area-inset-top, 47px) + 209px)',
-              background:
-                'radial-gradient(187.5% 187.5% at 50% -79%, #D4EFF6 10%, #DBE1F9 50%, #EBF3F9 70%, rgba(235,243,249,0) 100%)',
-            }}
-          />
+            data-id="addr-header-theme"
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 overflow-hidden rounded-b-[12px]"
+            style={{ height: 'calc(env(safe-area-inset-top, 47px) + 300px)' }}
+          >
+            <AnimatePresence initial={false}>
+              <motion.div
+                key={activeId}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0"
+                style={{ background: view.theme }}
+              />
+            </AnimatePresence>
+          </div>
+
           <MarketplaceSwitcher items={marketplaces} activeId={activeId} onChange={switchMarketplace} progress={progress} />
-          <LocationBar
+          <MarketHeader
+            view={view}
             label={current.type}
             line={current.line}
             revision={override ? 'recent' : addressId}
-            onClick={() => setSheetOpen(true)}
+            closer={Boolean(override)}
+            onLocation={() => setSheetOpen(true)}
           />
-          <SearchBar />
         </div>
 
         <div data-id="addr-content" className="relative z-10">

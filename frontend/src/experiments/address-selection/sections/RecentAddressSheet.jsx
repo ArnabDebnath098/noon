@@ -44,7 +44,7 @@ export default function RecentAddressSheet({ open, marketplaceLogo = minutesLogo
             initial={{ y: '110%' }}
             animate={{ y: 0 }}
             exit={{ y: '110%' }}
-            transition={springs.panel}
+            transition={springs.sheet}
             className="fixed inset-x-0 bottom-0 z-[60] mx-auto w-full max-w-md px-3"
             style={{ paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}
           >

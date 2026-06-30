@@ -8,6 +8,8 @@ export const springs = {
   snappy: { type: 'spring', stiffness: 340, damping: 33, mass: 0.6 },
   // a larger surface (panel/sheet) that should feel weightier
   panel: { type: 'spring', stiffness: 300, damping: 30, mass: 0.85 },
+  // bottom-sheet slide
+  sheet: { type: 'spring', stiffness: 300, damping: 28, mass: 1 },
   // quick tactile press/release
   press: { type: 'spring', stiffness: 700, damping: 30 },
   // 3D card flip
