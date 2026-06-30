@@ -17,4 +17,12 @@ export const experiments = [
     path: '/marketplace-switcher',
     accent: '#15806A',
   },
+  {
+    id: 'address-selection',
+    title: 'Address 2.0 selection',
+    description:
+      'Pick your delivery address from a redesigned bottom-sheet — on the marketplace home.',
+    path: '/address-selection',
+    accent: '#0F61FF',
+  },
 ]

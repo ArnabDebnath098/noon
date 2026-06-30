@@ -63,18 +63,23 @@ function Tile({ m, activeId, onChange, progress }) {
   const rmWrapW = useTransform(sp, [0, 1], [41, 55])
   const rmWrapH = useTransform(sp, [0, 1], [29, 10])
 
+  const active = m.id === activeId
+  // when active, a marketplace may swap to a pre-coloured logo set (e.g. yellow)
+  // instead of the default white-invert
+  const rowLogos = active && m.activeLogoStack ? m.activeLogoStack : m.logoStack
+
   let content
   if (m.rowMorph) {
     content = (
       <motion.span style={{ width: rmWrapW, height: rmWrapH }} className="relative block">
         <motion.img
-          src={m.logoStack[0]}
+          src={rowLogos[0]}
           alt=""
           style={{ height: rmItemH, y: rmSuperNudge }}
           className="absolute left-0 top-0 w-auto"
         />
         <motion.img
-          src={m.logoStack[1]}
+          src={rowLogos[1]}
           alt=""
           style={{ height: rmItemH, x: rmMallX, y: rmMallY }}
           className="absolute left-0 top-0 w-auto"
@@ -101,7 +106,6 @@ function Tile({ m, activeId, onChange, progress }) {
     )
   }
 
-  const active = m.id === activeId
   return (
     <motion.button
       type="button"
@@ -112,8 +116,8 @@ function Tile({ m, activeId, onChange, progress }) {
       className="relative flex shrink-0 items-center justify-center overflow-hidden px-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
     >
       {/* selected → content turns white via invert filter (kept dark on light
-          accents like noon's yellow) */}
-      <span style={{ filter: active && !m.lightAccent ? 'brightness(0) invert(1)' : undefined }} className="flex items-center justify-center">
+          accents like noon's yellow, or when a pre-coloured activeLogoStack is used) */}
+      <span style={{ filter: active && !m.lightAccent && !m.activeLogoStack ? 'brightness(0) invert(1)' : undefined }} className="flex items-center justify-center">
         {content}
       </span>
     </motion.button>
