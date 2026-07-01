@@ -3,6 +3,7 @@ import ExperimentsLanding from '../pages/ExperimentsLanding.jsx'
 import ComboAnimationExperiment from '../experiments/combo-animation/index.jsx'
 import MarketplaceExperiment from '../experiments/marketplace-switcher/index.jsx'
 import AddressExperiment from '../experiments/address-selection/index.jsx'
+import MarketplaceSwitcherIntroExperiment from '../experiments/marketplace-switcher-intro/index.jsx'
 
 export default function AppRoutes() {
   return (
@@ -14,6 +15,7 @@ export default function AppRoutes() {
         element={<MarketplaceExperiment />}
       />
       <Route path="/address-selection" element={<AddressExperiment />} />
+      <Route path="/marketplace-switcher-intro" element={<MarketplaceSwitcherIntroExperiment />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

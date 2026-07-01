@@ -25,4 +25,12 @@ export const experiments = [
     path: '/address-selection',
     accent: '#0F61FF',
   },
+  {
+    id: 'marketplace-switcher-intro',
+    title: 'Marketplace switcher intro',
+    description:
+      'A different take on the switcher, led by an animated intro screen. (WIP — empty screens.)',
+    path: '/marketplace-switcher-intro',
+    accent: '#7C3AED',
+  },
 ]

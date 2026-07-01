@@ -8,6 +8,8 @@ import nownowLogo from '../../assets/marketplace/nownow.svg'
 import sendLogo from '../../assets/marketplace/send.svg'
 import minutes15Logo from '../../assets/marketplace/minutes-15.svg'
 import minutesWordLogo from '../../assets/marketplace/minutes-word.svg'
+import hsHomeLogo from '../../assets/marketplace/hs-home.svg'
+import hsServicesLogo from '../../assets/marketplace/hs-services.svg'
 
 const AIRPODS =
   'https://f.nooncdn.com/p/pzsku/Z00A3C6B2FA70477424D8Z/45/_/1773140636/6ad93409-c794-4938-93a1-3f94284436a7.jpg'
@@ -26,7 +28,7 @@ export const marketplaces = [
   { id: 'minutes', label: '15', sub: 'MINUTES', pill: 'MINUTES', fadeStack: [minutes15Logo, minutesWordLogo], fadeW: 50, fadeH: 36, keepW: 52, bg: '#FFFFFF', fg: '#E5293E', accent: '#E5293E' },
   { id: 'nownow', label: 'now\nnow', pill: 'now now', logo: nownowLogo, logoH: 46, logoHSmall: 26, bg: '#FFFFFF', fg: '#1B1B1B', accent: '#1B1B1B' },
   { id: 'pay', label: 'noon\npay', pill: 'pay', bg: '#FFFFFF', fg: '#5523DD', accent: '#5523DD' },
-  { id: 'home', label: 'home\nservices', pill: 'home', bg: '#FFFFFF', fg: '#00A6A6', accent: '#00A6A6' },
+  { id: 'home', label: 'home\nservices', pill: 'home', fadeStack: [hsHomeLogo, hsServicesLogo], fadeW: 39, fadeH: 12, keepW: 58, bg: '#FFFFFF', fg: '#00A6A6', accent: '#00A6A6' },
   { id: 'send', label: 'noon\nsend', pill: 'send', fadeStack: [noonLogo, sendLogo], fadeW: 50, fadeH: 13, keepW: 46, bg: '#FFFFFF', fg: '#1F20B7', accent: '#1F20B7' },
   { id: 'out', label: 'noon\nout', pill: 'out', bg: '#FFFFFF', fg: '#FF6A00', accent: '#FF6A00' },
   { id: 'med', label: 'noon\nmed', pill: 'med', bg: '#FFFFFF', fg: '#00A98F', accent: '#00A98F' },
