@@ -13,9 +13,22 @@ const REF = 76
 
 export default function MarketplaceMark({ m, white, size = 72 }) {
   const k = size / REF
-  const filter = white ? 'brightness(0) invert(1)' : undefined
+  // white → invert to white (dark accent fill); mono → force black (e.g. a
+  // coloured wordmark that should read as neutral in both default & selected).
+  const filter = white ? 'brightness(0) invert(1)' : m.mono ? 'brightness(0)' : undefined
 
   if (m.fadeStack) {
+    // fadeMatchH: both marks share one cap height (natural widths) — use when the
+    // two wordmarks have the same intrinsic height and equal-width would distort.
+    if (m.fadeMatchH) {
+      const h = (m.fadeH ?? 12) * k
+      return (
+        <span className="flex flex-col items-start gap-0.5" style={{ filter }}>
+          <img src={m.fadeStack[0]} alt="" className="w-auto" style={{ height: h }} />
+          <img src={m.fadeStack[1]} alt="" className="w-auto" style={{ height: h }} />
+        </span>
+      )
+    }
     const w = (m.keepW ?? 46) * k
     return (
       <span className="flex flex-col items-center gap-0.5" style={{ filter }}>

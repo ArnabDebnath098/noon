@@ -2,7 +2,7 @@
 
 A noon-style home screen exploring different **marketplace switcher** UX
 patterns. The switcher variation is chosen live via a floating segmented
-control (tabs 1 / 2 / 3); the rest of the page is shared.
+control (tabs 1 – 6); the rest of the page is shared.
 
 Route: `/marketplace-switcher` · Accent: `#15806A`
 
@@ -20,7 +20,7 @@ AppShell (fixed 100dvh frame so `main` scrolls internally)
          ├─ CategoryGrid  (4-col, no scroll)
          └─ CombosSection (reuses combo data + ProductCard)
  ├─ Floating back-to-experiments FAB (#1D2539)
- ├─ FloatingTabs (variation switcher 1/2/3, accent #15806A)
+ ├─ FloatingTabs (variation switcher 1–6, accent #15806A)
  └─ BottomNav (shared, sliding marker, safe-area)
 ```
 
@@ -95,6 +95,32 @@ baseline sits ~27% above its box — nudge it down ~0.26×height to align baseli
   picked marketplace now in the row. Implemented via `slotOrder` state (slot
   positions stay fixed; only the marketplace at each slot swaps).
 - Ignores scroll `progress` (interaction is tap-driven, not scroll).
+
+### V4 / V5 — `MarketplaceCircularDial.jsx` (rotary dial flyout)
+- Shared component, `orientation` prop; V4 = `vertical`, V5 = `horizontal`.
+- Collapsed: 3 quick tiles + a grid tile (2×2 accent preview). Tapping the grid
+  tile opens a full-frame flyout that **slides up from the bottom** and lays all
+  marketplaces along a **big circular arc** (a rotary jog-wheel). A faint SVG
+  `<circle>` traces the wheel edge behind the marks; a dark handle marks the
+  selection point.
+  - **vertical:** wheel centre off-screen right, arc bulges left, scroll up/down,
+    selection at vertical middle, labels left, handle right (matches reference).
+  - **horizontal:** wheel centre off-screen below, arc bulges up, scroll ↔,
+    selection at top-centre, labels above, handle top.
+- One motion value `rot` (radians) drives everything: each mark's x/y/scale/
+  opacity is a `useTransform(rot)`. `onPan` scrolls it, `onPanEnd` springs to the
+  nearest step, and on open `rot` springs in from a `SWEEP` offset so every mark
+  glides along the arc into place. Tap a mark → `onChange` + close.
+
+### V6 — `MarketplaceSwitcherV6.jsx` (push-down reveal, iOS-Wallet style)
+- Grid tile → the **whole home page slides down** and every marketplace appears
+  in the revealed space at the top (no box). Tap a marketplace → select + slide up.
+- Moves the *real* page: reaches up the DOM (`el.closest('[data-id="marketplace-main"]')`),
+  translates it `Y` with rounded top + shadow, and portals a dark marketplace
+  grid panel into `app-frame` **behind** it (`main` z-30 > panel z-10). Grid
+  items stagger in (framer variants). Chevron handle pulls the page back up.
+- Caveat: it mutates the scroll container's inline styles directly; an unmount
+  effect hard-resets them if the variant is swapped away while open.
 
 ## Spring reference (App-Library feel)
 

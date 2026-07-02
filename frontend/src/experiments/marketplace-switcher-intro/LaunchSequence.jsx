@@ -62,6 +62,7 @@ export default function LaunchSequence() {
       setTimeout(() => setPhase(3), 1950), // carousel
       setTimeout(() => setPhase(4), 2500), // select
       setTimeout(() => setPhase(5), 2780), // confirm
+      setTimeout(() => setPhase(6), 3200), // settle → become the scrollable switcher
     ]
     return () => ts.forEach(clearTimeout)
   }, [])
@@ -71,6 +72,7 @@ export default function LaunchSequence() {
   const scrolled = phase >= 3
   const activeIndex = phase >= 4 ? NOON_INDEX : MINUTES_INDEX
   const confirm = phase >= 5
+  const handoff = phase >= 6 // strip fades over the real scrollable switcher
 
   const tileLeft = (i) => i * (W + GAP)
   const stripX = scrolled ? DOCK_LEFT : size.w / 2 - (tileLeft(MINUTES_INDEX) + W / 2)
@@ -78,7 +80,7 @@ export default function LaunchSequence() {
   const stripY = dockedUp ? DOCK_TOP : size.h * 0.4 - W / 2
 
   return (
-    <div ref={ref} data-id="mp-intro-launch" className="scrollbar-hide relative h-full overflow-y-auto bg-white">
+    <div ref={ref} data-id="mp-intro-launch" className="scrollbar-hide relative h-full overflow-y-auto overflow-x-hidden bg-white">
       {/* noon theme background — fades in as the strip docks */}
       <motion.div
         aria-hidden="true"
@@ -92,9 +94,28 @@ export default function LaunchSequence() {
 
       {/* home chrome (revealed once docking begins) */}
       <div className="relative z-10" style={{ paddingTop: TOP_PAD }}>
-        {/* switcher slot — reserves the row height; the animated strip is the
-            switcher and stays docked here (no swap/replacement) */}
-        <div data-id="mp-intro-switcher-slot" style={{ height: W + SLOT_PY * 2 }} />
+        {/* switcher slot — reserves the row height. Once settled, the real
+            width-filling, horizontally-scrollable switcher lives here (the strip
+            fades over it, so it's not a visible swap during the move-up). */}
+        <div data-id="mp-intro-switcher-slot" style={{ height: W + SLOT_PY * 2 }}>
+          {handoff && (
+            <div
+              data-id="mp-intro-switcher"
+              className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-3"
+              style={{ paddingTop: SLOT_PY, paddingBottom: SLOT_PY }}
+            >
+              {marketplaces.map((m) => (
+                <div
+                  key={m.id}
+                  className={`shrink-0 ${TILE_CLASS}`}
+                  style={{ width: W, height: W, backgroundColor: m.id === 'noon' ? YELLOW : '#FFFFFF' }}
+                >
+                  <MarketplaceMark m={m} size={68} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* top section — delivery / location / search */}
         <motion.div
@@ -116,16 +137,18 @@ export default function LaunchSequence() {
         <HomeSkeleton />
       </motion.div>
 
-      {/* animated strip — this IS the switcher; it settles into the docked slot
-          and stays there (no swap) */}
-      <motion.div
-        data-id="mp-intro-strip"
-        className="absolute left-0 top-0 z-20"
-        style={{ height: W }}
-        initial={false}
-        animate={{ x: stripX, y: stripY }}
-        transition={{ x: FLICK, y: { duration: 0.42, ease: DOCK } }}
-      >
+      {/* animated strip — the switcher during the launch; once settled it fades
+          over the identical real (scrollable) switcher in the slot, then unmounts */}
+      {phase < 7 && (
+        <motion.div
+          data-id="mp-intro-strip"
+          className="absolute left-0 top-0 z-20"
+          style={{ height: W, pointerEvents: handoff ? 'none' : 'auto' }}
+          initial={false}
+          animate={{ x: stripX, y: stripY, opacity: handoff ? 0 : 1 }}
+          transition={{ x: FLICK, y: { duration: 0.42, ease: DOCK }, opacity: { duration: 0.2, ease: 'easeInOut' } }}
+          onAnimationComplete={() => handoff && setPhase(7)}
+        >
           {marketplaces.map((m, i) => {
             const isMinutes = i === MINUTES_INDEX
             const active = i === activeIndex
@@ -160,7 +183,8 @@ export default function LaunchSequence() {
               </motion.div>
             )
           })}
-      </motion.div>
+        </motion.div>
+      )}
     </div>
   )
 }
