@@ -18,7 +18,7 @@ const NoSwitcher = () => null
 // experiment root skips the standard LocationBar/SearchBar rows.
 export const switcherVariants = [
   { value: 1, label: '1', Component: MarketplaceSwitcherV3 },
-  { value: 2, label: '2', Component: MarketplaceSwitcherV2 },
+  { value: 2, label: '2', Component: MarketplaceSwitcherV2, ownsHeader: true },
   { value: 3, label: '3', Component: MarketplaceSwitcherV6 },
   { value: 4, label: '4', Component: MarketplaceSwitcherV7 },
   { value: 5, label: '5', Component: MarketplaceSwitcherV8 },

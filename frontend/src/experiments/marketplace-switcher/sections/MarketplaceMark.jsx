@@ -12,9 +12,11 @@
 // `active` swaps to `m.activeLogoStack` / `m.activeFadeStack` when the
 // marketplace provides one (pre-coloured selected-state wordmarks, e.g.
 // supermall's yellow-on-blue) — those skip the white-invert.
+// `collapsed` shows only the "keep" wordmark of a fadeStack (e.g. noon FOOD →
+// FOOD, 15 MINUTES → MINUTES) — the compact form used when a tile shrinks.
 const REF = 76
 
-export default function MarketplaceMark({ m, white, active, size = 72 }) {
+export default function MarketplaceMark({ m, white, active, collapsed, size = 72 }) {
   const k = size / REF
   // pre-coloured active stacks carry their own colours — never filter them;
   // otherwise: white → invert to white (dark accent fill); mono → force black
@@ -26,6 +28,14 @@ export default function MarketplaceMark({ m, white, active, size = 72 }) {
 
   if (m.fadeStack) {
     const stack = active && m.activeFadeStack ? m.activeFadeStack : m.fadeStack
+    // collapsed → only the keep (bottom) wordmark
+    if (collapsed) {
+      return m.fadeMatchH ? (
+        <img src={stack[1]} alt="" className="w-auto" style={{ filter, height: (m.fadeH ?? 12) * k }} />
+      ) : (
+        <img src={stack[1]} alt="" className="h-auto" style={{ filter, width: (m.keepW ?? 46) * k }} />
+      )
+    }
     // fadeMatchH: both marks share one cap height (natural widths) — use when the
     // two wordmarks have the same intrinsic height and equal-width would distort.
     if (m.fadeMatchH) {
@@ -48,6 +58,20 @@ export default function MarketplaceMark({ m, white, active, size = 72 }) {
 
   if (m.logoStack) {
     const stack = active && m.activeLogoStack ? m.activeLogoStack : m.logoStack
+    // collapsed → the two words sit on ONE line, tight, reading "supermall".
+    // "super" is drawn larger than "mall" in these assets, so bump mall up to
+    // match its cap height.
+    if (collapsed) {
+      const h = 11.5 * k
+      // same scale (matched weight); super has a 'p' descender so drop it a
+      // touch to sit "super" and "mall" on the same baseline
+      return (
+        <span className="flex flex-row items-end gap-px" style={{ filter }}>
+          <img src={stack[0]} alt="" className="w-auto" style={{ height: h, marginBottom: -0.22 * h }} />
+          <img src={stack[1]} alt="" className="w-auto" style={{ height: h }} />
+        </span>
+      )
+    }
     return (
       <span className="flex flex-col items-start gap-0.5" style={{ filter }}>
         <img src={stack[0]} alt="" className="w-auto" style={{ height: 13 * k }} />

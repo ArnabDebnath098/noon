@@ -72,7 +72,11 @@ export default function BottomNav({
             <motion.span
               data-id={`${dataId}-${tab.key}-marker`}
               layoutId={`${dataId}-marker`}
-              className="absolute inset-1 rounded-full bg-[#0F61FF]/[0.12]"
+              // aspect-square + height keeps the marker equal width & height
+              // (a circle) even when the tab is a wide flex-1 pill slot.
+              // centered via inset-0 + m-auto (NOT translate) so it doesn't
+              // fight framer's layoutId transform
+              className="absolute inset-0 m-auto aspect-square h-[calc(100%-8px)] rounded-full bg-[#0F61FF]/[0.12]"
               transition={{ type: 'spring', stiffness: 500, damping: 38 }}
             />
           )}
@@ -87,7 +91,7 @@ export default function BottomNav({
       <nav
         data-id={dataId}
         className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4"
-        style={{ paddingTop: 10, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)' }}
+        style={{ paddingTop: 10, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {/* white fade behind the floating bar — spans up past the top and down
             through the safe area (transparent at top → white by 80%) */}
@@ -121,10 +125,12 @@ export default function BottomNav({
           </div>
         )}
 
-        {/* right: the tabs, in a floating pill — each fills an equal share, no
-            gap/padding */}
-        <div data-id={`${dataId}-pill`} className="flex h-[62px] flex-1 items-center overflow-hidden rounded-full bg-white shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
-          {pillTabs.map((tab) => navCircle(tab, 'h-full flex-1'))}
+        {/* right: the tabs in a floating pill (2px inset). The active tab is a
+            square; the rest split the remaining width equally. */}
+        <div data-id={`${dataId}-pill`} className="flex h-[62px] flex-1 items-center overflow-hidden rounded-full bg-white p-[2px] shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
+          {pillTabs.map((tab) =>
+            navCircle(tab, tab.key === active ? 'h-full aspect-square shrink-0' : 'h-full flex-1'),
+          )}
         </div>
       </nav>
     )

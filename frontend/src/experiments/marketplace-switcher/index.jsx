@@ -102,6 +102,7 @@ export default function MarketplaceExperiment() {
             activeId={activeId}
             onChange={setActiveId}
             progress={progress}
+            collapsed={collapsed}
           />
           {!activeVariant.ownsHeader && (
             <>
