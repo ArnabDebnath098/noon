@@ -103,6 +103,7 @@ export default function MarketplaceExperiment() {
             label={address.label}
             line={address.line}
             marketplace={isNavVariant ? activeMarketplace : undefined}
+            onMarketplace={isNavVariant ? () => setAllOpen(true) : undefined}
           />
           <SearchBar />
         </div>

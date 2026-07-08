@@ -35,18 +35,23 @@ function SlideText({ text, k, className, height }) {
   )
 }
 
-export default function LocationBar({ label, line, onClick, onWishlist, marketplace, revision = '' }) {
+export default function LocationBar({ label, line, onClick, onWishlist, marketplace, onMarketplace, revision = '' }) {
   // The location area is a button only when an onClick is supplied (e.g. the
   // address-selection experiment opens its sheet); otherwise it's a plain div.
   const Info = onClick ? 'button' : 'div'
+  // same for the marketplace chip — clickable when onMarketplace is supplied
+  const Chip = onMarketplace ? 'button' : 'span'
   return (
     <div data-id="mp-location" className="flex items-center gap-2 px-5 py-1.5">
       {marketplace && (
         <>
-          <span
+          <Chip
+            type={onMarketplace ? 'button' : undefined}
+            onClick={onMarketplace}
+            aria-label={onMarketplace ? 'Switch marketplace' : undefined}
             data-id="mp-location-marketplace"
             style={{ background: marketplace.accent }}
-            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform active:scale-95"
           >
             <MarketplaceMark
               m={marketplace}
@@ -54,7 +59,7 @@ export default function LocationBar({ label, line, onClick, onWishlist, marketpl
               active
               size={48}
             />
-          </span>
+          </Chip>
           <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[#D9DADB]" />
         </>
       )}

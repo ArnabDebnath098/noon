@@ -1,6 +1,6 @@
 // BottomNav — sticky primary tab bar with a sliding active marker (Framer
-// Motion layoutId) and the iOS home indicator. Self-contained (internal active
-// state); safe-area aware.
+// Motion layoutId). Self-contained (internal active state); safe-area aware —
+// the bottom strip is left empty for the device's own home indicator.
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import homeIcon from '../../assets/icons/nav/home.svg?raw'
@@ -95,10 +95,8 @@ export default function BottomNav({ dataId = 'bottom-nav', onAll }) {
         })}
       </div>
 
-      {/* iOS home indicator */}
-      <div className="flex h-[21px] items-center justify-center">
-        <span className="h-[5px] w-[134px] rounded-full bg-[#0E0E12]" />
-      </div>
+      {/* bottom strip stays empty — the device draws its own home indicator */}
+      <div className="h-[21px]" />
     </nav>
   )
 }
