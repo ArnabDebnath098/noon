@@ -6,6 +6,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { springs } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
+import NewBadge from './NewBadge'
 
 const PREVIEW_IDS = ['pay', 'minutes', 'home', 'send'] // 2×2 preview (TL,TR,BL,BR)
 // per-marketplace mark size for the preview minis — the raw marks differ a lot
@@ -33,7 +34,7 @@ export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen
             aria-pressed={active}
             onClick={() => onChange(m.id)}
             style={{ width: 76, height: 76, borderRadius: 20, perspective: 700 }}
-            className="relative shrink-0 overflow-hidden border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-transform active:scale-95"
+            className="relative shrink-0 border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-transform active:scale-95"
           >
             <AnimatePresence initial={false}>
               <motion.span
@@ -45,6 +46,8 @@ export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen
                 style={{
                   position: 'absolute',
                   inset: 0,
+                  borderRadius: 20,
+                  overflow: 'hidden',
                   background: active ? m.accent : m.bg ?? '#FFFFFF',
                   backfaceVisibility: 'hidden',
                 }}
@@ -53,6 +56,7 @@ export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen
                 <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={68} />
               </motion.span>
             </AnimatePresence>
+            {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
           </button>
         )
       })}

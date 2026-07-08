@@ -49,7 +49,7 @@ export default function MarketplaceMark({ m, white, active, size = 72 }) {
   if (m.logoStack) {
     const stack = active && m.activeLogoStack ? m.activeLogoStack : m.logoStack
     return (
-      <span className="flex flex-col items-center gap-0.5" style={{ filter }}>
+      <span className="flex flex-col items-start gap-0.5" style={{ filter }}>
         <img src={stack[0]} alt="" className="w-auto" style={{ height: 13 * k }} />
         <img src={stack[1]} alt="" className="w-auto" style={{ height: 13 * k }} />
       </span>

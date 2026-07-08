@@ -6,10 +6,19 @@ import MarketplaceSwitcherV2 from './MarketplaceSwitcherV2'
 import MarketplaceSwitcherV3 from './MarketplaceSwitcherV3'
 import MarketplaceSwitcherV6 from './MarketplaceSwitcherV6'
 import MarketplaceSwitcherV7 from './MarketplaceSwitcherV7'
+import MarketplaceSwitcherV8 from './MarketplaceSwitcherV8'
+import MarketplaceSwitcherV9 from './MarketplaceSwitcherV9'
+
+// Variation 7 has no top switcher at all — switching happens from the bottom
+// nav's "All" tab (wired in the experiment root).
+const NoSwitcher = () => null
 
 export const switcherVariants = [
   { value: 1, label: '1', Component: MarketplaceSwitcherV3 },
   { value: 2, label: '2', Component: MarketplaceSwitcherV2 },
   { value: 3, label: '3', Component: MarketplaceSwitcherV6 },
   { value: 4, label: '4', Component: MarketplaceSwitcherV7 },
+  { value: 5, label: '5', Component: MarketplaceSwitcherV8 },
+  { value: 6, label: '6', Component: MarketplaceSwitcherV9 },
+  { value: 7, label: '7', Component: NoSwitcher },
 ]

@@ -1,8 +1,11 @@
 // Section 2 — location (left) + wishlist heart (right).
 // The label and line each slide-swap (framer) when the address changes; pass a
 // `revision` that changes per address so they animate even if the text repeats.
+// Pass `marketplace` to lead the row with the selected marketplace's chip
+// (accent-filled circle, wishlist-sized) followed by a divider.
 import { motion, AnimatePresence } from 'framer-motion'
 import homeIcon from '../../../assets/marketplace/home.svg'
+import MarketplaceMark from './MarketplaceMark'
 
 const SLIDE = { type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }
 
@@ -32,12 +35,29 @@ function SlideText({ text, k, className, height }) {
   )
 }
 
-export default function LocationBar({ label, line, onClick, onWishlist, revision = '' }) {
+export default function LocationBar({ label, line, onClick, onWishlist, marketplace, revision = '' }) {
   // The location area is a button only when an onClick is supplied (e.g. the
   // address-selection experiment opens its sheet); otherwise it's a plain div.
   const Info = onClick ? 'button' : 'div'
   return (
     <div data-id="mp-location" className="flex items-center gap-2 px-5 py-1.5">
+      {marketplace && (
+        <>
+          <span
+            data-id="mp-location-marketplace"
+            style={{ background: marketplace.accent }}
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.08)]"
+          >
+            <MarketplaceMark
+              m={marketplace}
+              white={!marketplace.lightAccent}
+              active
+              size={48}
+            />
+          </span>
+          <span aria-hidden="true" className="h-4 w-px shrink-0 bg-[#D9DADB]" />
+        </>
+      )}
       <Info
         type={onClick ? 'button' : undefined}
         onClick={onClick}

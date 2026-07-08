@@ -9,6 +9,7 @@ import { useEffect, useRef } from 'react'
 import { motion, useSpring, useTransform, useMotionValueEvent, animate } from 'framer-motion'
 import { springs, easings, scrollSmoothing } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
+import NewBadge from './NewBadge'
 
 const PEEK = 96 // initial pre-scroll (px) — how far the intro slide travels
 const INTRO_SLIDE = { delay: 0.55, duration: 0.9, ease: easings.ios }
@@ -87,6 +88,7 @@ function Story({ m, i, active, onChange, sp }) {
             <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={MARK_SIZE[m.id] ?? 72} />
           </motion.span>
         </span>
+        {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
       </motion.span>
     </motion.button>
   )

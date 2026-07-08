@@ -17,6 +17,7 @@ import { useEffect } from 'react'
 import { motion, useMotionValue, useTransform, useSpring, animate } from 'framer-motion'
 import useElementWidth from '../../../hooks/useElementWidth'
 import { scrollSmoothing, clamp01, lerp } from '../../../utils/motion'
+import NewBadge from './NewBadge'
 
 const COLLSCALE = 0.82
 // intro deck→grid unfold — iOS-tuned: quick response, a touch of bounce
@@ -104,7 +105,7 @@ function Mark({ m, active }) {
   if (m.logoStack) {
     const stack = active && m.activeLogoStack ? m.activeLogoStack : m.logoStack
     return (
-      <span className="flex flex-col items-center gap-px">
+      <span className="flex flex-col items-start gap-px">
         <img src={stack[0]} alt="" className="max-w-[34px]" />
         <img src={stack[1]} alt="" className="max-w-[28px]" />
       </span>
@@ -144,7 +145,7 @@ function Icon({ m, i, M, activeId, onChange, reveal, sp }) {
       aria-pressed={active}
       onClick={() => onChange(m.id)}
       style={{ x, y, scale, opacity, zIndex: zFor(i), width: M.ICON, height: M.ICON, borderRadius: radius, background: active ? m.accent : m.bg ?? '#FFFFFF' }}
-      className="absolute left-0 top-0 flex items-center justify-center overflow-hidden shadow-[0_4px_12px_rgba(16,24,40,0.18)]"
+      className="absolute left-0 top-0 flex items-center justify-center shadow-[0_4px_12px_rgba(16,24,40,0.18)]"
     >
       <motion.span
         style={{
@@ -158,6 +159,7 @@ function Icon({ m, i, M, activeId, onChange, reveal, sp }) {
       >
         <Mark m={m} active={active} />
       </motion.span>
+      {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
     </motion.button>
   )
 }

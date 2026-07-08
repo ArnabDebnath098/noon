@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { easings } from '../../utils/motion'
 import AppShell from '../../components/layout/AppShell'
 import HomeSkeleton from './sections/HomeSkeleton'
+import MarketplaceSheet from './sections/MarketplaceSheet'
 import LocationBar from './sections/LocationBar'
 import SearchBar from './sections/SearchBar'
 import PromoBanner from './sections/PromoBanner'
@@ -45,6 +46,16 @@ export default function MarketplaceExperiment() {
     const t = setTimeout(() => setLoading(false), 750)
     return () => clearTimeout(t)
   }, [loading, activeId])
+
+  // variant 7 has no top switcher — the bottom nav's "All" tab opens the
+  // marketplaces sheet, and the location bar leads with the selected chip
+  const isNavVariant = variant === 7
+  const [allOpen, setAllOpen] = useState(false)
+  const activeMarketplace = marketplaces.find((m) => m.id === activeId)
+  const selectFromSheet = (id) => {
+    setActiveId(id)
+    setTimeout(() => setAllOpen(false), 180)
+  }
   // 0 = fully expanded, 1 = fully collapsed; drives the tile size morph.
   const progress = useMotionValue(0)
   const COLLAPSE_RANGE = 44 // px of scroll over which the switcher collapses
@@ -88,7 +99,11 @@ export default function MarketplaceExperiment() {
             onChange={setActiveId}
             progress={progress}
           />
-          <LocationBar label={address.label} line={address.line} />
+          <LocationBar
+            label={address.label}
+            line={address.line}
+            marketplace={isNavVariant ? activeMarketplace : undefined}
+          />
           <SearchBar />
         </div>
 
@@ -148,7 +163,17 @@ export default function MarketplaceExperiment() {
         offset="calc(85px + env(safe-area-inset-bottom, 0px) + 16px)"
       />
 
-      <BottomNav dataId="mp-bottom-nav" />
+      <BottomNav dataId="mp-bottom-nav" onAll={isNavVariant ? () => setAllOpen(true) : undefined} />
+
+      {isNavVariant && (
+        <MarketplaceSheet
+          open={allOpen}
+          onClose={() => setAllOpen(false)}
+          items={marketplaces}
+          activeId={activeId}
+          onSelect={selectFromSheet}
+        />
+      )}
     </AppShell>
   )
 }

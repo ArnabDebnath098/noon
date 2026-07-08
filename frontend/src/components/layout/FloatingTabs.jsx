@@ -16,7 +16,7 @@ export default function FloatingTabs({
   return (
     <div
       data-id={dataId}
-      className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-3"
+      className="pointer-events-none fixed left-1/2 z-40 flex w-full max-w-md -translate-x-1/2 justify-start px-3"
       style={{ bottom: offset }}
     >
       <div className="pointer-events-auto flex gap-0.5 rounded-full border border-[#EAECF0] bg-white p-1 shadow-[0px_6px_20px_rgba(0,0,0,0.12)]">

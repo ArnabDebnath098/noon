@@ -14,6 +14,7 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { springs, easings } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
+import NewBadge from './NewBadge'
 import TriggerRow from './TriggerRow'
 
 const STATUS_PAD = 47
@@ -144,9 +145,10 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
                         >
                           <span
                             style={{ background: active ? m.accent : m.bg ?? 'rgba(255,255,255,0.94)' }}
-                            className="flex h-[62px] w-[62px] items-center justify-center rounded-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.28)]"
+                            className="relative flex h-[62px] w-[62px] items-center justify-center rounded-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.28)]"
                           >
                             <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={44} />
+                            {m.isNew && <NewBadge dataId={`mp-reveal-${m.id}-new`} />}
                           </span>
                           <span className="max-w-[68px] truncate text-center font-noontree text-[11px] lowercase text-white/75">
                             {m.label.replace('\n', ' ')}

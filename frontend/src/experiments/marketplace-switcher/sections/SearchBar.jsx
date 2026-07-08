@@ -1,7 +1,7 @@
 // Section 3 — search bar (search icon · placeholder · divider · camera).
 export default function SearchBar() {
   return (
-    <div data-id="mp-search" className="px-5 py-2">
+    <div data-id="mp-search" className="px-5 pb-5 pt-2">
       <div className="flex h-12 items-center gap-3 rounded-[12px] border border-[#D7DAE3] bg-white px-3">
         {/* search */}
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">

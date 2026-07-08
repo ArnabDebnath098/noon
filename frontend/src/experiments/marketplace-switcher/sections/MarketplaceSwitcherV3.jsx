@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import useElementWidth from '../../../hooks/useElementWidth'
 import { springs, easings, curvedPath, staggerContainer, pathFlightVariants } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
+import NewBadge from './NewBadge'
 
 // ---- layout constants ----
 const ICON = 76 // tile size (px), and the reference size for marks
@@ -104,6 +105,7 @@ function FolderIcon({ m, active, offsetPath, collapsedScale, collapsedOpacity, r
           <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={ICON} />
         </motion.div>
       </AnimatePresence>
+      {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
     </motion.div>
   )
 }

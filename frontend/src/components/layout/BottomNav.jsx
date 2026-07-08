@@ -8,6 +8,7 @@ import categoryIcon from '../../assets/icons/nav/category.svg?raw'
 import dealsIcon from '../../assets/icons/nav/deals.svg?raw'
 import cartIcon from '../../assets/icons/nav/cart.svg?raw'
 import profileIcon from '../../assets/icons/nav/profile.svg?raw'
+import allIcon from '../../assets/icons/nav/all.svg?raw'
 
 const ACTIVE = '#0F61FF'
 const INACTIVE = '#5C667E'
@@ -21,7 +22,9 @@ const TABS = [
 ]
 
 function NavIcon({ raw, active }) {
-  const html = raw.replace(/fill="#[0-9a-f]{3,8}"/gi, 'fill="currentColor"')
+  const html = raw
+    .replace(/fill="#[0-9a-f]{3,8}"/gi, 'fill="currentColor"')
+    .replace(/stroke="#[0-9a-f]{3,8}"/gi, 'stroke="currentColor"')
   return (
     <motion.span
       aria-hidden="true"
@@ -33,7 +36,7 @@ function NavIcon({ raw, active }) {
   )
 }
 
-export default function BottomNav({ dataId = 'bottom-nav' }) {
+export default function BottomNav({ dataId = 'bottom-nav', onAll }) {
   const [active, setActive] = useState('home')
 
   return (
@@ -43,6 +46,21 @@ export default function BottomNav({ dataId = 'bottom-nav' }) {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="relative flex flex-1">
+        {/* optional "All" entry — opens the marketplaces sheet */}
+        {onAll && (
+          <>
+            <button
+              type="button"
+              data-id={`${dataId}-all`}
+              onClick={onAll}
+              className="relative flex flex-1 flex-col items-center justify-center gap-1 pt-2"
+            >
+              <NavIcon raw={allIcon} active={false} />
+              <span className="text-xs leading-none text-[#5C667E]">All</span>
+            </button>
+            <span aria-hidden="true" className="h-4 w-px self-center bg-[#E2E5EC]" />
+          </>
+        )}
         {TABS.map((tab) => {
           const isActive = tab.key === active
           return (

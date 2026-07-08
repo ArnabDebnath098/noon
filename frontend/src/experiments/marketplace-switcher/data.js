@@ -12,6 +12,7 @@ import minutes15Logo from '../../assets/marketplace/minutes-15.svg'
 import minutesWordLogo from '../../assets/marketplace/minutes-word.svg'
 import hsHomeLogo from '../../assets/marketplace/hs-home.svg'
 import hsServicesLogo from '../../assets/marketplace/hs-services.svg'
+import medLogo from '../../assets/marketplace/med.svg'
 import superYellowLogo from '../../assets/address/super-yellow.svg'
 import mallYellowLogo from '../../assets/address/mall-yellow.svg'
 import noonYellowLogo from '../../assets/marketplace/noon-yellow.svg'
@@ -38,12 +39,14 @@ export const marketplaces = [
   // the white-invert, which would reduce the 15/MINUTES marks to white blobs)
   { id: 'minutes', label: '15', sub: 'MINUTES', pill: 'MINUTES', fadeStack: [minutes15Logo, minutesWordLogo], fadeW: 50, fadeH: 36, keepW: 52, fg: '#E5293E', accent: '#FEEE00', lightAccent: true },
   // selected: orange fill, logo keeps its own colours (lightAccent skips the invert)
-  { id: 'nownow', label: 'now\nnow', pill: 'now now', logo: nownowLogo, logoH: 46, logoHSmall: 26, fg: '#1B1B1B', accent: '#F33A01', lightAccent: true },
+  { id: 'nownow', label: 'now\nnow', pill: 'now now', logo: nownowLogo, logoH: 46, logoHSmall: 26, fg: '#1B1B1B', accent: '#F33A01', lightAccent: true, isNew: true },
   { id: 'pay', label: 'noon\npay', pill: 'pay', fg: '#5523DD', accent: '#5523DD' },
   { id: 'home', label: 'home\nservices', pill: 'home', fadeStack: [hsHomeLogo, hsServicesLogo], fadeW: 39, fadeH: 12, keepW: 58, fadeMatchH: true, mono: true, fg: '#1B282C', accent: '#FEEE00', lightAccent: true },
-  { id: 'send', label: 'noon\nsend', pill: 'send', fadeStack: [noonLogo, sendLogo], fadeW: 50, fadeH: 13, keepW: 46, fg: '#1F20B7', accent: '#1F20B7' },
-  { id: 'out', label: 'noon\nout', pill: 'out', fg: '#FF6A00', accent: '#FF6A00' },
-  { id: 'med', label: 'noon\nmed', pill: 'med', fg: '#00A98F', accent: '#00A98F' },
+  // isNew → tiles show a "NEW" pill on their bottom edge (see NewBadge)
+  { id: 'send', label: 'noon\nsend', pill: 'send', fadeStack: [noonLogo, sendLogo], fadeW: 50, fadeH: 13, keepW: 46, fg: '#1F20B7', accent: '#1F20B7', isNew: true },
+  { id: 'out', label: 'noon\nout', pill: 'out', fg: '#FF6A00', accent: '#FF6A00', isNew: true },
+  // same stacked style as noon FOOD: noon wordmark over the med logo
+  { id: 'med', label: 'noon\nmed', pill: 'med', fadeStack: [noonLogo, medLogo], fadeW: 50, fadeH: 13, keepW: 46, fg: '#237B6A', accent: '#237B6A' },
   { id: 'global', label: 'noon\nglobal', pill: 'global', fg: '#231F20', accent: '#231F20' },
 ]
 
