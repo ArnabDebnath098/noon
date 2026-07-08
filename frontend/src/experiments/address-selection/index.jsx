@@ -12,7 +12,7 @@ import CombosSection from '../marketplace-switcher/sections/CombosSection'
 import MarketHeader from './sections/MarketHeader'
 import AddressSheet from './sections/AddressSheet'
 import RecentAddressSheet from './sections/RecentAddressSheet'
-import HomeSkeleton from './sections/HomeSkeleton'
+import HomeSkeleton from '../marketplace-switcher/sections/HomeSkeleton'
 import { viewFor } from './marketplaceViews'
 import { marketplaces, categories, addresses, recentMinutesAddress } from './data'
 

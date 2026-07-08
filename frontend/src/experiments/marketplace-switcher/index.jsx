@@ -1,7 +1,9 @@
-import { useState } from 'react'
-import { useMotionValue } from 'framer-motion'
+import { useEffect, useState } from 'react'
+import { motion, useMotionValue } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { easings } from '../../utils/motion'
 import AppShell from '../../components/layout/AppShell'
+import HomeSkeleton from './sections/HomeSkeleton'
 import LocationBar from './sections/LocationBar'
 import SearchBar from './sections/SearchBar'
 import PromoBanner from './sections/PromoBanner'
@@ -19,7 +21,9 @@ import { marketplaces, address, categories } from './data'
 export default function MarketplaceExperiment() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const [activeId, setActiveId] = useState(marketplaces[0].id)
+  // marketplace selection is per-variant so trying one variation never
+  // carries its selection into another
+  const [selections, setSelections] = useState({})
   const [collapsed, setCollapsed] = useState(false)
   // variant is deep-linkable: /marketplace-switcher?v=4
   const [variant, setVariant] = useState(() => {
@@ -28,6 +32,19 @@ export default function MarketplaceExperiment() {
   })
   const ActiveSwitcher =
     switcherVariants.find((v) => v.value === variant)?.Component ?? switcherVariants[0].Component
+  const activeId = selections[variant] ?? marketplaces[0].id
+  // switching marketplace shows a skeleton while the new home "loads"
+  const [loading, setLoading] = useState(false)
+  const setActiveId = (id) => {
+    if (id === activeId) return
+    setSelections((s) => ({ ...s, [variant]: id }))
+    setLoading(true)
+  }
+  useEffect(() => {
+    if (!loading) return undefined
+    const t = setTimeout(() => setLoading(false), 750)
+    return () => clearTimeout(t)
+  }, [loading, activeId])
   // 0 = fully expanded, 1 = fully collapsed; drives the tile size morph.
   const progress = useMotionValue(0)
   const COLLAPSE_RANGE = 44 // px of scroll over which the switcher collapses
@@ -75,11 +92,23 @@ export default function MarketplaceExperiment() {
           <SearchBar />
         </div>
 
-        {/* Scrollable body */}
+        {/* Scrollable body — skeleton while the selected marketplace "loads",
+            then the content fades in */}
         <div data-id="mp-content" className="relative z-10">
-          <PromoBanner />
-          <CategoryGrid categories={categories} />
-          <CombosSection />
+          {loading ? (
+            <HomeSkeleton />
+          ) : (
+            <motion.div
+              key={`home-${activeId}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: easings.ios }}
+            >
+              <PromoBanner />
+              <CategoryGrid categories={categories} />
+              <CombosSection />
+            </motion.div>
+          )}
         </div>
       </main>
 

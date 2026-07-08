@@ -7,9 +7,15 @@ import homeIcon from '../../../assets/marketplace/home.svg'
 const SLIDE = { type: 'spring', stiffness: 460, damping: 40, mass: 0.7 }
 
 // A fixed-height clip whose text slides up-and-out / up-and-in on key change.
+// An invisible static copy sizes the clip to the text itself (the animated
+// copies are absolute), so trailing elements like the chevron hug the text
+// instead of being pushed to the row's far edge.
 function SlideText({ text, k, className, height }) {
   return (
-    <span className="relative block min-w-0 flex-1 overflow-hidden" style={{ height }}>
+    <span className="relative block min-w-0 max-w-full overflow-hidden" style={{ height }}>
+      <span aria-hidden="true" className={`invisible block ${className}`} style={{ lineHeight: `${height}px` }}>
+        {text}
+      </span>
       <AnimatePresence initial={false}>
         <motion.span
           key={k}
@@ -48,7 +54,7 @@ export default function LocationBar({ label, line, onClick, onWishlist, revision
           />
         </div>
         <div className="flex items-center gap-1">
-          <span data-id="mp-location-line" className="flex min-w-0 flex-1">
+          <span data-id="mp-location-line" className="flex min-w-0">
             <SlideText
               k={`${revision}|${line}`}
               text={line}

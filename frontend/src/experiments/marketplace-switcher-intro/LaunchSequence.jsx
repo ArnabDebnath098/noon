@@ -17,7 +17,7 @@ import { motion } from 'framer-motion'
 import { marketplaces } from '../marketplace-switcher/data'
 import MarketplaceMark from '../marketplace-switcher/sections/MarketplaceMark'
 import MarketHeader from '../address-selection/sections/MarketHeader'
-import HomeSkeleton from '../address-selection/sections/HomeSkeleton'
+import HomeSkeleton from '../marketplace-switcher/sections/HomeSkeleton'
 import { viewFor } from '../address-selection/marketplaceViews'
 
 const W = 76

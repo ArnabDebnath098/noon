@@ -5,8 +5,8 @@
 //     The switcher height hugs the deck, then springs open as the deck unfolds
 //     into a 4-per-row grid (staggered) and the text slides out left.
 //   • Scroll: the grid collapses — the first 4 icons stay in a row and a 5th
-//     "more" tile (styled like the others) appears, holding a horizontal
-//     facepile of 4 circular mini icons (marketplaces 5–8); the rest tuck away.
+//     "more" tile (styled like the others) appears, holding a 2×2 grid of
+//     circular mini icons (marketplaces 5–8); the rest tuck away.
 //
 // Icon geometry is derived from the measured container width so 5 columns fill
 // the row. Every icon's transform is a continuous lerp of two spring-smoothed
@@ -24,8 +24,8 @@ const INTRO_SPRING = { type: 'spring', duration: 0.7, bounce: 0.22, delay: 0.25 
 
 function metrics(W) {
   const PADX = 12
-  const PADY = 10
-  const ICON = 72
+  const PADY = 16 // top/bottom gap around the grid
+  const ICON = 64
   // 4 columns spread across the width, gap clamped to a sensible range
   const GAP = Math.min(28, Math.max(12, (W - 2 * PADX - 4 * ICON) / 3))
   const COLX = ICON + GAP
@@ -41,16 +41,15 @@ function metrics(W) {
   const COLL_OFFSET = Math.max(PADX, (W - CLUSTER_W) / 2)
   const COLLAPSED_H = ICON * COLLSCALE + 24
   const COLL_CY = COLLAPSED_H / 2
-  // facepile inside the "more" tile: 4 circular minis overlapping horizontally
+  // 2×2 preview grid inside the "more" tile: 4 circular minis
   const MINI = collIcon * 0.38
-  const PILE_STEP = MINI * 0.52
-  const PILE_W = MINI + 3 * PILE_STEP
+  const MINI_GAP = 4
   const MORE_C = COLL_OFFSET + collIcon / 2 + 4 * ROW_S // more-tile centre x
 
   return {
     PADX, PADY, ICON, COLX, ROWY, GRID_OFFSET,
     collIcon, ROW_S, COLL_OFFSET, COLL_CY,
-    MINI, PILE_STEP, PILE_W, MORE_C,
+    MINI, MINI_GAP, MORE_C,
     DECKX: Math.max(140, W * 0.4),
     GRID_H: PADY + 2 * ROWY + ICON + PADY,
     DECK_H: ICON + 20,
@@ -66,8 +65,8 @@ function gridPos(i, M) {
   }
 }
 
-// collapsed: 0–3 in a row; 4–7 shrink into circular minis facepiled inside the
-// "more" tile; 8+ tuck invisibly behind its centre. Positioned by visual
+// collapsed: 0–3 in a row; 4–7 shrink into circular minis arranged 2×2 inside
+// the "more" tile; 8+ tuck invisibly behind its centre. Positioned by visual
 // centre (x is the element's top-left), centred in the row.
 function collapsedPos(i, M) {
   const y = M.COLL_CY - M.ICON / 2
@@ -76,9 +75,11 @@ function collapsedPos(i, M) {
     return { x: cx - M.ICON / 2, y, scale: COLLSCALE, opacity: 1 }
   }
   if (i < 8) {
-    const k = i - 4 // 0 = front of the pile
-    const cx = M.MORE_C - M.PILE_W / 2 + M.MINI / 2 + k * M.PILE_STEP
-    return { x: cx - M.ICON / 2, y, scale: M.MINI / M.ICON, opacity: 1 }
+    const k = i - 4 // 0=TL, 1=TR, 2=BL, 3=BR
+    const step = M.MINI + M.MINI_GAP
+    const cx = M.MORE_C - step / 2 + (k % 2) * step
+    const cy = M.COLL_CY - step / 2 + Math.floor(k / 2) * step
+    return { x: cx - M.ICON / 2, y: cy - M.ICON / 2, scale: M.MINI / M.ICON, opacity: 1 }
   }
   return { x: M.MORE_C - M.ICON / 2, y, scale: M.MINI / M.ICON, opacity: 0 }
 }
@@ -172,8 +173,6 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, progr
   const height = useTransform([reveal, sp], ([r, p]) =>
     lerp(lerp(M.DECK_H, M.GRID_H, r), M.COLLAPSED_H, p),
   )
-  const textOpacity = useTransform(reveal, [0.05, 0.4], [1, 0])
-  const textX = useTransform(reveal, [0.05, 0.4], [0, -44])
   const moreOpacity = useTransform(sp, [0.55, 0.95], [0, 1])
 
   useEffect(() => {
@@ -184,14 +183,6 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, progr
 
   return (
     <motion.div ref={ref} data-id="mp-switcher" style={{ height }} className="relative w-full overflow-visible">
-      <motion.div
-        data-id="mp-services-label"
-        style={{ opacity: textOpacity, x: textX }}
-        className="absolute left-3 top-3 z-0 max-w-[120px] font-noontree text-[14px] font-semibold leading-[17px] text-[#404553]"
-      >
-        Services provided by noon
-      </motion.div>
-
       {/* "more" tile — fades in behind the facepile as the grid collapses,
           styled like the row tiles */}
       <motion.div

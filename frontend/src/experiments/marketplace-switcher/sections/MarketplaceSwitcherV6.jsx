@@ -30,6 +30,10 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
   const rootRef = useRef(null)
   const [open, setOpen] = useState(false)
   const [frame, setFrame] = useState({ w: 390, h: 780, el: null, main: null })
+  // the trigger row's third tile holds the last marketplace picked from the
+  // panel (slots 1 & 2 are fixed and select in place)
+  const [thirdId, setThirdId] = useState(items[2]?.id)
+  const rowItems = [items[0], items[1], items.find((m) => m.id === thirdId)].filter(Boolean)
 
   // grab the frame + scroll container we'll push down
   useLayoutEffect(() => {
@@ -80,8 +84,11 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
     [frame.main],
   )
 
+  // picking from the panel: fixed row marketplaces select in place; anything
+  // else swaps into the third tile (variation-1 behaviour)
   const select = (id) => {
     onChange(id)
+    if (id !== items[0]?.id && id !== items[1]?.id) setThirdId(id)
     setOpen(false)
   }
 
@@ -91,6 +98,7 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
       <TriggerRow
         rootRef={rootRef}
         items={items}
+        rowItems={rowItems}
         activeId={activeId}
         onChange={onChange}
         onOpen={() => setOpen(true)}

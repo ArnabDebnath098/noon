@@ -6,7 +6,7 @@
 // slide) so the user sees the rail extends off-screen right. The scroll-linked
 // collapse shrinks the circles and folds the labels away.
 import { useEffect, useRef } from 'react'
-import { motion, useSpring, useTransform, animate } from 'framer-motion'
+import { motion, useSpring, useTransform, useMotionValueEvent, animate } from 'framer-motion'
 import { springs, easings, scrollSmoothing } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
 
@@ -94,17 +94,54 @@ function Story({ m, i, active, onChange, sp }) {
 
 export default function MarketplaceSwitcherV7({ items, activeId, onChange, progress }) {
   const railRef = useRef(null)
+  const introDone = useRef(false)
   // one shared smoothing spring drives every circle's collapse
   const sp = useSpring(progress, scrollSmoothing)
 
-  // Intro slide: start the rail pre-scrolled by PEEK, then glide back to the
-  // start — the movement telegraphs that more marketplaces sit off-screen
-  // right. Any touch/scroll from the user cancels the glide immediately.
+  // While the page scroll collapses/expands the rail, keep the selected tile
+  // centred: tile widths change with the morph, and a user-scrolled rail would
+  // otherwise leave the selection off-screen. Runs per frame only while the
+  // collapse spring is moving — a rail at rest stays free to scroll.
+  useMotionValueEvent(sp, 'change', () => {
+    const el = railRef.current
+    const tile = el?.querySelector(`[data-id="mp-tile-${activeId}"]`)
+    if (!el || !tile) return
+    const centre = tile.offsetLeft - (el.clientWidth - tile.offsetWidth) / 2
+    el.scrollLeft = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, centre))
+  })
+
+  // Keep the selected marketplace in view: whenever the selection changes,
+  // smooth-scroll the rail so its tile sits centred. Skipped on mount so it
+  // doesn't fight the intro slide (which owns the initial scroll position).
+  useEffect(() => {
+    if (!introDone.current) {
+      introDone.current = true
+      return
+    }
+    const el = railRef.current
+    const tile = el?.querySelector(`[data-id="mp-tile-${activeId}"]`)
+    if (!el || !tile) return
+    const target = tile.offsetLeft - (el.clientWidth - tile.offsetWidth) / 2
+    el.scrollTo({
+      left: Math.max(0, Math.min(el.scrollWidth - el.clientWidth, target)),
+      behavior: 'smooth',
+    })
+  }, [activeId])
+
+  // Intro slide: glide the rail to rest with the SELECTED marketplace in view.
+  // Default selection (rail start) → start pre-scrolled by PEEK and glide back,
+  // telegraphing that more marketplaces sit off-screen right. Selection deeper
+  // in the rail → same directional glide, but settling with that tile centred.
+  // Any touch/scroll from the user cancels the glide immediately.
   useEffect(() => {
     const el = railRef.current
     if (!el) return undefined
-    el.scrollLeft = PEEK
-    const c = animate(PEEK, 0, { ...INTRO_SLIDE, onUpdate: (v) => { el.scrollLeft = v } })
+    const tile = el.querySelector(`[data-id="mp-tile-${activeId}"]`)
+    const centre = tile ? tile.offsetLeft - (el.clientWidth - tile.offsetWidth) / 2 : 0
+    const target = Math.max(0, Math.min(el.scrollWidth - el.clientWidth, centre))
+    const from = target > 0 ? Math.max(0, target - PEEK) : PEEK
+    el.scrollLeft = from
+    const c = animate(from, target, { ...INTRO_SLIDE, onUpdate: (v) => { el.scrollLeft = v } })
     const stop = () => c.stop()
     el.addEventListener('pointerdown', stop)
     el.addEventListener('wheel', stop, { passive: true })
@@ -115,6 +152,7 @@ export default function MarketplaceSwitcherV7({ items, activeId, onChange, progr
       el.removeEventListener('wheel', stop)
       el.removeEventListener('touchstart', stop)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
