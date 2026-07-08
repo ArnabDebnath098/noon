@@ -3,6 +3,9 @@
 // the full flyout. Pass `rowItems` to control which marketplaces occupy the
 // quick tiles (e.g. V6 swaps the picked marketplace into the third slot);
 // defaults to the first three. A tile whose marketplace changes flips over.
+// `dialLayoutId` + `dialVisible` let a variant morph the grid tile itself into
+// its expanded surface (framer shared-layout): while the surface is open the
+// tile yields to an invisible placeholder that preserves the row's layout.
 import { motion, AnimatePresence } from 'framer-motion'
 import { springs } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
@@ -13,7 +16,7 @@ const PREVIEW_IDS = ['pay', 'minutes', 'home', 'send'] // 2×2 preview (TL,TR,BL
 // in intrinsic width, these equalise them inside the circular cells
 const PREVIEW_MARK_SIZE = { pay: 34, minutes: 21, home: 23, send: 24 }
 
-export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen, rootRef }) {
+export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen, rootRef, dialLayoutId, dialVisible = true }) {
   const row = rowItems ?? items.slice(0, 3)
   const preview = PREVIEW_IDS.map((id) => items.find((m) => m.id === id)).filter(Boolean)
 
@@ -60,20 +63,27 @@ export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen
           </button>
         )
       })}
-      <button
-        type="button"
-        data-id="mp-dial-open"
-        aria-label="Open all marketplaces"
-        onClick={onOpen}
-        style={{ width: 76, height: 76, borderRadius: 20 }}
-        className="grid shrink-0 grid-cols-2 grid-rows-2 gap-1.5 border border-[#EFEFEF] bg-[#F4F5F7] p-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-transform active:scale-95"
-      >
-        {preview.map((m) => (
-          <span key={m.id} className="flex items-center justify-center overflow-hidden rounded-full bg-white">
-            <MarketplaceMark m={m} size={PREVIEW_MARK_SIZE[m.id] ?? 26} />
-          </span>
-        ))}
-      </button>
+      {dialVisible ? (
+        <motion.button
+          type="button"
+          data-id="mp-dial-open"
+          aria-label="Open all marketplaces"
+          onClick={onOpen}
+          layoutId={dialLayoutId}
+          whileTap={{ scale: 0.95 }}
+          transition={springs.panel}
+          style={{ width: 76, height: 76, borderRadius: 20 }}
+          className="grid shrink-0 grid-cols-2 grid-rows-2 gap-1.5 border border-[#EFEFEF] bg-[#F4F5F7] p-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+        >
+          {preview.map((m) => (
+            <span key={m.id} className="flex items-center justify-center overflow-hidden rounded-full bg-white">
+              <MarketplaceMark m={m} size={PREVIEW_MARK_SIZE[m.id] ?? 26} />
+            </span>
+          ))}
+        </motion.button>
+      ) : (
+        <span aria-hidden="true" style={{ width: 76, height: 76 }} className="shrink-0" />
+      )}
     </div>
   )
 }

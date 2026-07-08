@@ -14,12 +14,13 @@ import { SquircleClipDef14, SQUIRCLE14 } from './MarketplaceSheet'
 import NewBadge from './NewBadge'
 import TriggerRow from './TriggerRow'
 
-const ROW_TILE = 76 // TriggerRow tile size — used to locate the grid tile
-const ROW_GAP = 8
 const PANEL_MARGIN = 16 // panel inset from each screen edge
+// shared-layout id: the trigger row's grid tile IS the panel (framer morphs
+// the one surface between its two shapes — the iOS zoom transition)
+const MORPH_ID = 'mp-dial-panel-morph'
 
-// subtle staggered entrance for the tiles
-const gridContainer = { hidden: {}, show: { transition: { staggerChildren: 0.02, delayChildren: 0.08 } } }
+// subtle staggered entrance for the tiles, timed to land as the morph settles
+const gridContainer = { hidden: {}, show: { transition: { staggerChildren: 0.02, delayChildren: 0.16 } } }
 const gridItem = {
   hidden: { opacity: 0, y: 6, scale: 0.97 },
   show: { opacity: 1, y: 0, scale: 1, transition: springs.snappy },
@@ -44,10 +45,6 @@ export default function MarketplaceSwitcherV9({ items, activeId, onChange }) {
   }, [ref])
 
   const ICON = W >= 430 ? 80 : 72 // bigger tiles than the row, roomier on wide frames
-
-  // centre of the trigger row's grid tile — the panel scales out of it
-  const rowW = 4 * ROW_TILE + 3 * ROW_GAP
-  const folderCx = (W - rowW) / 2 + 3 * (ROW_TILE + ROW_GAP) + ROW_TILE / 2
 
   const openPanel = () => {
     // anchor the panel to the trigger row's frame position at open time
@@ -84,28 +81,32 @@ export default function MarketplaceSwitcherV9({ items, activeId, onChange }) {
             <motion.div
               key="panel"
               data-id="mp-grid-panel"
-              initial={{ opacity: 0, scale: 0.25 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.25 }}
+              layoutId={MORPH_ID}
               transition={springs.panel}
               style={{
                 left: PANEL_MARGIN,
                 right: PANEL_MARGIN,
                 top: panelTop,
-                transformOrigin: `${folderCx - PANEL_MARGIN}px 40px`,
+                borderRadius: 24,
               }}
-              className="absolute z-[51] rounded-[24px] bg-white shadow-[0_18px_50px_rgba(16,24,40,0.22)]"
+              className="absolute z-[51] overflow-hidden bg-white shadow-[0_18px_50px_rgba(16,24,40,0.22)]"
             >
               <SquircleClipDef14 />
-              {/* header */}
-              <div data-id="mp-grid-header" className="flex flex-col gap-1 p-4 pb-2">
+              {/* header — fades in as the surface finishes expanding */}
+              <motion.div
+                data-id="mp-grid-header"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.14, duration: 0.25 }}
+                className="flex flex-col gap-1 p-4 pb-2"
+              >
                 <span data-id="mp-grid-title" className="font-noontree text-[18px] font-semibold text-[#1D2539]">
                   Explore noon marketplaces
                 </span>
                 <span data-id="mp-grid-subtitle" className="font-noontree text-[12px] font-normal leading-[17px] text-[#7E859B]">
                   Groceries in minutes, food, fashion, pharmacy & more — one account, every marketplace.
                 </span>
-              </div>
+              </motion.div>
 
               {/* all marketplaces */}
               <motion.div
@@ -154,7 +155,15 @@ export default function MarketplaceSwitcherV9({ items, activeId, onChange }) {
 
   return (
     <div ref={ref} data-id="mp-switcher-root" className="relative">
-      <TriggerRow items={items} rowItems={rowItems} activeId={activeId} onChange={onChange} onOpen={openPanel} />
+      <TriggerRow
+        items={items}
+        rowItems={rowItems}
+        activeId={activeId}
+        onChange={onChange}
+        onOpen={openPanel}
+        dialLayoutId={MORPH_ID}
+        dialVisible={!open}
+      />
       {frame && createPortal(overlay, frame)}
     </div>
   )

@@ -9,15 +9,11 @@ import { motion } from 'framer-motion'
 import MarketplaceMark from './MarketplaceMark'
 import NewBadge from './NewBadge'
 
-// subtle repeating spring nudge for the chevron — a few px, springy settle
+// continuous gentle drift for the chevron — no pause between cycles
 const HINT_NUDGE = {
-  type: 'spring',
-  stiffness: 140,
-  damping: 5,
-  mass: 0.6,
+  duration: 1.4,
+  ease: 'easeInOut',
   repeat: Infinity,
-  repeatType: 'mirror',
-  repeatDelay: 0.8,
 }
 
 function Chevrons() {
@@ -29,13 +25,7 @@ function Chevrons() {
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient id="mp-scroll-hint-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FEEE00" />
-          <stop offset="100%" stopColor="#F0B400" />
-        </linearGradient>
-      </defs>
-      <g fill="url(#mp-scroll-hint-gradient)">
+      <g fill="#0E0E0E">
         <path d="m12 19a1 1 0 0 1 -.71-1.71l5.3-5.29-5.3-5.29a1 1 0 0 1 1.41-1.41l6 6a1 1 0 0 1 0 1.41l-6 6a1 1 0 0 1 -.7.29z" />
         <path d="m6 19a1 1 0 0 1 -.71-1.71l5.3-5.29-5.3-5.29a1 1 0 0 1 1.42-1.42l6 6a1 1 0 0 1 0 1.41l-6 6a1 1 0 0 1 -.71.3z" />
       </g>
@@ -128,13 +118,13 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
           // too and doesn't cut a hard edge against the header background.
           // Kept soft so the tile underneath stays visible through it.
           background:
-            'radial-gradient(ellipse 85% 60% at 100% 50%, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.5) 45%, rgba(255,255,255,0.2) 100%)',
+            'radial-gradient(ellipse 115% 80% at 100% 50%, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0.25) 100%)',
         }}
       >
         <motion.span
           data-id="mp-scroll-hint-motion"
           className="flex items-center justify-center"
-          animate={{ x: 3 }}
+          animate={{ x: [0, 3, 0] }}
           transition={HINT_NUDGE}
         >
           <Chevrons />
