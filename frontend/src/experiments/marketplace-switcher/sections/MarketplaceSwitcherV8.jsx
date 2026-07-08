@@ -1,13 +1,18 @@
 // Marketplace switcher — VARIATION 5 ("scroll rail + sticky hint").
 //
-// A plain horizontally-scrollable rail of 72px marketplace tiles. Pinned to
-// the right edge sits a 24×72 hint: a white gradient (transparent on the left,
-// solid white on the right) with a small double-chevron that nudges gently on
-// a spring loop, telegraphing that the rail scrolls.
+// Two containers side by side (20px apart): a horizontally-scrollable rail
+// filling the width that shows exactly the first 4 marketplaces (inter-tile gap
+// computed from the measured width so none overflow/peek), and a sticky 40px
+// black hint block on the right (left corners rounded 8px) holding a white
+// double-chevron that drifts continuously. Tapping the hint pages the rail; it
+// fades away at the rail's far end.
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import MarketplaceMark from './MarketplaceMark'
 import NewBadge from './NewBadge'
+
+const TILE = 72
+const VISIBLE = 4 // marketplaces shown before scrolling
 
 // continuous gentle drift for the chevron — no pause between cycles
 const HINT_NUDGE = {
@@ -25,7 +30,7 @@ function Chevrons() {
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
-      <g fill="#0E0E0E">
+      <g fill="#FFFFFF">
         <path d="m12 19a1 1 0 0 1 -.71-1.71l5.3-5.29-5.3-5.29a1 1 0 0 1 1.41-1.41l6 6a1 1 0 0 1 0 1.41l-6 6a1 1 0 0 1 -.7.29z" />
         <path d="m6 19a1 1 0 0 1 -.71-1.71l5.3-5.29-5.3-5.29a1 1 0 0 1 1.42-1.42l6 6a1 1 0 0 1 0 1.41l-6 6a1 1 0 0 1 -.71.3z" />
       </g>
@@ -37,11 +42,16 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
   const railRef = useRef(null)
   // the hint hides once the rail is scrolled to its far end
   const [atEnd, setAtEnd] = useState(false)
+  // inter-tile gap computed so exactly VISIBLE tiles fill the rail width
+  const [gap, setGap] = useState(8)
 
   useEffect(() => {
     const el = railRef.current
     if (!el) return undefined
-    const check = () => setAtEnd(el.scrollLeft >= el.scrollWidth - el.clientWidth - 1)
+    const check = () => {
+      setAtEnd(el.scrollLeft >= el.scrollWidth - el.clientWidth - 1)
+      setGap(Math.max(6, (el.clientWidth - VISIBLE * TILE) / (VISIBLE - 1)))
+    }
     check()
     el.addEventListener('scroll', check, { passive: true })
     const ro = new ResizeObserver(check)
@@ -76,11 +86,15 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
   }, [activeId])
 
   return (
-    <div data-id="mp-switcher" className="relative">
+    <div data-id="mp-switcher" className="flex items-center gap-5 pl-5">
+      {/* left container: the rail fills the remaining width, showing 4 tiles.
+          py-2 gives the scroll box vertical room so NEW badges / shadows that
+          overhang the tiles aren't clipped by overflow-x-auto. */}
       <div
         ref={railRef}
         data-id="mp-switcher-rail"
-        className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-5 py-2"
+        style={{ gap }}
+        className="scrollbar-hide flex min-w-0 flex-1 items-center overflow-x-auto py-2"
       >
         {items.map((m) => {
           const active = m.id === activeId
@@ -91,7 +105,7 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
               data-id={`mp-tile-${m.id}`}
               aria-pressed={active}
               onClick={() => onChange(m.id)}
-              style={{ width: 72, height: 72, borderRadius: 20, background: active ? m.accent : m.bg ?? '#FFFFFF' }}
+              style={{ width: TILE, height: TILE, borderRadius: 20, background: active ? m.accent : m.bg ?? '#FFFFFF' }}
               className="relative flex shrink-0 items-center justify-center border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-transform active:scale-95"
             >
               <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={64} />
@@ -101,7 +115,7 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
         })}
       </div>
 
-      {/* sticky scroll hint pinned to the right edge — tap to page forward;
+      {/* right container: sticky black hint block — tap to page forward;
           fades away at the rail's far end */}
       <motion.button
         type="button"
@@ -112,14 +126,7 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
         animate={{ opacity: atEnd ? 0 : 1 }}
         transition={{ duration: 0.2 }}
         style={{ pointerEvents: atEnd ? 'none' : 'auto' }}
-        className="absolute right-0 top-1/2 flex h-[72px] w-[40px] -translate-y-1/2 items-center justify-center"
-        style={{
-          // radial (not linear) so the white fades out toward the top/bottom
-          // too and doesn't cut a hard edge against the header background.
-          // Kept soft so the tile underneath stays visible through it.
-          background:
-            'radial-gradient(ellipse 115% 80% at 100% 50%, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.75) 50%, rgba(255,255,255,0.25) 100%)',
-        }}
+        className="flex h-[72px] w-[40px] shrink-0 items-center justify-center rounded-l-[20px] bg-[#0E0E12]"
       >
         <motion.span
           data-id="mp-scroll-hint-motion"

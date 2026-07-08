@@ -8,11 +8,14 @@ import MarketplaceSwitcherV6 from './MarketplaceSwitcherV6'
 import MarketplaceSwitcherV7 from './MarketplaceSwitcherV7'
 import MarketplaceSwitcherV8 from './MarketplaceSwitcherV8'
 import MarketplaceSwitcherV9 from './MarketplaceSwitcherV9'
+import MarketplaceSwitcherV10 from './MarketplaceSwitcherV10'
 
 // Variation 7 has no top switcher at all — switching happens from the bottom
 // nav's "All" tab (wired in the experiment root).
 const NoSwitcher = () => null
 
+// `ownsHeader` — the variant renders its own location + search, so the
+// experiment root skips the standard LocationBar/SearchBar rows.
 export const switcherVariants = [
   { value: 1, label: '1', Component: MarketplaceSwitcherV3 },
   { value: 2, label: '2', Component: MarketplaceSwitcherV2 },
@@ -21,4 +24,5 @@ export const switcherVariants = [
   { value: 5, label: '5', Component: MarketplaceSwitcherV8 },
   { value: 6, label: '6', Component: MarketplaceSwitcherV9 },
   { value: 7, label: '7', Component: NoSwitcher },
+  { value: 8, label: '8', Component: MarketplaceSwitcherV10, ownsHeader: true },
 ]

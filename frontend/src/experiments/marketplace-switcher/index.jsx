@@ -5,6 +5,7 @@ import { easings } from '../../utils/motion'
 import AppShell from '../../components/layout/AppShell'
 import HomeSkeleton from './sections/HomeSkeleton'
 import MarketplaceSheet from './sections/MarketplaceSheet'
+import MarketplaceMark from './sections/MarketplaceMark'
 import LocationBar from './sections/LocationBar'
 import SearchBar from './sections/SearchBar'
 import PromoBanner from './sections/PromoBanner'
@@ -31,8 +32,9 @@ export default function MarketplaceExperiment() {
     const v = Number(searchParams.get('v'))
     return switcherVariants.some((s) => s.value === v) ? v : switcherVariants[0].value
   })
-  const ActiveSwitcher =
-    switcherVariants.find((v) => v.value === variant)?.Component ?? switcherVariants[0].Component
+  const activeVariant =
+    switcherVariants.find((v) => v.value === variant) ?? switcherVariants[0]
+  const ActiveSwitcher = activeVariant.Component
   const activeId = selections[variant] ?? marketplaces[0].id
   // switching marketplace shows a skeleton while the new home "loads"
   const [loading, setLoading] = useState(false)
@@ -50,6 +52,8 @@ export default function MarketplaceExperiment() {
   // variant 7 has no top switcher — the bottom nav's "All" tab opens the
   // marketplaces sheet, and the location bar leads with the selected chip
   const isNavVariant = variant === 7
+  // variant 2's floating bottom nav also opens the sheet from its left circle
+  const usesSheet = isNavVariant || variant === 2
   const [allOpen, setAllOpen] = useState(false)
   const activeMarketplace = marketplaces.find((m) => m.id === activeId)
   const selectFromSheet = (id) => {
@@ -99,13 +103,17 @@ export default function MarketplaceExperiment() {
             onChange={setActiveId}
             progress={progress}
           />
-          <LocationBar
-            label={address.label}
-            line={address.line}
-            marketplace={isNavVariant ? activeMarketplace : undefined}
-            onMarketplace={isNavVariant ? () => setAllOpen(true) : undefined}
-          />
-          <SearchBar />
+          {!activeVariant.ownsHeader && (
+            <>
+              <LocationBar
+                label={address.label}
+                line={address.line}
+                marketplace={isNavVariant ? activeMarketplace : undefined}
+                onMarketplace={isNavVariant ? () => setAllOpen(true) : undefined}
+              />
+              <SearchBar />
+            </>
+          )}
         </div>
 
         {/* Scrollable body — skeleton while the selected marketplace "loads",
@@ -164,9 +172,25 @@ export default function MarketplaceExperiment() {
         offset="calc(85px + env(safe-area-inset-bottom, 0px) + 16px)"
       />
 
-      <BottomNav dataId="mp-bottom-nav" onAll={isNavVariant ? () => setAllOpen(true) : undefined} />
+      <BottomNav
+        dataId="mp-bottom-nav"
+        onAll={isNavVariant ? () => setAllOpen(true) : undefined}
+        floating={variant === 2}
+        leading={
+          variant === 2 && activeMarketplace ? (
+            <MarketplaceMark
+              m={activeMarketplace}
+              white={!activeMarketplace.lightAccent}
+              active
+              size={44}
+            />
+          ) : undefined
+        }
+        leadingBg={variant === 2 ? activeMarketplace?.accent : undefined}
+        onLeading={variant === 2 ? () => setAllOpen(true) : undefined}
+      />
 
-      {isNavVariant && (
+      {usesSheet && (
         <MarketplaceSheet
           open={allOpen}
           onClose={() => setAllOpen(false)}
