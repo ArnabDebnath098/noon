@@ -121,7 +121,7 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
               >
                 <div className="absolute inset-x-0 top-0" style={{ height: REVEAL }}>
                   <div style={{ height: STATUS_PAD }} />
-                  <div className="flex items-center px-5 pb-1">
+                  <div className="flex items-center px-4 pb-1">
                     <span className="font-noontree text-[19px] font-black lowercase text-white">marketplaces</span>
                   </div>
 

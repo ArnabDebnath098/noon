@@ -86,7 +86,7 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
   }, [activeId])
 
   return (
-    <div data-id="mp-switcher" className="flex items-center gap-5 pl-5">
+    <div data-id="mp-switcher" className="flex items-center gap-5 pl-4">
       {/* left container: the rail fills the remaining width, showing 4 tiles.
           py-2 gives the scroll box vertical room so NEW badges / shadows that
           overhang the tiles aren't clipped by overflow-x-auto. */}

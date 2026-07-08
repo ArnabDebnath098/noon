@@ -21,12 +21,13 @@ const TABS = [
   { key: 'account', label: 'Account', raw: profileIcon },
 ]
 
-function NavIcon({ raw, active }) {
+function NavIcon({ raw, active, dataId }) {
   const html = raw
     .replace(/fill="#[0-9a-f]{3,8}"/gi, 'fill="currentColor"')
     .replace(/stroke="#[0-9a-f]{3,8}"/gi, 'stroke="currentColor"')
   return (
     <motion.span
+      data-id={dataId}
       aria-hidden="true"
       className="block h-7 w-7 [&>svg]:h-full [&>svg]:w-full"
       animate={{ color: active ? ACTIVE : INACTIVE }}
@@ -69,13 +70,14 @@ export default function BottomNav({
         >
           {isActive && (
             <motion.span
+              data-id={`${dataId}-${tab.key}-marker`}
               layoutId={`${dataId}-marker`}
               className="absolute inset-1 rounded-full bg-[#0F61FF]/[0.12]"
               transition={{ type: 'spring', stiffness: 500, damping: 38 }}
             />
           )}
-          <span className="relative">
-            <NavIcon raw={tab.raw} active={isActive} />
+          <span data-id={`${dataId}-${tab.key}-icon`} className="relative">
+            <NavIcon raw={tab.raw} active={isActive} dataId={`${dataId}-${tab.key}-glyph`} />
           </span>
         </button>
       )
@@ -87,6 +89,18 @@ export default function BottomNav({
         className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4"
         style={{ paddingTop: 10, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)' }}
       >
+        {/* white fade behind the floating bar — spans up past the top and down
+            through the safe area (transparent at top → white by 80%) */}
+        <div
+          data-id={`${dataId}-gradient`}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 -z-10"
+          style={{
+            top: -28,
+            background: 'linear-gradient(180deg, rgba(255,255,255,0) 0%, #FFFFFF 80%)',
+          }}
+        />
+
         {/* left: floating circle — the selected marketplace, or the first tab */}
         {leading ? (
           <button
@@ -97,17 +111,20 @@ export default function BottomNav({
             style={{ background: leadingBg }}
             className="flex h-[62px] w-[62px] shrink-0 items-center justify-center overflow-hidden rounded-full shadow-[0_6px_24px_rgba(16,24,40,0.16)] transition-transform active:scale-95"
           >
-            {leading}
+            <span data-id={`${dataId}-leading-inner`} className="flex items-center justify-center">
+              {leading}
+            </span>
           </button>
         ) : (
-          <div className="h-[62px] w-[62px] shrink-0 rounded-full bg-white shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
+          <div data-id={`${dataId}-leading-circle`} className="h-[62px] w-[62px] shrink-0 rounded-full bg-white shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
             {navCircle(first, 'h-full w-full')}
           </div>
         )}
 
-        {/* right: the tabs, in a floating pill */}
-        <div className="flex h-[62px] flex-1 items-center justify-around rounded-full bg-white px-1.5 shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
-          {pillTabs.map((tab) => navCircle(tab, 'h-[50px] w-[50px]'))}
+        {/* right: the tabs, in a floating pill — each fills an equal share, no
+            gap/padding */}
+        <div data-id={`${dataId}-pill`} className="flex h-[62px] flex-1 items-center overflow-hidden rounded-full bg-white shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
+          {pillTabs.map((tab) => navCircle(tab, 'h-full flex-1'))}
         </div>
       </nav>
     )

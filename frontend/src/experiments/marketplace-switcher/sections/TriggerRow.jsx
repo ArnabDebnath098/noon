@@ -24,7 +24,7 @@ export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen
     <div
       ref={rootRef}
       data-id="mp-switcher"
-      className="flex items-center justify-center gap-2 px-5 py-2"
+      className="flex items-center justify-center gap-2 px-4 py-2"
     >
       {/* buttons are keyed by slot so a swapped marketplace flips in place */}
       {row.map((m, slot) => {

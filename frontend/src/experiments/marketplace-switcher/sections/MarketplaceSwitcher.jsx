@@ -130,7 +130,7 @@ export default function MarketplaceSwitcher({ items, activeId, onChange, progres
   // one shared smoothing spring; every tile derives its morph from it
   const sp = useSpring(progress, scrollSmoothing)
   return (
-    <div data-id="mp-switcher" className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-5 py-2">
+    <div data-id="mp-switcher" className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-4 py-2">
       {items.map((m) => (
         <Tile key={m.id} m={m} activeId={activeId} onChange={onChange} sp={sp} />
       ))}

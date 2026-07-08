@@ -20,7 +20,7 @@ import MarketplaceMark from './MarketplaceMark'
 import MarketplaceSheet from './MarketplaceSheet'
 import NewBadge from './NewBadge'
 
-const PAD = 20 // section side padding
+const PAD = 16 // section side padding
 const RAIL_TILE = 72 // rail tile size in the default state
 const DOCK_TILE = 64 // docked selected tile size
 const GAP = 12 // gap between docked tile and group
@@ -76,7 +76,7 @@ export default function MarketplaceSwitcherV10({ items, activeId, onChange, prog
           ref={railRef}
           data-id="mp-switcher-rail"
           style={{ top: TOP, y: railY, opacity: railOpacity, pointerEvents: railPE }}
-          className="scrollbar-hide absolute inset-x-0 flex items-center gap-2 overflow-x-auto px-5 pb-2"
+          className="scrollbar-hide absolute inset-x-0 flex items-center gap-2 overflow-x-auto px-4 pb-2"
         >
           {items.map((item) => {
             const active = item.id === activeId

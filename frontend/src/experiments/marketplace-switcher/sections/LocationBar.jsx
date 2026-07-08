@@ -42,7 +42,7 @@ export default function LocationBar({ label, line, onClick, onWishlist, marketpl
   // same for the marketplace chip — clickable when onMarketplace is supplied
   const Chip = onMarketplace ? 'button' : 'span'
   return (
-    <div data-id="mp-location" className="flex items-center gap-2 px-5 py-1.5">
+    <div data-id="mp-location" className="flex items-center gap-2 px-4 py-1.5">
       {marketplace && (
         <>
           <Chip

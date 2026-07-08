@@ -5,10 +5,10 @@ import { combos } from '../../combo-animation/data'
 export default function CombosSection() {
   return (
     <div data-id="mp-section-combos" className="bg-[#F7F8FA] py-4">
-      <h2 className="mb-3 px-5 font-figtree text-[17px] font-bold tracking-[-0.02em] text-[#262A33]">
+      <h2 className="mb-3 px-4 font-figtree text-[17px] font-bold tracking-[-0.02em] text-[#262A33]">
         Save more with combos
       </h2>
-      <div className="scrollbar-hide flex gap-3 overflow-x-auto px-5 pb-1">
+      <div className="scrollbar-hide flex gap-3 overflow-x-auto px-4 pb-1">
         {combos.map((c, i) => (
           <ProductCard
             key={c.id}

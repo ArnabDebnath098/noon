@@ -3,13 +3,13 @@
 export default function CategoryGrid({ categories }) {
   return (
     <div data-id="mp-categories" className="flex flex-col gap-3 bg-white py-4">
-      <h2 className="px-5 font-figtree text-[17px] font-bold tracking-[-0.02em] text-[#262A33]">
+      <h2 className="px-4 font-figtree text-[17px] font-bold tracking-[-0.02em] text-[#262A33]">
         Shop by category
       </h2>
 
       <div
         data-id="mp-category-grid"
-        className="scrollbar-hide flex gap-3 overflow-x-auto px-5"
+        className="scrollbar-hide flex gap-3 overflow-x-auto px-4"
       >
         {categories.map((c) => (
           <div

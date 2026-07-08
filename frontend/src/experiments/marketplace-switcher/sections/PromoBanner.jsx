@@ -6,7 +6,7 @@ export default function PromoBanner() {
   return (
     <div data-id="mp-promo" className="flex flex-col gap-4 py-3">
       {/* Promo banner */}
-      <div className="px-5">
+      <div className="px-4">
         <img
           data-id="mp-promo-banner"
           src={promoBanner}
@@ -16,7 +16,7 @@ export default function PromoBanner() {
       </div>
 
       {/* Offer strip */}
-      <div className="px-5">
+      <div className="px-4">
         <img
           data-id="mp-cashback-strip"
           src={stripBanner}

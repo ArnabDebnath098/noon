@@ -161,7 +161,7 @@ export default function MarketplaceSwitcherV7({ items, activeId, onChange, progr
     <div
       ref={railRef}
       data-id="mp-switcher"
-      className="scrollbar-hide flex items-start gap-3 overflow-x-auto px-5 py-2"
+      className="scrollbar-hide flex items-start gap-3 overflow-x-auto px-4 py-2"
     >
       <SquircleClipDef />
       {items.map((m, i) => (
