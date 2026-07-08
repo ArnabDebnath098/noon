@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMotionValue } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../../components/layout/AppShell'
 import LocationBar from './sections/LocationBar'
 import SearchBar from './sections/SearchBar'
@@ -18,9 +18,14 @@ import { marketplaces, address, categories } from './data'
  */
 export default function MarketplaceExperiment() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [activeId, setActiveId] = useState(marketplaces[0].id)
   const [collapsed, setCollapsed] = useState(false)
-  const [variant, setVariant] = useState(switcherVariants[0].value)
+  // variant is deep-linkable: /marketplace-switcher?v=4
+  const [variant, setVariant] = useState(() => {
+    const v = Number(searchParams.get('v'))
+    return switcherVariants.some((s) => s.value === v) ? v : switcherVariants[0].value
+  })
   const ActiveSwitcher =
     switcherVariants.find((v) => v.value === variant)?.Component ?? switcherVariants[0].Component
   // 0 = fully expanded, 1 = fully collapsed; drives the tile size morph.

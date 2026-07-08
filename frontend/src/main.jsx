@@ -6,7 +6,10 @@ import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode data-id="app-strict-mode">
-    <BrowserRouter data-id="app-router">
+    <BrowserRouter
+      data-id="app-router"
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <App data-id="app-root" />
     </BrowserRouter>
   </React.StrictMode>,

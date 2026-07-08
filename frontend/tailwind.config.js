@@ -8,6 +8,7 @@ export default {
         sans: ['Noontree', 'system-ui', 'sans-serif'],
         noontree: ['Noontree', 'sans-serif'],
         figtree: ['Figtree', 'Noontree', 'system-ui', 'sans-serif'],
+        questrial: ['Questrial', 'system-ui', 'sans-serif'],
       },
       colors: {
         // noon brand palette

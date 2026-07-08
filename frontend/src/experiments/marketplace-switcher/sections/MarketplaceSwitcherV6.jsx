@@ -12,16 +12,18 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { springs, easings } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
+import TriggerRow from './TriggerRow'
 
-const PREVIEW_IDS = ['pay', 'minutes', 'home', 'send'] // 2×2 folder-tile preview
 const STATUS_PAD = 47
-const SLIDE = 'transform 0.55s cubic-bezier(0.32,0.72,0,1)'
+const SLIDE_MS = 550 // page push-down duration; style resets wait for it
+const SLIDE = `transform ${SLIDE_MS / 1000}s ${easings.iosCss}`
 
 const gridContainer = { hidden: {}, show: { transition: { staggerChildren: 0.03, delayChildren: 0.14 } } }
 const gridItem = {
   hidden: { opacity: 0, y: 14, scale: 0.9 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 420, damping: 30 } },
+  show: { opacity: 1, y: 0, scale: 1, transition: springs.snappy },
 }
 
 export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
@@ -61,7 +63,7 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
       main.style.borderTopRightRadius = ''
       main.style.overflow = ''
       main.style.zIndex = ''
-    }, 560)
+    }, SLIDE_MS + 10)
     return () => clearTimeout(t)
   }, [open, frame.main, REVEAL])
 
@@ -82,43 +84,17 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
     onChange(id)
     setOpen(false)
   }
-  const preview = PREVIEW_IDS.map((id) => items.find((m) => m.id === id)).filter(Boolean)
 
   return (
     <>
-      {/* collapsed trigger row */}
-      <div ref={rootRef} data-id="mp-switcher" className="flex items-center justify-center gap-2 px-3 py-2">
-        {items.slice(0, 3).map((m) => {
-          const active = m.id === activeId
-          return (
-            <button
-              key={m.id}
-              type="button"
-              data-id={`mp-tile-${m.id}`}
-              aria-pressed={active}
-              onClick={() => onChange(m.id)}
-              style={{ width: 76, height: 76, borderRadius: 20, background: active ? m.accent : '#FFFFFF' }}
-              className="flex shrink-0 items-center justify-center border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
-            >
-              <MarketplaceMark m={m} white={active && !m.lightAccent} size={68} />
-            </button>
-          )
-        })}
-        <button
-          type="button"
-          data-id="mp-dial-open"
-          aria-label="Open all marketplaces"
-          onClick={() => setOpen(true)}
-          style={{ width: 76, height: 76, borderRadius: 20 }}
-          className="grid shrink-0 grid-cols-2 gap-1.5 border border-[#EFEFEF] bg-[#F4F5F7] p-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95"
-        >
-          {preview.map((m) => (
-            <span key={m.id} className="flex items-center justify-center rounded-[10px] bg-white">
-              <MarketplaceMark m={m} size={24} />
-            </span>
-          ))}
-        </button>
-      </div>
+      {/* collapsed trigger row (rootRef anchors the DOM lookup above) */}
+      <TriggerRow
+        rootRef={rootRef}
+        items={items}
+        activeId={activeId}
+        onChange={onChange}
+        onOpen={() => setOpen(true)}
+      />
 
       {/* revealed marketplace panel — sits behind the pushed-down page */}
       {frame.el &&
@@ -132,7 +108,7 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
+                transition={{ duration: 0.25, ease: easings.ios }}
               >
                 <div className="absolute inset-x-0 top-0" style={{ height: REVEAL }}>
                   <div style={{ height: STATUS_PAD }} />
@@ -159,10 +135,10 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange }) {
                           className="flex flex-col items-center gap-1.5"
                         >
                           <span
-                            style={{ background: active ? m.accent : 'rgba(255,255,255,0.94)' }}
+                            style={{ background: active ? m.accent : m.bg ?? 'rgba(255,255,255,0.94)' }}
                             className="flex h-[62px] w-[62px] items-center justify-center rounded-[18px] shadow-[0_6px_18px_rgba(0,0,0,0.28)]"
                           >
-                            <MarketplaceMark m={m} white={active && !m.lightAccent} size={44} />
+                            <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={44} />
                           </span>
                           <span className="max-w-[68px] truncate text-center font-noontree text-[11px] lowercase text-white/75">
                             {m.label.replace('\n', ' ')}

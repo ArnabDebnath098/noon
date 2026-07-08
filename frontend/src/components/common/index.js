@@ -8,4 +8,3 @@ export { Accordion } from './Accordion';
 export { ProductCard } from './ProductCard';
 export { BentoProductCard } from './BentoProductCard';
 export { HorizontalComboCard } from './HorizontalComboCard';
-export { colour, space } from './tokens';

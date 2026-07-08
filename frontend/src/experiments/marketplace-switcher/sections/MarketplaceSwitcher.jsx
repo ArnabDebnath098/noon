@@ -6,6 +6,7 @@
 // lightly spring-smoothed. The logo continuously scales down with the tile
 // rather than swapping to a different rendering.
 import { motion, useTransform, useSpring } from 'framer-motion'
+import { springs, scrollSmoothing } from '../../../utils/motion'
 
 function TileArt({ m }) {
   if (m.logoStack) {
@@ -41,9 +42,7 @@ function TileArt({ m }) {
   )
 }
 
-function Tile({ m, activeId, onChange, progress }) {
-  // light spring so coarse scroll deltas read as a smooth morph
-  const sp = useSpring(progress, { stiffness: 500, damping: 50, mass: 0.4 })
+function Tile({ m, activeId, onChange, sp }) {
   const height = useTransform(sp, [0, 1], [76, 36])
   const radius = useTransform(sp, [0, 1], [20, 10])
   // text/logo tiles: shrink in proportion with the tile (per-tile override)
@@ -87,15 +86,16 @@ function Tile({ m, activeId, onChange, progress }) {
       </motion.span>
     )
   } else if (m.fadeStack) {
+    const fade = active && m.activeFadeStack ? m.activeFadeStack : m.fadeStack
     content = (
       <span className="flex flex-col items-center gap-0.5">
         <motion.span
           style={{ height: topH, opacity: topOpacity }}
           className="flex items-end overflow-hidden"
         >
-          <img src={m.fadeStack[0]} alt="" className="h-auto" style={{ width: m.fadeW }} />
+          <img src={fade[0]} alt="" className="h-auto" style={{ width: m.fadeW }} />
         </motion.span>
-        <img src={m.fadeStack[1]} alt={m.id} className="h-auto" style={{ width: m.keepW }} />
+        <img src={fade[1]} alt={m.id} className="h-auto" style={{ width: m.keepW }} />
       </span>
     )
   } else {
@@ -112,12 +112,14 @@ function Tile({ m, activeId, onChange, progress }) {
       data-id={`mp-tile-${m.id}`}
       aria-pressed={active}
       onClick={() => onChange(m.id)}
-      style={{ height, borderRadius: radius, width: 76, background: active ? m.accent : '#FFFFFF' }}
+      whileTap={{ scale: 0.96 }}
+      transition={springs.press}
+      style={{ height, borderRadius: radius, width: 76, background: active ? m.accent : m.bg ?? '#FFFFFF' }}
       className="relative flex shrink-0 items-center justify-center overflow-hidden px-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
     >
       {/* selected → content turns white via invert filter (kept dark on light
           accents like noon's yellow, or when a pre-coloured activeLogoStack is used) */}
-      <span style={{ filter: active && !m.lightAccent && !m.activeLogoStack ? 'brightness(0) invert(1)' : undefined }} className="flex items-center justify-center">
+      <span style={{ filter: active && !m.lightAccent && !m.activeLogoStack && !m.activeFadeStack ? 'brightness(0) invert(1)' : undefined }} className="flex items-center justify-center">
         {content}
       </span>
     </motion.button>
@@ -125,10 +127,12 @@ function Tile({ m, activeId, onChange, progress }) {
 }
 
 export default function MarketplaceSwitcher({ items, activeId, onChange, progress }) {
+  // one shared smoothing spring; every tile derives its morph from it
+  const sp = useSpring(progress, scrollSmoothing)
   return (
-    <div data-id="mp-switcher" className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-3 py-2">
+    <div data-id="mp-switcher" className="scrollbar-hide flex items-center gap-2 overflow-x-auto px-5 py-2">
       {items.map((m) => (
-        <Tile key={m.id} m={m} activeId={activeId} onChange={onChange} progress={progress} />
+        <Tile key={m.id} m={m} activeId={activeId} onChange={onChange} sp={sp} />
       ))}
     </div>
   )

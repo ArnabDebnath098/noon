@@ -31,7 +31,7 @@ export default function LocationBar({ label, line, onClick, onWishlist, revision
   // address-selection experiment opens its sheet); otherwise it's a plain div.
   const Info = onClick ? 'button' : 'div'
   return (
-    <div data-id="mp-location" className="flex items-center gap-2 px-4 py-1.5">
+    <div data-id="mp-location" className="flex items-center gap-2 px-5 py-1.5">
       <Info
         type={onClick ? 'button' : undefined}
         onClick={onClick}

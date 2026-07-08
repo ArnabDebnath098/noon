@@ -14,7 +14,7 @@
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import useElementWidth from '../../../hooks/useElementWidth'
-import { springs, curvedPath, staggerContainer, pathFlightVariants } from '../../../utils/motion'
+import { springs, easings, curvedPath, staggerContainer, pathFlightVariants } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
 
 // ---- layout constants ----
@@ -31,7 +31,7 @@ const MINI_SCALE = MINI / ICON
 
 // expanded panel grid
 const PADP = 14 // panel padding
-const EXP_GAP = 8 // gap between grid cells
+const PANEL_MARGIN = 16 // panel inset from each screen edge
 const COLS = 4
 
 // Which folder positions appear in the 2×2 preview, and in which mini slot
@@ -42,14 +42,19 @@ const PREVIEW_SLOT = { 3: 1, 5: 0, 6: 2, 7: 3 }
 const isPreview = (i) => PREVIEW_SLOT[i] !== undefined
 
 // ---- animation config (see utils/motion) ----
-const ICONS_CONTAINER = staggerContainer({ stagger: 0.018, delayChildren: 0.02 })
-const ICON_VARIANTS = pathFlightVariants(springs.snappy, { duration: 0.16 })
+const ICONS_CONTAINER = staggerContainer({ stagger: 0.022, delayChildren: 0.03 })
+// slightly longer flight than the default snappy — the icons travel further
+// now that the panel spans the full width
+const ICON_VARIANTS = pathFlightVariants(
+  { type: 'spring', duration: 0.5, bounce: 0.18 },
+  { duration: 0.18 },
+)
 const PANEL_SHADOW = 'shadow-[0_18px_50px_rgba(16,24,40,0.22)] backdrop-blur-xl'
 // the marketplace card flips on its Y axis when a slot's marketplace swaps
 const FLIP_TRANSITION = {
   rotateY: springs.flip,
   opacity: { duration: 0.18 },
-  borderRadius: { type: 'spring', stiffness: 260, damping: 28 },
+  borderRadius: springs.snappy,
 }
 
 /**
@@ -90,13 +95,13 @@ function FolderIcon({ m, active, offsetPath, collapsedScale, collapsedOpacity, r
           style={{
             position: 'absolute',
             inset: 0,
-            background: active ? m.accent : '#FFFFFF',
+            background: active ? m.accent : m.bg ?? '#FFFFFF',
             border: '1px solid #E5E7EB',
             backfaceVisibility: 'hidden',
           }}
           className="flex items-center justify-center"
         >
-          <MarketplaceMark m={m} white={active && !m.lightAccent} size={ICON} />
+          <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={ICON} />
         </motion.div>
       </AnimatePresence>
     </motion.div>
@@ -130,12 +135,17 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
 
   // Expanded panel + its grid cells (left-aligned natural fill: position i →
   // cell i, so tiles pack from the top-left and the empty slot is bottom-right).
-  const panelW = COLS * ICON + (COLS - 1) * EXP_GAP + 2 * PADP
-  const panelLeft = (W - panelW) / 2
-  const panelH = Math.ceil(items.length / COLS) * ICON + (Math.ceil(items.length / COLS) - 1) * EXP_GAP + 2 * PADP
+  // The panel spans the full width minus PANEL_MARGIN per side; the grid gap is
+  // derived from the leftover space so the columns spread evenly, and the same
+  // gap is used vertically so the grid reads uniform.
+  const panelW = W - 2 * PANEL_MARGIN
+  const panelLeft = PANEL_MARGIN
+  const cellGap = (panelW - 2 * PADP - COLS * ICON) / (COLS - 1)
+  const rows = Math.ceil(items.length / COLS)
+  const panelH = rows * ICON + (rows - 1) * cellGap + 2 * PADP
   const cellCenter = (i) => ({
-    x: panelLeft + PADP + ICON / 2 + (i % COLS) * (ICON + EXP_GAP),
-    y: ROW_TOP + PADP + ICON / 2 + Math.floor(i / COLS) * (ICON + EXP_GAP),
+    x: panelLeft + PADP + ICON / 2 + (i % COLS) * (ICON + cellGap),
+    y: ROW_TOP + PADP + ICON / 2 + Math.floor(i / COLS) * (ICON + cellGap),
   })
 
   // Collapsed pose per position: row tiles in the row, preview icons in their
@@ -199,6 +209,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: easings.ios }}
             onClick={close}
             className="fixed inset-0 z-20 bg-black/25"
           />
@@ -227,10 +238,13 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
         />
 
         {/* icons cascade out of / back into the folder (children are ordered
-            nearest-travel-first so the stagger matches the geometry) */}
+            nearest-travel-first so the stagger matches the geometry).
+            pointer-events-none: the overlay spans the whole switcher, and
+            without it taps in the gaps between icons never reach the folder
+            surface below — the "click sometimes doesn't work" bug. */}
         <motion.div
           data-id="mp-icons"
-          className="absolute inset-0"
+          className="pointer-events-none absolute inset-0"
           variants={ICONS_CONTAINER}
           initial={false}
           animate={expanded ? 'open' : 'closed'}

@@ -20,14 +20,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence, useMotionValue, useMotionValueEvent, useTransform, animate } from 'framer-motion'
+import { springs, easings, clamp } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
+import TriggerRow from './TriggerRow'
 
-const PREVIEW_IDS = ['pay', 'minutes', 'home', 'send'] // 2×2 folder-tile preview (TL,TR,BL,BR)
 const STEP = 0.19 // angular gap between marks (rad) — tight so many marks show at once
 const CHIP = 58 // mark chip size (px)
 const FOCUS_BAND = 0.14 // |phi| under which a mark counts as "centred"
 const SWEEP = 1.0 // intro rotation offset — how far the ring sweeps in on open
-const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v)
+// intro: long decelerating sweep of the whole ring into place
+const SWEEP_SPRING = { type: 'spring', duration: 0.75, bounce: 0.18 }
 const nameOf = (m) => m.label.replace('\n', ' ')
 
 // Wheel geometry from the measured panel size.
@@ -105,7 +107,6 @@ export default function MarketplaceCircularDial({ items, activeId, onChange, ori
 
   const activeIndex = Math.max(0, items.findIndex((m) => m.id === activeId))
   const maxRot = (items.length - 1) * STEP
-  const preview = PREVIEW_IDS.map((id) => items.find((m) => m.id === id)).filter(Boolean)
 
   useLayoutEffect(() => {
     if (!open) return undefined
@@ -123,7 +124,7 @@ export default function MarketplaceCircularDial({ items, activeId, onChange, ori
     if (!open) return undefined
     const target = activeIndex * STEP
     rot.set(target - SWEEP)
-    const c = animate(rot, target, { type: 'spring', stiffness: 120, damping: 20 })
+    const c = animate(rot, target, SWEEP_SPRING)
     return () => c.stop()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -136,11 +137,11 @@ export default function MarketplaceCircularDial({ items, activeId, onChange, ori
   }
   const onPanEnd = () => {
     const idx = clamp(Math.round(rot.get() / STEP), 0, items.length - 1)
-    animate(rot, idx * STEP, { type: 'spring', stiffness: 240, damping: 28 })
+    animate(rot, idx * STEP, springs.settle) // physics spring keeps pan velocity
   }
   const select = (i, id) => {
     onChange(id)
-    animate(rot, i * STEP, { type: 'spring', stiffness: 260, damping: 28 })
+    animate(rot, i * STEP, springs.settle)
     setTimeout(() => setOpen(false), 200)
   }
 
@@ -165,40 +166,8 @@ export default function MarketplaceCircularDial({ items, activeId, onChange, ori
 
   return (
     <>
-      {/* collapsed trigger row */}
-      <div data-id="mp-switcher" className="flex items-center justify-center gap-2 px-3 py-2">
-        {items.slice(0, 3).map((m) => {
-          const active = m.id === activeId
-          return (
-            <button
-              key={m.id}
-              type="button"
-              data-id={`mp-tile-${m.id}`}
-              aria-pressed={active}
-              onClick={() => onChange(m.id)}
-              style={{ width: 76, height: 76, borderRadius: 20, background: active ? m.accent : '#FFFFFF' }}
-              className="flex shrink-0 items-center justify-center border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
-            >
-              <MarketplaceMark m={m} white={active && !m.lightAccent} size={68} />
-            </button>
-          )
-        })}
-        {/* grid tile → opens the dial (2×2 mini-logo preview of more marketplaces) */}
-        <button
-          type="button"
-          data-id="mp-dial-open"
-          aria-label="Open all marketplaces"
-          onClick={() => setOpen(true)}
-          style={{ width: 76, height: 76, borderRadius: 20 }}
-          className="grid shrink-0 grid-cols-2 gap-1.5 border border-[#EFEFEF] bg-[#F4F5F7] p-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)] active:scale-95"
-        >
-          {preview.map((m) => (
-            <span key={m.id} className="flex items-center justify-center rounded-[10px] bg-white">
-              <MarketplaceMark m={m} size={24} />
-            </span>
-          ))}
-        </button>
-      </div>
+      {/* collapsed trigger row — the grid tile opens the dial */}
+      <TriggerRow items={items} activeId={activeId} onChange={onChange} onOpen={() => setOpen(true)} />
 
       {/* dial flyout — portalled to <body> so it escapes the sticky header's
           stacking context and can layer above the bottom nav */}
@@ -212,7 +181,7 @@ export default function MarketplaceCircularDial({ items, activeId, onChange, ori
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.25, ease: easings.ios }}
           >
             {/* frosted backdrop (covers the bottom nav) — transparent at the top,
                 fading to solid dark at the bottom. Tap to dismiss. */}
@@ -228,7 +197,7 @@ export default function MarketplaceCircularDial({ items, activeId, onChange, ori
               initial={{ y: 60 }}
               animate={{ y: 0 }}
               exit={{ y: 60 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+              transition={springs.sheet}
             >
               {/* the wheel edge traced behind the marks */}
               <svg className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">

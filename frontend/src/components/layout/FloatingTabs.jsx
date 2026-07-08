@@ -11,10 +11,12 @@ export default function FloatingTabs({
   accent = '#0F61FF',
   offset = 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
 }) {
+  // z-40: must stay above pushed/translated page surfaces (e.g. the
+  // marketplace push-down reveal raises the page to z-30)
   return (
     <div
       data-id={dataId}
-      className="pointer-events-none fixed inset-x-0 z-20 flex justify-center px-3"
+      className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-3"
       style={{ bottom: offset }}
     >
       <div className="pointer-events-auto flex gap-0.5 rounded-full border border-[#EAECF0] bg-white p-1 shadow-[0px_6px_20px_rgba(0,0,0,0.12)]">
