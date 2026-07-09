@@ -4,10 +4,11 @@
 // inside the BundleSheet (which adds the overlay, slide-up and a Done footer via
 // the `footer` slot).
 import { Squircle } from 'corner-smoothing'
-import { ComboProductCard, ComboRowCard } from '../../components/common'
+import { ComboProductCard, ComboRowCard, ComboGif } from '../../components/common'
+import { COMBO_GIF } from '../../components/common/ComboGif'
 import { Dirham } from '../../components/common/Dirham'
 
-export const COMBO_GIF = 'https://f.nooncdn.com/s/app/com/noon/images/combo-animated.gif'
+export { COMBO_GIF }
 
 export default function BundleContainer({
   items = [],
@@ -44,7 +45,7 @@ export default function BundleContainer({
         className="flex h-14 items-center gap-3 rounded-t-[14px] px-3"
         style={{ background: 'linear-gradient(0deg, #EAF4FE 0%, #FFFFFF 100%)' }}
       >
-        <img data-id={did('header-icon')} src={COMBO_GIF} alt="" aria-hidden="true" className="h-6 w-6 shrink-0" />
+        <ComboGif dataId={did('header-icon')} className="h-6 w-6 shrink-0" />
         <div data-id={did('header-text')} className="flex items-center gap-1">
           <span data-id={did('header-title')} className="font-noontree text-[16px] font-semibold leading-5 tracking-[-0.1px] text-[#0A49B8]">
             Buy together and save

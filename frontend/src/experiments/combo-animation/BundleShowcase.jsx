@@ -2,9 +2,8 @@
 // gradient info panel ("Bundle & Save" + savings + benefit bullets + View all)
 // followed by a horizontal rail of ComboProductCards (variation-2 style: plain
 // "2 Products" tag, no combo-icon). The whole strip scrolls horizontally.
-import { ComboProductCard } from '../../components/common'
+import { ComboProductCard, ComboGif } from '../../components/common'
 import { Dirham } from '../../components/common/Dirham'
-import { COMBO_GIF } from './BundleContainer'
 import pointerIcon from '../../assets/icons/pointer.svg'
 
 export default function BundleShowcase({
@@ -27,7 +26,7 @@ export default function BundleShowcase({
         style={{ background: 'linear-gradient(270deg, #FFFFFF 5.45%, #E7EFFD 194.76%)' }}
       >
         <div className="flex flex-col gap-4">
-          <img data-id={did('icon')} src={COMBO_GIF} alt="" aria-hidden="true" className="h-8 w-8" />
+          <ComboGif dataId={did('icon')} className="h-8 w-8" />
 
           <div data-id={did('header')} className="flex flex-col gap-1">
             <span data-id={did('title')} className="font-noontree text-[18px] font-bold leading-[22px] tracking-[-0.15px] text-[#0A49B8]">

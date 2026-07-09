@@ -13,3 +13,4 @@ export { WishlistButton } from './WishlistButton';
 export { PlpProductCard } from './PlpProductCard';
 export { ComboRowCard } from './ComboRowCard';
 export { NudgeFlipper } from './NudgeFlipper';
+export { ComboGif } from './ComboGif';

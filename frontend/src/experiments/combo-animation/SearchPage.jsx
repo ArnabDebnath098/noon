@@ -156,10 +156,11 @@ export default function SearchPage({ open, onClose, plp, bundle, variant }) {
                   )
                 }
 
-                // variation 3: a row of product cards, then the combos showcase,
-                // then the rest of the results.
-                const firstRow = plp.products.slice(0, 2)
-                const rest = plp.products.slice(2)
+                // variation 3: combos live only in the showcase, so the grid
+                // shows product cards only — a row, then the showcase, then rest.
+                const productsOnly = plp.products.filter((p) => p.kind !== 'combo')
+                const firstRow = productsOnly.slice(0, 2)
+                const rest = productsOnly.slice(2)
                 return (
                   <>
                     <div className="grid grid-cols-2 items-stretch gap-2.5 px-3 pb-3 pt-3">
