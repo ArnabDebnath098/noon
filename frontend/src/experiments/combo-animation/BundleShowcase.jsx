@@ -51,7 +51,7 @@ export default function BundleShowcase({
         </div>
 
         {/* benefits — fill available height, 20px top/bottom */}
-        <div data-id={did('benefits')} className="flex flex-1 flex-col justify-center gap-4 py-5">
+        <div data-id={did('benefits')} className="flex flex-1 flex-col justify-center gap-6 py-5">
           {benefits.map((b, i) => (
             <div key={i} data-id={did(`benefit-${i}`)} className="flex items-start gap-1.5">
               <span className="flex h-[18px] shrink-0 items-center">

@@ -12,6 +12,11 @@ const COMBO_THUMBS = [
   { image: comboThumbConditioner, qty: 1 },
   { image: comboThumbShampoo, qty: 1 },
 ]
+const COMBO_THUMBS_3 = [
+  { image: comboThumbConditioner, qty: 1 },
+  { image: comboThumbShampoo, qty: 1 },
+  { image: comboThumbShampoo, qty: 1 },
+]
 
 // Main product for the full PDP — Bare Anatomy Expert Anti-Dandruff Shampoo.
 // The hero image already carries the "Salicylic Acid & Biotin" key-visual text,
@@ -53,7 +58,8 @@ export const bundle = {
     {
       id: 'bundle-2',
       image: bundleShampooRicewater,
-      thumbs: COMBO_THUMBS,
+      thumbs: COMBO_THUMBS_3,
+      extra: 4,
       productCount: '2 Products',
       title: 'The Derma Co Pore Minimizing Skincare Combo Pack',
       price: '59.98',

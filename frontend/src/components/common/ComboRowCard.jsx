@@ -67,7 +67,7 @@ export function ComboRowCard({
             type="button"
             data-id={did('add')}
             onClick={onAdd}
-            className="flex h-9 shrink-0 items-center justify-center rounded-lg bg-[#0F7EFF] px-3 font-noontree text-[12px] font-semibold leading-4 text-white"
+            className="flex h-9 shrink-0 items-center justify-center rounded-lg border border-[#D6E9FF] bg-white px-3 font-noontree text-[12px] font-semibold leading-4 text-[#0F61FF]"
           >
             Add to cart
           </button>
