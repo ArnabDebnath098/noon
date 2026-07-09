@@ -5,9 +5,24 @@
 import { Dirham, withDirham } from './Dirham'
 import { WishlistButton } from './WishlistButton'
 import { ComboAtc } from './ComboProductCard'
+import { NudgeFlipper } from './NudgeFlipper'
 import badgeMinutes from '../../assets/icons/badge-minutes.svg'
 import badgeSupermall from '../../assets/icons/badge-supermall.svg'
 import badgeExpress from '../../assets/icons/badge-express.svg'
+import nudgeLowest from '../../assets/icons/nudge-lowest.svg'
+import nudgeFast from '../../assets/icons/nudge-fast.svg'
+import nudgeDelivery from '../../assets/icons/nudge-delivery.svg'
+import nudgeStock from '../../assets/icons/nudge-stock.svg'
+import nudgeBestseller from '../../assets/icons/bestseller.svg'
+
+// Nudge registry — data references these by key.
+const NUDGES = {
+  lowest: { icon: nudgeLowest, text: 'Lowest Price in 30 days' },
+  fast: { icon: nudgeFast, text: 'Selling out fast' },
+  bestseller: { icon: nudgeBestseller, text: '#3 bestseller' },
+  delivery: { icon: nudgeDelivery, text: 'Free Delivery' },
+  stock: { icon: nudgeStock, text: '5 left in stock' },
+}
 
 const BADGES = {
   minutes: badgeMinutes,
@@ -25,6 +40,7 @@ export function PlpProductCard({
   discount,
   quantity,
   nudge,
+  nudges,
   bestSeller = false,
   ad = false,
   variants = [],
@@ -143,11 +159,18 @@ export function PlpProductCard({
             </div>
           )}
 
-          {nudge && (
-            <div data-id={did('nudge')} className="flex items-center gap-1 font-figtree text-[12px] leading-4 tracking-[-0.12px] text-[#475067]">
-              <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-[#DE1C1C] text-[9px] leading-none text-white">↓</span>
-              <span className="truncate">{nudge}</span>
-            </div>
+          {nudges?.length ? (
+            <NudgeFlipper
+              dataId={did('nudge')}
+              nudges={nudges.map((k) => NUDGES[k]).filter(Boolean)}
+            />
+          ) : (
+            nudge && (
+              <div data-id={did('nudge')} className="flex items-center gap-1 font-figtree text-[12px] leading-4 tracking-[-0.12px] text-[#475067]">
+                <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-[#DE1C1C] text-[9px] leading-none text-white">↓</span>
+                <span className="truncate">{nudge}</span>
+              </div>
+            )
           )}
 
           {coupons.length > 0 && (

@@ -38,7 +38,7 @@ export const bundle = {
   savings: '20', // "upto AED20"
   off: '80', // variation-3 showcase: "upto AED80 off"
   viewAll: 6, // "View all 6 combos" tile at the end of the rail
-  benefits: ['Less than buying separately', 'Everything together'],
+  benefits: ['Pay less than buying separately', 'Curated for convenience'],
   items: [
     {
       id: 'bundle-1',
@@ -321,7 +321,7 @@ export const plp = {
       originalPrice: '1399',
       discount: '33%',
       quantity: '500ml | AED2.35/ml',
-      nudge: 'Lowest price in 30 days',
+      nudges: ['lowest', 'fast', 'bestseller'],
       bestSeller: true,
       ad: true,
       dots: 4,
@@ -343,7 +343,7 @@ export const plp = {
       originalPrice: '1399',
       discount: '33%',
       quantity: '500ml | AED2.35/ml',
-      nudge: 'Lowest price in 30 days',
+      nudges: ['fast', 'delivery', 'stock'],
       ad: true,
       dots: 4,
       variants: ['#F43333', '#05AF25', '#0076FF'],
@@ -363,7 +363,7 @@ export const plp = {
       price: '899',
       originalPrice: '1399',
       discount: '33%',
-      nudge: 'Lowest price in 30 days',
+      nudges: ['bestseller', 'lowest', 'delivery'],
       bestSeller: true,
       dots: 4,
       variants: ['#F43333', '#05AF25', '#0076FF'],
@@ -381,7 +381,7 @@ export const plp = {
       price: '899',
       originalPrice: '1399',
       discount: '33%',
-      nudge: 'Lowest price in 30 days',
+      nudges: ['stock', 'fast', 'lowest'],
       dots: 4,
       variants: ['#F43333', '#05AF25', '#0076FF'],
       variantCount: 4,

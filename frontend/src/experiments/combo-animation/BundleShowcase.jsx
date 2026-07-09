@@ -23,7 +23,7 @@ export default function BundleShowcase({
       {/* Info panel */}
       <div
         data-id={did('info')}
-        className="flex w-[164px] min-w-[164px] shrink-0 flex-col px-5 py-8"
+        className="flex w-[180px] min-w-[180px] shrink-0 flex-col px-5 py-8"
         style={{ background: 'linear-gradient(270deg, #FFFFFF 5.45%, #E7EFFD 194.76%)' }}
       >
         <div className="flex flex-col gap-4">
