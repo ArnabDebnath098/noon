@@ -1,8 +1,10 @@
 # Combo Animation — Experiment Context
 
-A product-details page whose **"Save more with combos" rail** can be rendered
-with several different combo-tag micro-animations, switched live via a floating
-segmented control. Built to explore which combo-reveal animation feels best.
+A **full noon PDP** (EUCERIN Anti-Dandruff Shampoo, per Figma) whose combos rail
+(**"Frequently bought together"**) can be rendered with several combo-tag
+micro-animations, switched live via a floating segmented control. Variation 1
+(`chiptop`) is the default. Built to explore which combo-reveal animation feels
+best inside a realistic PDP.
 
 Route: `/combo-animation` · Accent: `#0F61FF`
 
@@ -10,15 +12,32 @@ Route: `/combo-animation` · Accent: `#0F61FF`
 
 ```
 AppShell
- ├─ Header (back → "/")
+ ├─ Header (back → "/", search, wishlist, share)
  ├─ main (scrollable, #F2F3F7)
- │   └─ CatalogBody
+ │   └─ PDPBody  (experiments/combo-animation/PDPBody.jsx)
+ │       ├─ Hero (image carousel + 360 button + indicator dots)
+ │       ├─ MainInfo (blue #E1EFFF card: store row + white info card)
+ │       ├─ Best Price with offers row (green dashed)
+ │       ├─ Bestseller #3 row
+ │       ├─ Bundle up & save row (blue)
+ │       ├─ Sponsored ad strip
+ │       ├─ Delivery Information card
+ │       ├─ Payment offers card (tabby)
  │       ├─ Product Details accordion
- │       ├─ Combos section  ← the animated rail
+ │       ├─ Bestseller #1 card (green)
+ │       ├─ Seller widget (ONESTO LABS + trust chips + other offers)
+ │       ├─ Top products rail (sponsored TECV)
+ │       ├─ Combos rail  ← the animated "Frequently bought together" section
+ │       ├─ Ratings & Reviews (noon-AI summary)
  │       └─ Similar products rail
- ├─ ActionBar (sticky bottom)
- └─ FloatingTabs (style switcher 1–7)
+ ├─ ActionBar (sticky bottom: QTY + Add to cart)
+ └─ FloatingTabs (combo style switcher 1–5)
 ```
+
+`PDPBody` receives `product`, `combos`, `similar`, `topProducts`,
+`productDetails`, `paymentOffer`, `deliveryInfo`, `seller`, `reviewSummary`
+from `data.js`. The older presentational `../../components/CatalogBody.jsx`
+is no longer used by this experiment.
 
 ## Combo-tag animation styles (FloatingTabs)
 

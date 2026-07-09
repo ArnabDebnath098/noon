@@ -1,26 +1,88 @@
 // Shared product data scraped from noon.com (uae-en) product pages.
 // Consumed by the Home and Categories routes.
 import koreanGlassHero from '../../assets/products/korean-glass-hero.png'
+import bareAnatomyShampoo from '../../assets/products/bare-anatomy-shampoo.png'
 
-// "Product Details" accordion rows.
+// Main product for the full PDP — Bare Anatomy Expert Anti-Dandruff Shampoo.
+// The hero image already carries the "Salicylic Acid & Biotin" key-visual text,
+// so no separate `highlight` overlay is used.
+export const product = {
+  store: 'BARE ANATOMY',
+  title:
+    'Expert Anti-Dandruff Shampoo, Salicylic Acid & Biotin, Targets Oily Scalp and Sheds Dry Flakes, 250ml',
+  images: [bareAnatomyShampoo],
+  rating: '4.6',
+  ratingCount: '34244',
+  price: '34.99',
+  originalPrice: '68',
+  discountPercent: '50%',
+  vat: '(incl. of VAT)',
+  bestPriceWithOffers: '699',
+  lowestPrice: 'Lowest Price in 30 days',
+  bestsellerRankTop: { rank: '#3', category: 'Hair Care' },
+  bestsellerRankBottom: { rank: '#1', category: 'Hair Care' },
+}
+
+// Payment offers row (tabby / bank cashback).
+export const paymentOffer = {
+  title: 'Get extra 5% cashback using',
+  subtitle: 'ENBD noon VISA credit card',
+  cta: 'Apply Now',
+}
+
+// Delivery information card.
+export const deliveryInfo = {
+  member: 'one member',
+  express: 'Get it Tomorrow before 12 PM',
+}
+
+// Seller widget.
+export const seller = {
+  name: 'ONESTO LABS FZ-LLC',
+  rating: '4.3',
+  ratingCount: '128',
+  positive: '74% Positive Seller Ratings',
+  tags: [
+    'Low Return Seller',
+    'Great Recent Ratings',
+    'Partner Since 5+ Years',
+    'Item as Described 100%',
+  ],
+  subtitle: 'This is a placeholder for brands to place subtitle',
+  otherOffers: { count: '5', from: '649' },
+}
+
+// noon-AI review summary.
+export const reviewSummary = {
+  rating: '4.8',
+  reviewCount: '64',
+  bullets: [
+    'The portrait mode includes a fantastic wide-angle',
+    'Users appreciate the overall performance of phone.',
+    'Enjoy the wide-angle capability while using portrait a fantastic wide-angle',
+    'Users appreciate the overall performance of this phone.',
+  ],
+}
+
+// "Product Details" accordion rows — Bare Anatomy Expert Anti-Dandruff Shampoo.
 export const productDetails = [
   {
     id: 'overview',
     title: 'Overview',
     content:
-      'A curated bundle that brings together complementary products at one combined price, so you save more than buying each item on its own.',
+      'Bare Anatomy Expert Anti-Dandruff Shampoo is clinically proven to deliver up to 100% dandruff reduction. Powered by Salicylic Acid and Biotin in a sulphate-free base, it targets an oily scalp, sheds dry flakes and strengthens hair from the roots — gentle enough for everyday use on all hair types.',
   },
   {
     id: 'highlights',
     title: 'Highlights',
     content:
-      'Best-value pairing, fast express delivery, and an extra combo discount applied automatically at checkout.',
+      'Up to 100% dandruff reduction. Salicylic Acid (BHA) exfoliates dead skin and unclogs scalp pores; Piroctone Olamine fights dandruff at the source; Biotin strengthens hair and supports a healthier scalp barrier. Sulphate-free, non-drying formula suitable for all hair types.',
   },
   {
     id: 'specifications',
     title: 'Specifications',
     content:
-      'Includes all listed items in the set. Colours, sizes and quantities are as shown on each product card.',
+      'Brand: Bare Anatomy Expert · Size: 250 ml (8.45 fl oz) · Form: Shampoo · Key actives: Salicylic Acid, Piroctone Olamine, Biotin · Concern: Dandruff, oily scalp, dry flakes · Suitable for: All hair types.',
   },
 ]
 
@@ -160,3 +222,26 @@ export const similar = [
     dots: 4,
   },
 ]
+
+// Sponsored "Top products in ..." rail — brand storefront (TECV).
+export const topProducts = {
+  brand: 'TECV',
+  items: [
+    {
+      id: 'tecv-1',
+      title: 'Charging Brick For Apple Devices 25W USB-C Fast Charger',
+      image: AIRPODS_IMG,
+      price: '89',
+      express: true,
+      ad: true,
+    },
+    {
+      id: 'tecv-2',
+      title: 'Charging Cable Samsung Type-C Braided 2m',
+      image: AIRPODS_IMG,
+      price: '69',
+      express: true,
+      ad: true,
+    },
+  ],
+}
