@@ -2,6 +2,8 @@
 // Consumed by the Home and Categories routes.
 import koreanGlassHero from '../../assets/products/korean-glass-hero.png'
 import bareAnatomyShampoo from '../../assets/products/bare-anatomy-shampoo.png'
+import bundleShampooConditioner from '../../assets/products/bundle-shampoo-conditioner.png'
+import bundleShampooRicewater from '../../assets/products/bundle-shampoo-ricewater.png'
 
 // Main product for the full PDP — Bare Anatomy Expert Anti-Dandruff Shampoo.
 // The hero image already carries the "Salicylic Acid & Biotin" key-visual text,
@@ -21,6 +23,42 @@ export const product = {
   lowestPrice: 'Lowest Price in 30 days',
   bestsellerRankTop: { rank: '#3', category: 'Hair Care' },
   bestsellerRankBottom: { rank: '#1', category: 'Hair Care' },
+}
+
+// "Buy together and save" bundle sheet (opened from the Bundle row).
+export const bundle = {
+  savings: '20', // "upto AED20"
+  viewAll: 6, // "View all 6 combos" tile at the end of the rail
+  items: [
+    {
+      id: 'bundle-1',
+      image: bundleShampooConditioner,
+      productCount: '2 Products',
+      title: 'The Derma Co Pore Minimizing Skincare Combo Pack',
+      price: '59.98',
+      comparePrice: '64.98',
+      coupon: 'AED5 cheaper with combo',
+    },
+    {
+      id: 'bundle-2',
+      image: bundleShampooRicewater,
+      productCount: '2 Products',
+      title: 'The Derma Co Pore Minimizing Skincare Combo Pack',
+      price: '59.98',
+      comparePrice: '64.98',
+      coupon: 'AED5 cheaper with combo',
+      express: true,
+    },
+    {
+      id: 'bundle-3',
+      image: bundleShampooRicewater,
+      productCount: '2 Products',
+      title: 'The Derma Co Pore Minimizing Skincare Combo Pack',
+      price: '59.98',
+      comparePrice: '64.98',
+      coupon: 'AED5 cheaper with combo',
+    },
+  ],
 }
 
 // Payment offers row (tabby / bank cashback).
@@ -242,6 +280,114 @@ export const topProducts = {
       price: '69',
       express: true,
       ad: true,
+    },
+  ],
+}
+
+// Search PLP (opened from "View all combos"). A 2-col product grid, marketplace
+// tabs and filter chips — modelled on the noon search results page.
+const IPHONE_CASE_IMG =
+  'https://f.nooncdn.com/p/pzsku/Z00A3C6B2FA70477424D8Z/45/_/1773140636/6ad93409-c794-4938-93a1-3f94284436a7.jpg'
+
+export const plp = {
+  query: 'airpods',
+  marketplaces: [
+    { id: 'noon', label: 'noon', bg: '#FEEE00', color: '#404553' },
+    { id: 'minutes', label: 'MINUTES', bg: '#E11B22', color: '#FFFFFF' },
+    { id: 'supermall', label: 'supermall', bg: '#EAEAF6', color: '#2B2B9E' },
+    { id: 'express', label: 'express', bg: '#FEEE00', color: '#404553' },
+  ],
+  chips: ['Filter', 'Sort', 'Price', 'Cases & Covers', 'Applicable'],
+  products: [
+    {
+      id: 'plp-1',
+      title: 'Apple Airpods Pro 2 Wireless Earbuds',
+      image: IPHONE_CASE_IMG,
+      rating: '4.3',
+      ratingCount: 128,
+      price: '899',
+      originalPrice: '1399',
+      discount: '33%',
+      nudge: 'Lowest price in 30 days',
+      variants: ['#F43333', '#05AF25', '#0076FF'],
+      variantCount: 4,
+      flashDeal: '00:42:28',
+      coupons: ['Extra 10% Off', '+3'],
+    },
+    {
+      id: 'plp-2',
+      title: 'Apple Airpods Pro 2 Wireless Earbuds',
+      image: IPHONE_CASE_IMG,
+      rating: '4.3',
+      ratingCount: 128,
+      price: '899',
+      originalPrice: '1399',
+      discount: '33%',
+      nudge: 'Lowest price in 30 days',
+      bestSeller: true,
+      variants: ['#F43333', '#05AF25', '#0076FF'],
+      variantCount: 4,
+      flashDeal: '00:42:28',
+      dealBar: { label: 'Yellow Friday Sale', bg: '#FEEE00', color: '#101628' },
+      coupons: ['Extra 10% Off', '+3'],
+    },
+    {
+      id: 'plp-3',
+      title: 'Apple Airpods Pro 2 Wireless Earbuds',
+      image: IPHONE_CASE_IMG,
+      rating: '4.3',
+      ratingCount: 128,
+      price: '899',
+      originalPrice: '1399',
+      discount: '33%',
+      nudge: 'Lowest price in 30 days',
+      bestSeller: true,
+      variants: ['#F43333', '#05AF25', '#0076FF'],
+      variantCount: 4,
+      coupons: ['Extra 10% Off', '+3'],
+    },
+    {
+      id: 'plp-4',
+      title: 'Apple Airpods Pro 2 Wireless Earbuds',
+      image: IPHONE_CASE_IMG,
+      rating: '4.3',
+      ratingCount: 128,
+      price: '899',
+      originalPrice: '1399',
+      discount: '33%',
+      nudge: 'Lowest price in 30 days',
+      bestSeller: true,
+      variants: ['#F43333', '#05AF25', '#0076FF'],
+      variantCount: 4,
+      coupons: ['Extra 10% Off', '+3'],
+    },
+    {
+      id: 'plp-5',
+      title: 'Apple Airpods Pro 2 Wireless Earbuds',
+      image: IPHONE_CASE_IMG,
+      rating: '4.3',
+      ratingCount: 128,
+      price: '899',
+      originalPrice: '1399',
+      discount: '33%',
+      nudge: 'Lowest price in 30 days',
+      variants: ['#F43333', '#05AF25', '#0076FF'],
+      variantCount: 4,
+      coupons: ['Extra 10% Off', '+3'],
+    },
+    {
+      id: 'plp-6',
+      title: 'Apple Airpods Pro 2 Wireless Earbuds',
+      image: IPHONE_CASE_IMG,
+      rating: '4.3',
+      ratingCount: 128,
+      price: '899',
+      originalPrice: '1399',
+      discount: '33%',
+      nudge: 'Lowest price in 30 days',
+      variants: ['#F43333', '#05AF25', '#0076FF'],
+      variantCount: 4,
+      coupons: ['Extra 10% Off', '+3'],
     },
   ],
 }

@@ -15,28 +15,24 @@ import {
   deliveryInfo,
   seller,
   reviewSummary,
+  bundle,
+  plp,
 } from './data'
 
-// Combo-tag animation styles, shown in the floating switcher.
-const COMBO_STYLES = [
-  // Gradient-green banner variants
-  { value: 'chiptop', label: '1' },
-  { value: 'mediatag', label: '2' },
-  // Plain white card variant
-  { value: 'slide', label: '3' },
-  // Stacked list of horizontal combo cards
-  { value: 'list', label: '4' },
-  // Bento grid card
-  { value: 'bento', label: '5' },
+// Two PDP variations — they differ only in the "Bundle & save" entry row style.
+const VARIANTS = [
+  { value: 1, label: '1' },
+  { value: 2, label: '2' },
 ]
 
 /**
- * Combo animation experiment — a product details page whose combos rail can be
- * rendered with different combo-tag animation styles via the floating switcher.
+ * Combo animation experiment — the full Bare Anatomy PDP. The floating switcher
+ * toggles between two variations of the combo-bundle entry row (variation 2
+ * uses the gradient "Bundle & save" card).
  */
 export default function ComboAnimationExperiment() {
   const navigate = useNavigate()
-  const [comboStyle, setComboStyle] = useState('chiptop')
+  const [variant, setVariant] = useState(1)
 
   return (
     <>
@@ -48,9 +44,10 @@ export default function ComboAnimationExperiment() {
           className="flex-1 overflow-y-auto overflow-x-clip bg-[#F2F3F7]"
         >
           <PDPBody
-            comboAnim={comboStyle}
+            comboAnim="chiptop"
             comboStagger={800}
             idPrefix="combo"
+            variant={variant}
             product={product}
             combos={combos}
             similar={similar}
@@ -60,19 +57,20 @@ export default function ComboAnimationExperiment() {
             deliveryInfo={deliveryInfo}
             seller={seller}
             reviewSummary={reviewSummary}
+            bundle={bundle}
+            plp={plp}
           />
         </main>
 
         <ActionBar />
       </AppShell>
 
-      {/* Floating style switcher — outside the shell so its fixed position is
-          anchored to the viewport. */}
+      {/* Floating variation switcher (1 / 2) */}
       <FloatingTabs
-        dataId="combo-style-tabs"
-        tabs={COMBO_STYLES}
-        value={comboStyle}
-        onChange={setComboStyle}
+        dataId="combo-variant-tabs"
+        tabs={VARIANTS}
+        value={variant}
+        onChange={setVariant}
       />
     </>
   )

@@ -6,9 +6,12 @@
 //
 // Every DOM element carries a namespaced `data-id` (derived from each section's
 // base id) so the whole page is addressable for testing / analytics.
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Squircle } from 'corner-smoothing'
 import { SectionCard, Accordion, ProductCard } from '../../components/common'
+import BundleSheet from './BundleSheet'
+import BundleContainer from './BundleContainer'
+import SearchPage from './SearchPage'
 import { Dirham, withDirham } from '../../components/common/Dirham'
 import ratingStar from '../../assets/icons/rating-star.svg'
 import offerIcon from '../../assets/icons/offer.svg'
@@ -19,6 +22,37 @@ import checkIcon from '../../assets/icons/check.svg'
 import lowPriceIcon from '../../assets/icons/low-price.svg'
 import expressLogo from '../../assets/icons/express.svg'
 import oneMemberLogo from '../../assets/icons/onemember.svg'
+import tagLeft from '../../assets/icons/tag-left.svg'
+import tagRight from '../../assets/icons/tag-right.svg'
+
+// Bundle combo animation — a GIF authored to loop infinitely (27 frames ≈ 4.81s).
+const COMBO_GIF = 'https://f.nooncdn.com/s/app/com/noon/images/combo-animated.gif'
+const COMBO_GIF_MS = 4810
+
+/**
+ * LoopingGif — renders an animated GIF and guarantees it keeps looping. The GIF
+ * loops on its own in normal browsers; some webviews stop it after the first
+ * pass, so we remount it once per loop via an incrementing `key`. The src is
+ * unchanged (served from cache — no refetch) and the remount is timed to the
+ * loop boundary, so the restart is seamless.
+ */
+function LoopingGif({ src, durationMs, dataId, className, alt = '' }) {
+  const [tick, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), durationMs)
+    return () => clearInterval(t)
+  }, [durationMs])
+  return (
+    <img
+      key={tick}
+      data-id={dataId}
+      src={src}
+      alt={alt}
+      aria-hidden={alt ? undefined : true}
+      className={className}
+    />
+  )
+}
 
 /* ---------------------------------------------------------------- icons -- */
 
@@ -445,11 +479,16 @@ export default function PDPBody({
   deliveryInfo,
   seller,
   reviewSummary,
+  bundle,
+  plp,
+  variant = 1,
   comboAnim = 'chiptop',
   comboStagger = 800,
   idPrefix = 'combo',
 }) {
   const id = (s) => (idPrefix ? `${idPrefix}-${s}` : s)
+  const [bundleOpen, setBundleOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   const comboCards = combos.map((c, i) => (
     <ProductCard
@@ -474,31 +513,73 @@ export default function PDPBody({
 
       <MainInfo product={product} dataId={id('main-info')} />
 
-      {/* Bundle up & save (combo entry) — Figma Frame 2147238531 */}
-      <button
-        type="button"
-        data-id={id('bundle')}
-        className="flex h-10 w-full items-center gap-3 self-stretch rounded-lg bg-white pl-2.5 pr-2"
-      >
-        <span data-id={id('bundle-icon')} className="flex h-[22px] w-5 shrink-0 items-center justify-center">
-          <img
-            data-id={id('bundle-gif')}
-            src="https://f.nooncdn.com/s/app/com/noon/images/combo-animated.gif"
-            alt=""
-            aria-hidden="true"
-            className="h-5 w-5"
-          />
-        </span>
-        <span data-id={id('bundle-text')} className="flex-1 text-left font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
-          {withDirham('Bundle up & save upto AED20')}
-        </span>
-        <span data-id={id('bundle-right')} className="flex items-center gap-1">
-          <span data-id={id('bundle-combo-count')} className="flex h-5 items-center rounded-xl bg-[#EBF4FF] px-1.5 font-noontree text-[11px] font-semibold leading-[14px] tracking-[-0.1px] text-[#082F8C]">
-            1 Combo
+      {/* Bundle up & save (combo entry) */}
+      {variant === 2 ? (
+        /* Variation 2 — gradient "Bundle & save" card (Figma "Bestseller") */
+        <button
+          type="button"
+          data-id={id('bundle')}
+          onClick={() => setBundleOpen(true)}
+          className="flex h-[62px] w-full items-center gap-2.5 self-stretch rounded-2xl border border-white py-1.5 pl-1 pr-3"
+          style={{ background: 'linear-gradient(95.67deg, #FFFFFF -14.82%, #D6E9FF 141.32%)' }}
+        >
+          <span data-id={id('bundle-left')} className="flex min-w-0 flex-1 items-center gap-0.5">
+            <span data-id={id('bundle-icon')} className="flex h-[42px] w-11 shrink-0 items-center justify-center">
+              <LoopingGif dataId={id('bundle-gif')} src={COMBO_GIF} durationMs={COMBO_GIF_MS} className="h-6 w-6" />
+            </span>
+            <span data-id={id('bundle-text')} className="flex min-w-0 flex-col gap-0.5 text-left">
+              <span data-id={id('bundle-title-row')} className="flex items-center gap-1.5">
+                <span data-id={id('bundle-title')} className="font-noontree text-[14px] font-bold leading-[18px] tracking-[-0.14px] text-[#242A34]">
+                  Bundle &amp; save
+                </span>
+                {/* savings ribbon tag — Figma Frame 2147241800 */}
+                <span data-id={id('bundle-tag')} className="flex h-[18px] items-center">
+                  <img src={tagLeft} alt="" aria-hidden="true" className="h-[18px] w-auto" />
+                  <span data-id={id('bundle-tag-label')} className="-mx-px flex h-[18px] items-center bg-[#082F8C] pr-1 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] text-white">
+                    <span className="inline-flex items-center gap-1">
+                      <span>upto</span>
+                      <span className="inline-flex items-center gap-px">
+                        <Dirham />5
+                      </span>
+                    </span>
+                  </span>
+                  <img src={tagRight} alt="" aria-hidden="true" className="h-[18px] w-auto" />
+                </span>
+              </span>
+              <span data-id={id('bundle-subtitle')} className="font-noontree text-[12px] font-normal leading-[14px] tracking-[-0.12px] text-[#5D5D5D]">
+                you save more when you buy together
+              </span>
+            </span>
           </span>
-          <ChevronRight dataId={id('bundle-chevron')} className="h-4 w-4" color="#1D2539" />
-        </span>
-      </button>
+          <ChevronRight dataId={id('bundle-chevron')} className="h-5 w-5" color="#0A4F4A" />
+        </button>
+      ) : (
+        /* Variation 1 — Figma Frame 2147238531 */
+        <button
+          type="button"
+          data-id={id('bundle')}
+          onClick={() => setBundleOpen(true)}
+          className="flex h-10 w-full items-center gap-3 self-stretch rounded-lg bg-white pl-2.5 pr-2"
+        >
+          <span data-id={id('bundle-icon')} className="flex h-[22px] w-5 shrink-0 items-center justify-center">
+            <LoopingGif
+              dataId={id('bundle-gif')}
+              src={COMBO_GIF}
+              durationMs={COMBO_GIF_MS}
+              className="h-5 w-5"
+            />
+          </span>
+          <span data-id={id('bundle-text')} className="flex-1 text-left font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
+            {withDirham('Bundle up & save upto AED20')}
+          </span>
+          <span data-id={id('bundle-right')} className="flex items-center gap-1">
+            <span data-id={id('bundle-combo-count')} className="flex h-5 items-center rounded-xl bg-[#EBF4FF] px-1.5 font-noontree text-[11px] font-semibold leading-[14px] tracking-[-0.1px] text-[#082F8C]">
+              1 Combo
+            </span>
+            <ChevronRight dataId={id('bundle-chevron')} className="h-4 w-4" color="#1D2539" />
+          </span>
+        </button>
+      )}
 
       {/* Sponsored ad strip — Figma Frame 1261154665 */}
       <div data-id={id('ad-strip')} className="flex h-[35px] items-stretch overflow-hidden rounded-md border border-[#F5F5F5] bg-white">
@@ -596,6 +677,19 @@ export default function PDPBody({
         <Accordion items={productDetails} dataId={id('accordion')} />
       </SectionCard>
 
+      {/* Buy together and save — inline section (same container as the sheet,
+          without the Done footer) */}
+      {bundle?.items?.length > 0 && (
+        <BundleContainer
+          dataId={id('section-bundle')}
+          items={bundle.items}
+          savings={bundle.savings}
+          viewAll={bundle.viewAll}
+          onViewAll={() => setSearchOpen(true)}
+          showComboIcon={variant !== 2}
+        />
+      )}
+
       {/* Bestseller #1 card */}
       <div
         data-id={id('bestseller-bottom')}
@@ -674,6 +768,24 @@ export default function PDPBody({
           ))}
         </div>
       </SectionCard>
+
+      {/* Buy together and save — bottom sheet */}
+      <BundleSheet
+        open={bundleOpen}
+        onClose={() => setBundleOpen(false)}
+        items={bundle?.items ?? []}
+        savings={bundle?.savings}
+        viewAll={bundle?.viewAll}
+        onViewAll={() => {
+          setBundleOpen(false)
+          setSearchOpen(true)
+        }}
+        showComboIcon={variant !== 2}
+        dataId={id('bundle-sheet')}
+      />
+
+      {/* Search / PLP — slides in from the right */}
+      {plp && <SearchPage open={searchOpen} onClose={() => setSearchOpen(false)} plp={plp} />}
     </div>
   )
 }
