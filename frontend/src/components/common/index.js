@@ -11,3 +11,4 @@ export { HorizontalComboCard } from './HorizontalComboCard';
 export { ComboProductCard } from './ComboProductCard';
 export { WishlistButton } from './WishlistButton';
 export { PlpProductCard } from './PlpProductCard';
+export { ComboRowCard } from './ComboRowCard';

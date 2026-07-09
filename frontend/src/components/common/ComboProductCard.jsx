@@ -26,7 +26,7 @@ function ComboMark() {
 // button; on add it becomes a blue [delete · count · +] stepper that expands
 // horizontally while its right edge stays pinned (the whole control is anchored
 // right, so growth pushes leftward). Width animates via Framer Motion.
-function ComboAtc({ dataId, onAdd, onQtyChange }) {
+export function ComboAtc({ dataId, onAdd, onQtyChange }) {
   const [qty, setQty] = useState(0)
   const added = qty > 0
   const inc = () =>
@@ -106,26 +106,29 @@ export function ComboProductCard({
 }) {
   const did = (s) => `${dataId}-${s}`
 
+  // Bordered variant uses a plain rounded border (a squircle clip-path would
+  // clip the right/bottom border away); borderless keeps the smooth squircle.
+  const Card = bordered ? 'div' : Squircle
+  const cardExtra = bordered ? {} : { as: 'div', cornerRadius: 16, cornerSmoothing: 1 }
+  const Media = bordered ? 'div' : Squircle
+  const mediaExtra = bordered ? {} : { as: 'div', cornerRadius: 16, cornerSmoothing: 1 }
+
   return (
-    <Squircle
-      as="div"
-      cornerRadius={bordered ? 12 : 16}
-      cornerSmoothing={1}
+    <Card
       data-id={dataId}
-      className={`flex shrink-0 flex-col ${bordered ? 'border border-[#F2F3F7]' : ''}`}
+      className={`flex shrink-0 flex-col ${bordered ? 'overflow-hidden rounded-xl border border-[#F2F3F7]' : ''}`}
       style={{ width }}
+      {...cardExtra}
     >
       {/* Product image */}
       <div data-id={did('media-wrap')} className="relative">
-        <Squircle
-          as="div"
-          cornerRadius={bordered ? 0 : 16}
-          cornerSmoothing={1}
+        <Media
           data-id={did('media')}
           className="flex h-[227px] w-full items-center justify-center bg-[#F0F1F6]"
+          {...mediaExtra}
         >
           <img data-id={did('image')} src={image} alt="" aria-hidden="true" className="h-[177px] w-auto object-contain" />
-        </Squircle>
+        </Media>
 
         {/* wishlist — shared animated heart (32×32) */}
         <div className="absolute right-2 top-2 z-10">
@@ -214,6 +217,6 @@ export function ComboProductCard({
           <img data-id={did('express')} src={expressTodayTag} alt="express Today" className="h-[18px] w-auto self-start" />
         )}
       </div>
-    </Squircle>
+    </Card>
   )
 }

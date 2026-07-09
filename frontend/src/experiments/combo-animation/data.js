@@ -4,6 +4,14 @@ import koreanGlassHero from '../../assets/products/korean-glass-hero.png'
 import bareAnatomyShampoo from '../../assets/products/bare-anatomy-shampoo.png'
 import bundleShampooConditioner from '../../assets/products/bundle-shampoo-conditioner.png'
 import bundleShampooRicewater from '../../assets/products/bundle-shampoo-ricewater.png'
+import comboThumbConditioner from '../../assets/products/combo-thumb-conditioner.png'
+import comboThumbShampoo from '../../assets/products/combo-thumb-shampoo.png'
+
+// Per-combo product thumbnails (for the variation-4 horizontal row card).
+const COMBO_THUMBS = [
+  { image: comboThumbConditioner, qty: 1 },
+  { image: comboThumbShampoo, qty: 1 },
+]
 
 // Main product for the full PDP — Bare Anatomy Expert Anti-Dandruff Shampoo.
 // The hero image already carries the "Salicylic Acid & Biotin" key-visual text,
@@ -28,11 +36,14 @@ export const product = {
 // "Buy together and save" bundle sheet (opened from the Bundle row).
 export const bundle = {
   savings: '20', // "upto AED20"
+  off: '80', // variation-3 showcase: "upto AED80 off"
   viewAll: 6, // "View all 6 combos" tile at the end of the rail
+  benefits: ['Less than buying separately', 'Everything together'],
   items: [
     {
       id: 'bundle-1',
       image: bundleShampooConditioner,
+      thumbs: COMBO_THUMBS,
       productCount: '2 Products',
       title: 'The Derma Co Pore Minimizing Skincare Combo Pack',
       price: '59.98',
@@ -42,6 +53,7 @@ export const bundle = {
     {
       id: 'bundle-2',
       image: bundleShampooRicewater,
+      thumbs: COMBO_THUMBS,
       productCount: '2 Products',
       title: 'The Derma Co Pore Minimizing Skincare Combo Pack',
       price: '59.98',
@@ -52,6 +64,7 @@ export const bundle = {
     {
       id: 'bundle-3',
       image: bundleShampooRicewater,
+      thumbs: COMBO_THUMBS,
       productCount: '2 Products',
       title: 'The Derma Co Pore Minimizing Skincare Combo Pack',
       price: '59.98',
@@ -285,39 +298,66 @@ export const topProducts = {
 }
 
 // Search PLP (opened from "View all combos"). A 2-col product grid, marketplace
-// tabs and filter chips — modelled on the noon search results page.
-const IPHONE_CASE_IMG =
-  'https://f.nooncdn.com/p/pzsku/Z00A3C6B2FA70477424D8Z/45/_/1773140636/6ad93409-c794-4938-93a1-3f94284436a7.jpg'
-
+// tabs and filter chips — modelled on the noon search results page. The grid
+// reuses the combo product card (bordered variant), so products are combo-shaped.
 export const plp = {
   query: 'airpods',
   marketplaces: [
-    { id: 'noon', label: 'noon', bg: '#FEEE00', color: '#404553' },
-    { id: 'minutes', label: 'MINUTES', bg: '#E11B22', color: '#FFFFFF' },
-    { id: 'supermall', label: 'supermall', bg: '#EAEAF6', color: '#2B2B9E' },
-    { id: 'express', label: 'express', bg: '#FEEE00', color: '#404553' },
+    { id: 'noon', label: 'noon', name: 'noon' },
+    { id: 'minutes', label: 'MINUTES', name: 'minutes' },
+    { id: 'supermall', label: 'supermall', name: 'supermall' },
+    { id: 'express', label: 'express', name: 'express' },
   ],
   chips: ['Filter', 'Sort', 'Price', 'Cases & Covers', 'Applicable'],
   products: [
     {
-      id: 'plp-1',
+      kind: 'product',
+      id: 'plp-p1',
+      image: 'https://f.nooncdn.com/p/pzsku/Z882BD8D9B447D09C4877Z/45/_/1779369459/62e3253c-1346-444e-9404-5b346c9449dd.jpg?width=800',
       title: 'Apple Airpods Pro 2 Wireless Earbuds',
-      image: IPHONE_CASE_IMG,
       rating: '4.3',
       ratingCount: 128,
       price: '899',
       originalPrice: '1399',
       discount: '33%',
+      quantity: '500ml | AED2.35/ml',
       nudge: 'Lowest price in 30 days',
+      bestSeller: true,
+      ad: true,
+      dots: 4,
       variants: ['#F43333', '#05AF25', '#0076FF'],
       variantCount: 4,
-      flashDeal: '00:42:28',
+      dealBar: { label: 'Mega Deal', bg: '#101628', color: '#FFFFFF' },
       coupons: ['Extra 10% Off', '+3'],
+      badge: 'minutes',
     },
+    { kind: 'combo', id: 'plp-1', image: bundleShampooConditioner, productCount: '2 Products', title: 'The Derma Co Pore Minimizing Skincare Combo Pack', price: '59.98', comparePrice: '64.98', coupon: 'AED5 cheaper with combo' },
     {
-      id: 'plp-2',
+      kind: 'product',
+      id: 'plp-p2',
+      image: 'https://f.nooncdn.com/p/pzsku/Z69919C7312B4BDAACED3Z/45/1751545273/4c481c14-efa2-45b6-986c-2b1cffbff38d.jpg?width=800',
       title: 'Apple Airpods Pro 2 Wireless Earbuds',
-      image: IPHONE_CASE_IMG,
+      rating: '4.3',
+      ratingCount: 128,
+      price: '899',
+      originalPrice: '1399',
+      discount: '33%',
+      quantity: '500ml | AED2.35/ml',
+      nudge: 'Lowest price in 30 days',
+      ad: true,
+      dots: 4,
+      variants: ['#F43333', '#05AF25', '#0076FF'],
+      variantCount: 4,
+      dealBar: { label: 'Mega Deal', bg: '#101628', color: '#FFFFFF' },
+      coupons: ['Extra 10% Off', '+3'],
+      badge: 'supermall',
+    },
+    { kind: 'combo', id: 'plp-2', image: bundleShampooRicewater, productCount: '2 Products', title: 'The Derma Co Pore Minimizing Skincare Combo Pack', price: '59.98', comparePrice: '64.98', coupon: 'AED5 cheaper with combo' },
+    {
+      kind: 'product',
+      id: 'plp-p3',
+      image: 'https://f.nooncdn.com/p/pzsku/ZA859CFCD2F23BC1140F2Z/45/1763647726/ad2c554f-6dd3-4238-9801-4cc94246254d.jpg?width=800',
+      title: 'Apple Airpods Pro 2 Wireless Earbuds',
       rating: '4.3',
       ratingCount: 128,
       price: '899',
@@ -325,69 +365,28 @@ export const plp = {
       discount: '33%',
       nudge: 'Lowest price in 30 days',
       bestSeller: true,
+      dots: 4,
       variants: ['#F43333', '#05AF25', '#0076FF'],
       variantCount: 4,
-      flashDeal: '00:42:28',
-      dealBar: { label: 'Yellow Friday Sale', bg: '#FEEE00', color: '#101628' },
       coupons: ['Extra 10% Off', '+3'],
+      badge: 'express',
     },
     {
-      id: 'plp-3',
+      kind: 'product',
+      id: 'plp-p4',
+      image: 'https://f.nooncdn.com/p/pzsku/ZA859CFCD2F23BC1140F2Z/45/1763647726/ad2c554f-6dd3-4238-9801-4cc94246254d.jpg?width=800',
       title: 'Apple Airpods Pro 2 Wireless Earbuds',
-      image: IPHONE_CASE_IMG,
       rating: '4.3',
       ratingCount: 128,
       price: '899',
       originalPrice: '1399',
       discount: '33%',
       nudge: 'Lowest price in 30 days',
-      bestSeller: true,
+      dots: 4,
       variants: ['#F43333', '#05AF25', '#0076FF'],
       variantCount: 4,
       coupons: ['Extra 10% Off', '+3'],
     },
-    {
-      id: 'plp-4',
-      title: 'Apple Airpods Pro 2 Wireless Earbuds',
-      image: IPHONE_CASE_IMG,
-      rating: '4.3',
-      ratingCount: 128,
-      price: '899',
-      originalPrice: '1399',
-      discount: '33%',
-      nudge: 'Lowest price in 30 days',
-      bestSeller: true,
-      variants: ['#F43333', '#05AF25', '#0076FF'],
-      variantCount: 4,
-      coupons: ['Extra 10% Off', '+3'],
-    },
-    {
-      id: 'plp-5',
-      title: 'Apple Airpods Pro 2 Wireless Earbuds',
-      image: IPHONE_CASE_IMG,
-      rating: '4.3',
-      ratingCount: 128,
-      price: '899',
-      originalPrice: '1399',
-      discount: '33%',
-      nudge: 'Lowest price in 30 days',
-      variants: ['#F43333', '#05AF25', '#0076FF'],
-      variantCount: 4,
-      coupons: ['Extra 10% Off', '+3'],
-    },
-    {
-      id: 'plp-6',
-      title: 'Apple Airpods Pro 2 Wireless Earbuds',
-      image: IPHONE_CASE_IMG,
-      rating: '4.3',
-      ratingCount: 128,
-      price: '899',
-      originalPrice: '1399',
-      discount: '33%',
-      nudge: 'Lowest price in 30 days',
-      variants: ['#F43333', '#05AF25', '#0076FF'],
-      variantCount: 4,
-      coupons: ['Extra 10% Off', '+3'],
-    },
+    { kind: 'combo', id: 'plp-3', image: bundleShampooConditioner, productCount: '2 Products', title: 'The Derma Co Pore Minimizing Skincare Combo Pack', price: '59.98', comparePrice: '64.98', coupon: 'AED5 cheaper with combo' },
   ],
 }

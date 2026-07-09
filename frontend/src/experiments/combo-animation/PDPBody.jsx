@@ -11,6 +11,7 @@ import { Squircle } from 'corner-smoothing'
 import { SectionCard, Accordion, ProductCard } from '../../components/common'
 import BundleSheet from './BundleSheet'
 import BundleContainer from './BundleContainer'
+import BundleShowcase from './BundleShowcase'
 import SearchPage from './SearchPage'
 import { Dirham, withDirham } from '../../components/common/Dirham'
 import ratingStar from '../../assets/icons/rating-star.svg'
@@ -679,16 +680,26 @@ export default function PDPBody({
 
       {/* Buy together and save — inline section (same container as the sheet,
           without the Done footer) */}
-      {bundle?.items?.length > 0 && (
-        <BundleContainer
-          dataId={id('section-bundle')}
-          items={bundle.items}
-          savings={bundle.savings}
-          viewAll={bundle.viewAll}
-          onViewAll={() => setSearchOpen(true)}
-          showComboIcon={variant !== 2}
-        />
-      )}
+      {bundle?.items?.length > 0 &&
+        (variant === 3 ? (
+          <BundleShowcase
+            dataId={id('section-bundle')}
+            items={bundle.items}
+            off={bundle.off}
+            viewAll={bundle.viewAll}
+            benefits={bundle.benefits}
+            onViewAll={() => setSearchOpen(true)}
+          />
+        ) : (
+          <BundleContainer
+            dataId={id('section-bundle')}
+            items={bundle.items}
+            savings={bundle.savings}
+            viewAll={bundle.viewAll}
+            onViewAll={() => setSearchOpen(true)}
+            showComboIcon={variant !== 2}
+          />
+        ))}
 
       {/* Bestseller #1 card */}
       <div
@@ -781,11 +792,20 @@ export default function PDPBody({
           setSearchOpen(true)
         }}
         showComboIcon={variant !== 2}
+        rowCards={variant === 4}
         dataId={id('bundle-sheet')}
       />
 
       {/* Search / PLP — slides in from the right */}
-      {plp && <SearchPage open={searchOpen} onClose={() => setSearchOpen(false)} plp={plp} />}
+      {plp && (
+        <SearchPage
+          open={searchOpen}
+          onClose={() => setSearchOpen(false)}
+          plp={plp}
+          bundle={bundle}
+          variant={variant}
+        />
+      )}
     </div>
   )
 }

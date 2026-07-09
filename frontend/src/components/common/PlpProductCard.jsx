@@ -1,9 +1,19 @@
-// PlpProductCard — a search/PLP grid card (noon results page). Image tile with
-// Best Seller tag, wishlist, a colour-variant indicator and an optional flash-
-// deal countdown bar; below: name, rating pill, price row, lowest-price nudge
-// and coupon chips.
-import { Dirham } from './Dirham'
+// PlpProductCard — the full noon search/PLP product card. Image tile (Best
+// Seller tag, wishlist, colour-variant indicator, page dots, Ad, ATC "+"),
+// an optional deal bar, then name, rating, price row, quantity, lowest-price
+// nudge, coupon chips and a red "Get in 15 Mins" delivery button.
+import { Dirham, withDirham } from './Dirham'
 import { WishlistButton } from './WishlistButton'
+import { ComboAtc } from './ComboProductCard'
+import badgeMinutes from '../../assets/icons/badge-minutes.svg'
+import badgeSupermall from '../../assets/icons/badge-supermall.svg'
+import badgeExpress from '../../assets/icons/badge-express.svg'
+
+const BADGES = {
+  minutes: badgeMinutes,
+  supermall: badgeSupermall,
+  express: badgeExpress,
+}
 
 export function PlpProductCard({
   image,
@@ -13,22 +23,24 @@ export function PlpProductCard({
   price,
   originalPrice,
   discount,
+  quantity,
   nudge,
   bestSeller = false,
   ad = false,
   variants = [],
   variantCount,
-  flashDeal,
+  dots = 0,
   dealBar,
   coupons = [],
+  badge,
   dataId = 'plp-card',
 }) {
   const did = (s) => `${dataId}-${s}`
   return (
     <div data-id={dataId} className="flex flex-col overflow-hidden rounded-xl border-[0.5px] border-[#F2F3F7] bg-white">
       {/* Image */}
-      <div data-id={did('media')} className="relative aspect-[3/4] w-full bg-[rgba(0,40,136,0.03)]">
-        <img data-id={did('image')} src={image} alt={title} loading="lazy" className="h-full w-full object-contain" />
+      <div data-id={did('media')} className="relative h-[227px] w-full shrink-0 bg-[rgba(0,40,136,0.03)]">
+        <img data-id={did('image')} src={image} alt={title} loading="lazy" className="h-full w-full object-cover" />
 
         {bestSeller && (
           <span data-id={did('best-seller')} className="absolute left-0 top-0 rounded-br-[10px] bg-[#0A4F4A] px-1.5 py-0.5 font-noontree text-[12px] font-semibold leading-[14px] tracking-[-0.12px] text-white shadow-[0px_0px_0px_1px_#EFF7FF]">
@@ -36,22 +48,17 @@ export function PlpProductCard({
           </span>
         )}
 
-        <div className="absolute right-2 top-2">
-          <WishlistButton dataId={did('wishlist')} size={24} bg="rgba(255,255,255,0.6)" />
+        {/* wishlist — same animated heart as the combo card (32×32) */}
+        <div className="absolute right-2 top-2 z-10">
+          <WishlistButton dataId={did('wishlist')} size={32} />
         </div>
 
-        {ad && (
-          <span data-id={did('ad')} className="absolute bottom-2 left-2 rounded bg-[#F2F3F7] px-1 py-0.5 font-noontree text-[10px] leading-none text-[#475067]">
-            Ad
-          </span>
-        )}
-
-        {/* variant indicator */}
+        {/* variant indicator — stacked colour dots + count */}
         {variants.length > 0 && (
-          <div data-id={did('variants')} className="absolute bottom-[42px] right-2 flex flex-col items-center rounded bg-white/70 px-1 py-1 backdrop-blur-[2px]">
+          <div data-id={did('variants')} className="absolute right-2 top-1/2 flex -translate-y-1/2 flex-col items-center rounded bg-white/70 px-0.5 py-1 backdrop-blur-[2px]">
             <div className="flex flex-col items-center">
               {variants.map((c, i) => (
-                <span key={i} data-id={did(`variant-${i}`)} className="h-3 w-3 rounded-full border-[0.5px] border-white" style={{ background: c, marginBottom: i < variants.length - 1 ? -5 : 0 }} />
+                <span key={i} className="h-3 w-3 rounded-full border-[0.5px] border-white" style={{ background: c, marginBottom: i < variants.length - 1 ? -5 : 0 }} />
               ))}
             </div>
             {variantCount != null && (
@@ -62,23 +69,28 @@ export function PlpProductCard({
           </div>
         )}
 
-        {/* flash deal bar */}
-        {flashDeal && (
-          <div data-id={did('flash')} className="absolute inset-x-0 bottom-0 flex h-9 items-center justify-center gap-1 bg-[rgba(16,22,40,0.8)] backdrop-blur-[2px]">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <rect x="3.5" y="7" width="9" height="6" rx="1.2" fill="#FEEE00" />
-              <path d="M5 7V5.5a3 3 0 016 0V7" stroke="#FEEE00" strokeWidth="1.4" />
-            </svg>
-            <span className="font-noontree text-[12px] font-medium text-white">Flash deal in</span>
-            <span className="font-noontree text-[14px] font-bold tracking-[-0.18px] text-[#FEEE00]">{flashDeal}</span>
+        {dots > 1 && (
+          <div data-id={did('dots')} className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full px-1">
+            {Array.from({ length: dots }).map((_, i) => (
+              <span key={i} className="rounded-full" style={{ width: i === 0 ? 6 : i === 1 ? 6 : i === 2 ? 4 : 2, height: i === 0 ? 6 : i === 1 ? 6 : i === 2 ? 4 : 2, background: i === 0 ? '#0E0E0E' : 'rgba(14,14,14,0.25)' }} />
+            ))}
           </div>
         )}
+
+        {ad && (
+          <span data-id={did('ad')} className="absolute bottom-2 left-2 rounded bg-[#F2F3F7] px-1 py-0.5 font-noontree text-[10px] leading-none text-[#475067]">
+            Ad
+          </span>
+        )}
+
+        {/* ATC — same squircle stepper as the combo card */}
+        <ComboAtc dataId={did('atc')} />
       </div>
 
       {/* deal bar */}
       {dealBar && (
         <div data-id={did('deal-bar')} className="flex h-5 items-center px-2" style={{ background: dealBar.bg }}>
-          <span className="font-noontree text-[12px] font-semibold leading-[14px] tracking-[-0.12px]" style={{ color: dealBar.color }}>
+          <span className="font-figtree text-[12px] font-normal leading-[14px] tracking-[-0.12px]" style={{ color: dealBar.color }}>
             {dealBar.label}
           </span>
         </div>
@@ -87,7 +99,7 @@ export function PlpProductCard({
       {/* Bottom */}
       <div data-id={did('bottom')} className="flex flex-col gap-2 px-2 pb-2.5 pt-2">
         <div data-id={did('rating-group')} className="flex flex-col gap-0.5">
-          <h3 data-id={did('title')} className="line-clamp-2 min-h-9 font-noontree text-[14px] font-medium leading-[18px] tracking-[-0.14px] text-[#212121]">
+          <h3 data-id={did('title')} className="line-clamp-2 min-h-9 font-noontree text-[14px] font-medium leading-[18px] tracking-[-0.14px] text-[#1D2539]">
             {title}
           </h3>
           {rating && (
@@ -104,7 +116,7 @@ export function PlpProductCard({
 
         <div data-id={did('pricing')} className="flex flex-col gap-1">
           <div data-id={did('price')} className="flex flex-wrap items-baseline gap-0.5">
-            <span data-id={did('price-now')} className="inline-flex items-center gap-px font-noontree text-[15px] font-bold leading-4 tracking-[0.07px] text-[#0E0E0E]">
+            <span data-id={did('price-now')} className="inline-flex items-center gap-px font-noontree text-[15px] font-bold leading-4 tracking-[0.07px] text-[#1D2539]">
               <Dirham />
               {price}
             </span>
@@ -119,6 +131,17 @@ export function PlpProductCard({
               </span>
             )}
           </div>
+
+          {quantity && (
+            <div data-id={did('quantity')} className="flex w-fit items-center gap-1.5 rounded bg-[#F9F9FB] px-1 py-0.5 font-noontree text-[12px] font-medium leading-[14px] tracking-[-0.12px] text-[#343D54]">
+              {quantity.split('|').map((q, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  {i > 0 && <span className="h-3 w-px bg-[#D0D4DD]" />}
+                  <span className="inline-flex items-center">{withDirham(q.trim())}</span>
+                </span>
+              ))}
+            </div>
+          )}
 
           {nudge && (
             <div data-id={did('nudge')} className="flex items-center gap-1 font-figtree text-[12px] leading-4 tracking-[-0.12px] text-[#475067]">
@@ -137,6 +160,10 @@ export function PlpProductCard({
             </div>
           )}
         </div>
+
+        {badge && BADGES[badge] && (
+          <img data-id={did('badge')} src={BADGES[badge]} alt="" aria-hidden="true" className="mt-0.5 h-[26px] w-auto self-start" />
+        )}
       </div>
     </div>
   )
