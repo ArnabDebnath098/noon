@@ -7,6 +7,7 @@
 // its expanded surface (framer shared-layout): while the surface is open the
 // tile yields to an invisible placeholder that preserves the row's layout.
 import { motion, AnimatePresence } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import { springs } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
 import NewBadge from './NewBadge'
@@ -24,45 +25,9 @@ export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen
     <div
       ref={rootRef}
       data-id="mp-switcher"
-      className="flex items-center justify-center gap-2 px-4 py-2"
+      className="flex items-center justify-between px-4 py-2"
     >
-      {/* buttons are keyed by slot so a swapped marketplace flips in place */}
-      {row.map((m, slot) => {
-        const active = m.id === activeId
-        return (
-          <button
-            key={slot}
-            type="button"
-            data-id={`mp-tile-${m.id}`}
-            aria-pressed={active}
-            onClick={() => onChange(m.id)}
-            style={{ width: 76, height: 76, borderRadius: 20, perspective: 700 }}
-            className="relative shrink-0 border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-transform active:scale-95"
-          >
-            <AnimatePresence initial={false}>
-              <motion.span
-                key={m.id}
-                initial={{ rotateY: -110, opacity: 0 }}
-                animate={{ rotateY: 0, opacity: 1 }}
-                exit={{ rotateY: 110, opacity: 0 }}
-                transition={{ rotateY: springs.flip, opacity: { duration: 0.18 } }}
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: 20,
-                  overflow: 'hidden',
-                  background: active ? m.accent : m.bg ?? '#FFFFFF',
-                  backfaceVisibility: 'hidden',
-                }}
-                className="flex items-center justify-center"
-              >
-                <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={68} />
-              </motion.span>
-            </AnimatePresence>
-            {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
-          </button>
-        )
-      })}
+      {/* grid tile on the LEFT — opens the flyout/panel */}
       {dialVisible ? (
         <motion.button
           type="button"
@@ -72,18 +37,60 @@ export default function TriggerRow({ items, rowItems, activeId, onChange, onOpen
           layoutId={dialLayoutId}
           whileTap={{ scale: 0.95 }}
           transition={springs.panel}
-          style={{ width: 76, height: 76, borderRadius: 20 }}
-          className="grid shrink-0 grid-cols-2 grid-rows-2 gap-1.5 border border-[#EFEFEF] bg-[#F4F5F7] p-2 shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
+          style={{ width: 76, height: 76, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.08))' }}
+          className="relative shrink-0"
         >
-          {preview.map((m) => (
-            <span key={m.id} className="flex items-center justify-center overflow-hidden rounded-full bg-white">
-              <MarketplaceMark m={m} size={PREVIEW_MARK_SIZE[m.id] ?? 26} />
-            </span>
-          ))}
+          <Squircle as="span" cornerRadius={20} cornerSmoothing={1} style={{ background: '#F4F5F7' }} className="absolute inset-0" />
+          <span className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-1.5 p-2">
+            {preview.map((m) => (
+              <span key={m.id} className="flex items-center justify-center overflow-hidden rounded-full bg-white">
+                <MarketplaceMark m={m} size={PREVIEW_MARK_SIZE[m.id] ?? 26} />
+              </span>
+            ))}
+          </span>
         </motion.button>
       ) : (
         <span aria-hidden="true" style={{ width: 76, height: 76 }} className="shrink-0" />
       )}
+
+      {/* quick tiles — keyed by slot so a swapped marketplace flips in place */}
+      {row.map((m, slot) => {
+        const active = m.id === activeId
+        return (
+          <button
+            key={slot}
+            type="button"
+            data-id={`mp-tile-${m.id}`}
+            aria-pressed={active}
+            onClick={() => onChange(m.id)}
+            style={{ width: 76, height: 76, perspective: 700, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.08))' }}
+            className="relative shrink-0 transition-transform active:scale-95"
+          >
+            <AnimatePresence initial={false}>
+              <motion.span
+                key={m.id}
+                initial={{ rotateY: -110, opacity: 0 }}
+                animate={{ rotateY: 0, opacity: 1 }}
+                exit={{ rotateY: 110, opacity: 0 }}
+                transition={{ rotateY: springs.flip, opacity: { duration: 0.18 } }}
+                style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden' }}
+                className="flex items-center justify-center"
+              >
+                <Squircle
+                  as="span"
+                  cornerRadius={20}
+                  cornerSmoothing={1}
+                  style={{ background: active ? m.accent : m.bg ?? '#FFFFFF' }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={68} />
+                </Squircle>
+              </motion.span>
+            </AnimatePresence>
+            {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
+          </button>
+        )
+      })}
     </div>
   )
 }

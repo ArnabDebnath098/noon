@@ -13,6 +13,7 @@
 //     open played in reverse (staggerDirection: -1)
 import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import useElementWidth from '../../../hooks/useElementWidth'
 import { springs, easings, curvedPath, staggerContainer, pathFlightVariants } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
@@ -50,7 +51,12 @@ const ICON_VARIANTS = pathFlightVariants(
   { type: 'spring', duration: 0.5, bounce: 0.18 },
   { duration: 0.18 },
 )
-const PANEL_SHADOW = 'shadow-[0_18px_50px_rgba(16,24,40,0.22)] backdrop-blur-xl'
+// blue gradient (same palette as the sticky header) — anchored to the panel
+// top so the blue reads clearly and fades to white toward the bottom
+const PANEL_BG = {
+  background:
+    'radial-gradient(160% 120% at 50% 0%, #D4EFF6 0%, #DBE1F9 32%, #EBF3F9 58%, #FFFFFF 88%)',
+}
 // the marketplace card flips on its Y axis when a slot's marketplace swaps
 const FLIP_TRANSITION = {
   rotateY: springs.flip,
@@ -89,20 +95,26 @@ function FolderIcon({ m, active, offsetPath, collapsedScale, collapsedOpacity, r
       <AnimatePresence initial={false}>
         <motion.div
           key={m.id}
-          initial={{ rotateY: -110, opacity: 0, borderRadius: radius }}
-          animate={{ rotateY: 0, opacity: 1, borderRadius: radius }}
+          initial={{ rotateY: -110, opacity: 0 }}
+          animate={{ rotateY: 0, opacity: 1 }}
           exit={{ rotateY: 110, opacity: 0 }}
           transition={FLIP_TRANSITION}
           style={{
             position: 'absolute',
             inset: 0,
-            background: active ? m.accent : m.bg ?? '#FFFFFF',
-            border: '1px solid #E5E7EB',
             backfaceVisibility: 'hidden',
           }}
-          className="flex items-center justify-center"
         >
-          <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={ICON} />
+          {/* squircle-smoothed surface (radius follows the row/circle/grid pose) */}
+          <Squircle
+            as="span"
+            cornerRadius={radius}
+            cornerSmoothing={1}
+            style={{ background: active ? m.accent : m.bg ?? '#FFFFFF' }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={ICON} />
+          </Squircle>
         </motion.div>
       </AnimatePresence>
       {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
@@ -119,11 +131,13 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
   const byId = useMemo(() => new Map(items.map((m) => [m.id, m])), [items])
 
   // ---- geometry ----------------------------------------------------------
-  // Collapsed row: BIG_N tiles + the folder, centred.
+  // Collapsed row: BIG_N tiles + the folder, spaced-between across the full
+  // width with 16px side padding (gap derived from the leftover space).
   const ROW_N = BIG_N + 1
-  const rowLeft = (W - (ROW_N * ICON + (ROW_N - 1) * GAP)) / 2
-  const rowCx = (i) => rowLeft + ICON / 2 + i * (ICON + GAP)
-  const folderLeft = rowLeft + BIG_N * (ICON + GAP)
+  const ROW_PAD = 16
+  const slotGap = Math.max(GAP, (W - 2 * ROW_PAD - ROW_N * ICON) / (ROW_N - 1))
+  const rowCx = (i) => ROW_PAD + ICON / 2 + i * (ICON + slotGap)
+  const folderLeft = ROW_PAD + BIG_N * (ICON + slotGap)
   const folderCx = folderLeft + ICON / 2
   const folderCy = ROW_TOP + ICON / 2
 
@@ -137,17 +151,18 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
 
   // Expanded panel + its grid cells (left-aligned natural fill: position i →
   // cell i, so tiles pack from the top-left and the empty slot is bottom-right).
-  // The panel spans the full width minus PANEL_MARGIN per side; the grid gap is
-  // derived from the leftover space so the columns spread evenly, and the same
-  // gap is used vertically so the grid reads uniform.
+  // The panel spans the full width minus PANEL_MARGIN per side; the column gap
+  // is derived from the leftover space so the columns spread evenly. Rows use a
+  // larger fixed gap so the marketplaces have more vertical breathing room.
   const panelW = W - 2 * PANEL_MARGIN
   const panelLeft = PANEL_MARGIN
   const cellGap = (panelW - 2 * PADP - COLS * ICON) / (COLS - 1)
+  const rowGap = 24
   const rows = Math.ceil(items.length / COLS)
-  const panelH = rows * ICON + (rows - 1) * cellGap + 2 * PADP
+  const panelH = rows * ICON + (rows - 1) * rowGap + 2 * PADP
   const cellCenter = (i) => ({
     x: panelLeft + PADP + ICON / 2 + (i % COLS) * (ICON + cellGap),
-    y: ROW_TOP + PADP + ICON / 2 + Math.floor(i / COLS) * (ICON + cellGap),
+    y: ROW_TOP + PADP + ICON / 2 + Math.floor(i / COLS) * (ICON + rowGap),
   })
 
   // Collapsed pose per position: row tiles in the row, preview icons in their
@@ -213,7 +228,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3, ease: easings.ios }}
             onClick={close}
-            className="fixed inset-0 z-20 bg-black/25"
+            className="fixed inset-0 z-20 bg-black/80"
           />
         )}
       </AnimatePresence>
@@ -224,20 +239,27 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange }) {
         animate={{ scale: pressed ? 0.97 : 1 }}
         transition={springs.press}
       >
-        {/* folder surface → full panel */}
-        <motion.div
+        {/* folder surface → full panel (squircle-clipped) */}
+        <Squircle
+          as={motion.div}
           data-id="mp-grid-panel"
+          cornerRadius={expanded ? 26 : RADIUS}
+          cornerSmoothing={1}
           onClick={() => !expanded && open()}
           initial={false}
           animate={
             expanded
-              ? { left: panelLeft, top: ROW_TOP, width: panelW, height: panelH, borderRadius: 26, backgroundColor: '#FFFFFF' }
-              : { left: folderLeft, top: ROW_TOP, width: ICON, height: ICON, borderRadius: RADIUS, backgroundColor: '#E8F2FB' }
+              ? { left: panelLeft, top: ROW_TOP, width: panelW, height: panelH }
+              : { left: folderLeft, top: ROW_TOP, width: ICON, height: ICON }
           }
           transition={springs.panel}
-          style={{ position: 'absolute' }}
-          className={expanded ? PANEL_SHADOW : ''}
-        />
+          style={{
+            position: 'absolute',
+            ...PANEL_BG,
+            filter: expanded ? 'drop-shadow(0 16px 40px rgba(16,24,40,0.22))' : 'none',
+          }}
+          className={expanded ? 'backdrop-blur-xl' : ''}
+        ></Squircle>
 
         {/* icons cascade out of / back into the folder (children are ordered
             nearest-travel-first so the stagger matches the geometry).

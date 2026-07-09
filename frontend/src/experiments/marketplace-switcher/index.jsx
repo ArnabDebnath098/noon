@@ -11,10 +11,11 @@ import SearchBar from './sections/SearchBar'
 import PromoBanner from './sections/PromoBanner'
 import CategoryGrid from './sections/CategoryGrid'
 import CombosSection from './sections/CombosSection'
+import ProductRail from './sections/ProductRail'
 import { switcherVariants } from './sections/switcherVariants'
 import BottomNav from '../../components/layout/BottomNav'
 import FloatingTabs from '../../components/layout/FloatingTabs'
-import { marketplaces, address, categories } from './data'
+import { marketplaces, address, categories, bestPicks, mobileDeals } from './data'
 
 /**
  * Marketplace switcher experiment — a noon-style home. The switcher is sticky
@@ -49,11 +50,11 @@ export default function MarketplaceExperiment() {
     return () => clearTimeout(t)
   }, [loading, activeId])
 
-  // variant 7 has no top switcher — the bottom nav's "All" tab opens the
+  // navSwitch: no top switcher — the bottom nav's "All" tab opens the
   // marketplaces sheet, and the location bar leads with the selected chip
-  const isNavVariant = variant === 7
-  // variant 2's floating bottom nav also opens the sheet from its left circle
-  const usesSheet = isNavVariant || variant === 2
+  const isNavVariant = !!activeVariant.navSwitch
+  // the floating-nav variant also opens the sheet from its left circle
+  const usesSheet = isNavVariant || !!activeVariant.floatingNav
   const [allOpen, setAllOpen] = useState(false)
   const activeMarketplace = marketplaces.find((m) => m.id === activeId)
   const selectFromSheet = (id) => {
@@ -63,12 +64,18 @@ export default function MarketplaceExperiment() {
   // 0 = fully expanded, 1 = fully collapsed; drives the tile size morph.
   const progress = useMotionValue(0)
   const COLLAPSE_RANGE = 44 // px of scroll over which the switcher collapses
+  // tapping the docked chip expands the switcher in place (scroll position
+  // retained); the override clears on the next scroll so scrolling re-collapses.
+  const [forceExpanded, setForceExpanded] = useState(false)
+  const expand = () => setForceExpanded(true)
 
   const onScroll = (e) => {
     const top = e.currentTarget.scrollTop
     progress.set(Math.min(1, Math.max(0, top / COLLAPSE_RANGE)))
     setCollapsed((c) => (c ? top > 16 : top > 28)) // content-swap threshold (hysteresis)
+    if (forceExpanded) setForceExpanded(false)
   }
+  const effectiveCollapsed = collapsed && !forceExpanded
 
   return (
     <AppShell>
@@ -86,7 +93,7 @@ export default function MarketplaceExperiment() {
             scrolling away) when the header collapses. */}
         <div
           data-id="mp-sticky-header"
-          className="sticky top-0 z-20 rounded-b-[12px] transition-shadow"
+          className="sticky top-0 z-[45] rounded-b-[12px] transition-shadow"
           style={{
             paddingTop: 'env(safe-area-inset-top, 47px)',
             background:
@@ -94,7 +101,7 @@ export default function MarketplaceExperiment() {
             backgroundSize: '100% 256px',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'top',
-            boxShadow: collapsed ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+            boxShadow: effectiveCollapsed ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
           }}
         >
           <ActiveSwitcher
@@ -102,7 +109,8 @@ export default function MarketplaceExperiment() {
             activeId={activeId}
             onChange={setActiveId}
             progress={progress}
-            collapsed={collapsed}
+            collapsed={effectiveCollapsed}
+            onExpand={expand}
           />
           {!activeVariant.ownsHeader && (
             <>
@@ -131,6 +139,13 @@ export default function MarketplaceExperiment() {
             >
               <PromoBanner />
               <CategoryGrid categories={categories} />
+              <ProductRail dataId="mp-best-picks" title="Best picks for you" products={bestPicks} />
+              <ProductRail
+                dataId="mp-mobile-deals"
+                title="Extra 10% off mobiles | Use code: SAVEBIG"
+                viewAll
+                products={mobileDeals}
+              />
               <CombosSection />
             </motion.div>
           )}
@@ -176,9 +191,9 @@ export default function MarketplaceExperiment() {
       <BottomNav
         dataId="mp-bottom-nav"
         onAll={isNavVariant ? () => setAllOpen(true) : undefined}
-        floating={variant === 2}
+        floating={!!activeVariant.floatingNav}
         leading={
-          variant === 2 && activeMarketplace ? (
+          activeVariant.floatingNav && activeMarketplace ? (
             <MarketplaceMark
               m={activeMarketplace}
               white={!activeMarketplace.lightAccent}
@@ -187,8 +202,8 @@ export default function MarketplaceExperiment() {
             />
           ) : undefined
         }
-        leadingBg={variant === 2 ? activeMarketplace?.accent : undefined}
-        onLeading={variant === 2 ? () => setAllOpen(true) : undefined}
+        leadingBg={activeVariant.floatingNav ? activeMarketplace?.accent : undefined}
+        onLeading={activeVariant.floatingNav ? () => setAllOpen(true) : undefined}
       />
 
       {usesSheet && (

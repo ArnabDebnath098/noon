@@ -4,6 +4,7 @@
 // Dumb component: parent owns open state and selection behaviour.
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import { springs } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
 import NewBadge from './NewBadge'
@@ -95,19 +96,16 @@ export default function MarketplaceSheet({ open, onClose, items, activeId, onSel
                       style={{ width: 72, height: 72 }}
                       className="relative flex items-center justify-center transition-transform active:scale-95"
                     >
-                      {/* squircle-clipped fill so the badge can overhang unclipped */}
-                      <span
-                        aria-hidden="true"
-                        className="absolute inset-0"
-                        style={{
-                          clipPath: SQUIRCLE,
-                          // very light brand tint instead of white
-                          background: active ? m.accent : `${m.accent}14`,
-                        }}
-                      />
-                      <span className="relative flex items-center justify-center">
+                      {/* squircle-smoothed fill; badge overhangs outside the clip */}
+                      <Squircle
+                        as="span"
+                        cornerRadius={14}
+                        cornerSmoothing={1}
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: active ? m.accent : `${m.accent}14` }}
+                      >
                         <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={60} />
-                      </span>
+                      </Squircle>
                       {m.isNew && <NewBadge dataId={`mp-sheet-tile-${m.id}-new`} />}
                     </motion.button>
                   )

@@ -13,11 +13,15 @@
 // always springs to fully expanded or fully collapsed. Swapping the selection
 // flips the tiles (3D rotateY).
 import { AnimatePresence, motion } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import { springs } from '../../../utils/motion'
 import { address } from '../data'
 import homeIcon from '../../../assets/marketplace/home.svg'
 import MarketplaceMark from './MarketplaceMark'
 import NewBadge from './NewBadge'
+import CameraIcon from './CameraIcon'
+
+const SMOOTH = 1 // corner-smoothing amount for the squircle tiles
 
 const SURFACE = '#DFE3EA'
 const PAD = 16
@@ -47,7 +51,7 @@ const MARK_SIZE = {
 }
 const markSize = (id) => MARK_SIZE[id] ?? MARK
 
-export default function MarketplaceSwitcherV2({ items, activeId, onChange, collapsed = false }) {
+export default function MarketplaceSwitcherV2({ items, activeId, onChange, collapsed = false, onExpand }) {
   const selected = items.find((i) => i.id === activeId) ?? items[0]
   const rest = items.filter((i) => i.id !== selected.id)
 
@@ -101,26 +105,52 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
               exit={{ rotateY: 90, opacity: 0 }}
               transition={{ ...FLIP, layout: springs.snappy }}
               whileTap={{ scale: 0.95 }}
-              style={{ width: CHIP, height: CHIP, background: m.bg ?? '#FFFFFF', backfaceVisibility: 'hidden', borderRadius: R }}
-              className="flex shrink-0 items-center justify-center overflow-hidden shadow-[0_1px_3px_rgba(16,24,40,0.08)]"
+              style={{ width: CHIP, height: CHIP, backfaceVisibility: 'hidden', filter: 'drop-shadow(0 1px 3px rgba(16,24,40,0.08))' }}
+              className="relative flex shrink-0 items-center justify-center"
             >
-              <MarketplaceMark m={m} size={markSize(m.id)} />
+              {/* squircle-smoothed inner layer clips the mark; the NEW badge
+                  sits on the button (outside the clip) so it isn't cut off */}
+              <Squircle
+                as="span"
+                cornerRadius={R}
+                cornerSmoothing={SMOOTH}
+                style={{ background: m.bg ?? '#FFFFFF' }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <MarketplaceMark m={m} size={markSize(m.id)} />
+              </Squircle>
+              {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
             </motion.button>
           ))}
         </AnimatePresence>
       </motion.div>
 
-      {/* selected marketplace — morphs between the square row tile and the wide
-          docked chip (short horizontal logo, 8px corners); keeps its accent
-          fill; flips on swap */}
+      {/* selected marketplace — the outer element morphs size/position; the
+          squircle fill lives on an inner layer keyed by state so its
+          cornerRadius (20 expanded / 12 docked) updates reliably through the
+          morph. Flips on swap. */}
       <motion.div
         data-id="mp-selected"
         initial={false}
-        animate={{ ...selPose, backgroundColor: selected.accent, borderRadius: collapsed ? 8 : R }}
+        animate={selPose}
         transition={T}
-        style={{ position: 'absolute', perspective: 600, zIndex: 10 }}
-        className="shadow-[0_2px_10px_rgba(16,24,40,0.10)]"
+        onClick={collapsed ? onExpand : undefined}
+        style={{
+          position: 'absolute',
+          perspective: 600,
+          zIndex: 10,
+          cursor: collapsed ? 'pointer' : 'default',
+          filter: 'drop-shadow(0 2px 8px rgba(16,24,40,0.12))',
+        }}
       >
+        <Squircle
+          key={collapsed ? 'c' : 'e'}
+          as="div"
+          cornerRadius={collapsed ? 12 : R}
+          cornerSmoothing={SMOOTH}
+          style={{ background: selected.accent }}
+          className="absolute inset-0"
+        />
         <AnimatePresence initial={false} mode="popLayout">
           <motion.div
             key={selected.id}
@@ -131,8 +161,7 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
             style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden' }}
             className="flex items-center justify-center"
           >
-            {/* crossfade the mark between full (stacked, on accent) and short
-                (horizontal, on white) when docking */}
+            {/* crossfade the mark between full (stacked) and short (horizontal) */}
             <AnimatePresence initial={false} mode="wait">
               <motion.span
                 key={collapsed ? 'short' : 'full'}
@@ -147,13 +176,12 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
                   white={!selected.lightAccent}
                   active
                   collapsed={collapsed}
-                  size={collapsed ? 84 : markSize(selected.id)}
+                  size={collapsed ? 84 : Math.round(markSize(selected.id) * 1.18)}
                 />
               </motion.span>
             </AnimatePresence>
           </motion.div>
         </AnimatePresence>
-        {selected.isNew && <NewBadge dataId="mp-selected-new" />}
       </motion.div>
 
       {/* 2-line location — slides beside the docked tile on collapse */}
@@ -182,23 +210,15 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
         animate={{ top: searchTop }}
         transition={T}
         style={{ position: 'absolute', left: PAD, right: PAD }}
-        className="flex h-12 items-center gap-3 rounded-[12px] border border-[#D7DAE3] bg-white px-3"
+        className="flex h-12 items-center gap-2 rounded-[12px] border border-[#D7DAE3] bg-white px-3"
       >
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+        <svg width="24" height="24" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
           <circle cx="9" cy="9" r="6" stroke="#1D2539" strokeWidth="1.6" />
           <path d="m14 14 3 3" stroke="#1D2539" strokeWidth="1.6" strokeLinecap="round" />
         </svg>
-        <span className="min-w-0 flex-1 truncate font-noontree text-[15px] font-medium text-[#1D2539]">Search noon</span>
+        <span className="min-w-0 flex-1 truncate font-noontree text-[15px] font-medium text-[#1D2539]">Search iphone</span>
         <span className="h-6 w-px shrink-0 bg-[#D9DADB]" />
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
-          <path
-            d="M3 7.5A1.5 1.5 0 0 1 4.5 6h1.2l.9-1.5h6.8L15.3 6h.2A1.5 1.5 0 0 1 17 7.5V15A1.5 1.5 0 0 1 15.5 16.5h-11A1.5 1.5 0 0 1 3 15V7.5Z"
-            stroke="#1F1D1D"
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
-          <circle cx="10" cy="11" r="2.6" stroke="#1F1D1D" strokeWidth="1.5" />
-        </svg>
+        <CameraIcon />
       </motion.div>
     </motion.div>
   )

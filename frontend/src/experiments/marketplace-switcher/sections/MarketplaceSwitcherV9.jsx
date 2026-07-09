@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import useElementWidth from '../../../hooks/useElementWidth'
 import { springs, easings } from '../../../utils/motion'
 import MarketplaceMark from './MarketplaceMark'
-import { SquircleClipDef14, SQUIRCLE14 } from './MarketplaceSheet'
+import { Squircle } from 'corner-smoothing'
 import NewBadge from './NewBadge'
 import TriggerRow from './TriggerRow'
 
@@ -91,7 +91,6 @@ export default function MarketplaceSwitcherV9({ items, activeId, onChange }) {
               }}
               className="absolute z-[51] overflow-hidden bg-white shadow-[0_18px_50px_rgba(16,24,40,0.22)]"
             >
-              <SquircleClipDef14 />
               {/* header — fades in as the surface finishes expanding */}
               <motion.div
                 data-id="mp-grid-header"
@@ -129,19 +128,16 @@ export default function MarketplaceSwitcherV9({ items, activeId, onChange }) {
                       style={{ width: ICON, height: ICON }}
                       className="relative flex items-center justify-center transition-transform active:scale-95"
                     >
-                      {/* squircle-clipped fill so the badge can overhang unclipped */}
-                      <span
-                        aria-hidden="true"
-                        className="absolute inset-0"
-                        style={{
-                          clipPath: SQUIRCLE14,
-                          // very light brand tint instead of white
-                          background: active ? m.accent : `${m.accent}14`,
-                        }}
-                      />
-                      <span className="relative flex items-center justify-center">
+                      {/* squircle-smoothed fill; badge overhangs outside the clip */}
+                      <Squircle
+                        as="span"
+                        cornerRadius={16}
+                        cornerSmoothing={1}
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: active ? m.accent : `${m.accent}14` }}
+                      >
                         <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={ICON - 12} />
-                      </span>
+                      </Squircle>
                       {m.isNew && <NewBadge dataId={`mp-grid-tile-${m.id}-new`} />}
                     </motion.button>
                   )

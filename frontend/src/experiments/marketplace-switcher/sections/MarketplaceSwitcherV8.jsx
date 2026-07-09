@@ -8,6 +8,7 @@
 // fades away at the rail's far end.
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import MarketplaceMark from './MarketplaceMark'
 import NewBadge from './NewBadge'
 
@@ -86,7 +87,7 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
   }, [activeId])
 
   return (
-    <div data-id="mp-switcher" className="flex items-center gap-5 pl-4">
+    <div data-id="mp-switcher" className="flex items-center pl-4">
       {/* left container: the rail fills the remaining width, showing 4 tiles.
           py-2 gives the scroll box vertical room so NEW badges / shadows that
           overhang the tiles aren't clipped by overflow-x-auto. */}
@@ -105,10 +106,18 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange }) {
               data-id={`mp-tile-${m.id}`}
               aria-pressed={active}
               onClick={() => onChange(m.id)}
-              style={{ width: TILE, height: TILE, borderRadius: 20, background: active ? m.accent : m.bg ?? '#FFFFFF' }}
-              className="relative flex shrink-0 items-center justify-center border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-transform active:scale-95"
+              style={{ width: TILE, height: TILE, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.08))' }}
+              className="relative flex shrink-0 items-center justify-center transition-transform active:scale-95"
             >
-              <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={64} />
+              <Squircle
+                as="span"
+                cornerRadius={20}
+                cornerSmoothing={1}
+                style={{ background: active ? m.accent : m.bg ?? '#FFFFFF' }}
+                className="absolute inset-0 flex items-center justify-center"
+              >
+                <MarketplaceMark m={m} white={active && !m.lightAccent} active={active} size={64} />
+              </Squircle>
               {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
             </button>
           )

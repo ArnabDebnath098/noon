@@ -1,28 +1,24 @@
 // Switcher variations available in the marketplace experiment, numbered
 // consecutively in the floating tab (?v= deep links use these values).
-// The scroll-morph row (MarketplaceSwitcher) and the rotary dials (V4/V5)
-// are currently hidden; re-add entries to bring them back.
+// Hidden: the scroll-morph row (MarketplaceSwitcher), rotary dials (V4/V5) and
+// the push-down reveal (V6) — re-add entries to bring them back.
+//
+// Behaviour flags (so index.jsx never hardcodes variant numbers):
+//   ownsHeader  — variant renders its own location + search
+//   floatingNav — use the floating bottom nav with the selected marketplace chip
+//   navSwitch   — no top switcher; the bottom nav's "All" tab opens the sheet
 import MarketplaceSwitcherV2 from './MarketplaceSwitcherV2'
 import MarketplaceSwitcherV3 from './MarketplaceSwitcherV3'
-import MarketplaceSwitcherV6 from './MarketplaceSwitcherV6'
 import MarketplaceSwitcherV7 from './MarketplaceSwitcherV7'
 import MarketplaceSwitcherV8 from './MarketplaceSwitcherV8'
 import MarketplaceSwitcherV9 from './MarketplaceSwitcherV9'
 import MarketplaceSwitcherV10 from './MarketplaceSwitcherV10'
 
-// Variation 7 has no top switcher at all — switching happens from the bottom
-// nav's "All" tab (wired in the experiment root).
-const NoSwitcher = () => null
-
-// `ownsHeader` — the variant renders its own location + search, so the
-// experiment root skips the standard LocationBar/SearchBar rows.
 export const switcherVariants = [
   { value: 1, label: '1', Component: MarketplaceSwitcherV3 },
-  { value: 2, label: '2', Component: MarketplaceSwitcherV2, ownsHeader: true },
-  { value: 3, label: '3', Component: MarketplaceSwitcherV6 },
-  { value: 4, label: '4', Component: MarketplaceSwitcherV7 },
-  { value: 5, label: '5', Component: MarketplaceSwitcherV8 },
-  { value: 6, label: '6', Component: MarketplaceSwitcherV9 },
-  { value: 7, label: '7', Component: NoSwitcher },
-  { value: 8, label: '8', Component: MarketplaceSwitcherV10, ownsHeader: true },
+  { value: 2, label: '2', Component: MarketplaceSwitcherV2, ownsHeader: true, floatingNav: true },
+  { value: 3, label: '3', Component: MarketplaceSwitcherV7 },
+  { value: 4, label: '4', Component: MarketplaceSwitcherV8 },
+  { value: 5, label: '5', Component: MarketplaceSwitcherV9 },
+  { value: 6, label: '6', Component: MarketplaceSwitcherV10, ownsHeader: true },
 ]

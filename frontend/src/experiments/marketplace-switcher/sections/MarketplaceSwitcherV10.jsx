@@ -13,11 +13,13 @@
 // Tapping the docked tile opens the marketplaces bottom sheet (variation-7).
 import { useEffect, useRef, useState } from 'react'
 import { motion, useSpring, useTransform } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import { scrollSmoothing } from '../../../utils/motion'
 import { address } from '../data'
 import homeIcon from '../../../assets/marketplace/home.svg'
 import MarketplaceMark from './MarketplaceMark'
 import MarketplaceSheet from './MarketplaceSheet'
+import CameraIcon from './CameraIcon'
 import NewBadge from './NewBadge'
 
 const PAD = 16 // section side padding
@@ -87,10 +89,18 @@ export default function MarketplaceSwitcherV10({ items, activeId, onChange, prog
                 data-id={`mp-tile-${item.id}`}
                 aria-pressed={active}
                 onClick={() => onChange(item.id)}
-                style={{ width: RAIL_TILE, height: RAIL_TILE, borderRadius: 20, background: active ? item.accent : item.bg ?? '#FFFFFF' }}
-                className="relative flex shrink-0 items-center justify-center border border-[#EFEFEF] shadow-[0_1px_3px_rgba(0,0,0,0.06)] transition-transform active:scale-95"
+                style={{ width: RAIL_TILE, height: RAIL_TILE, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.08))' }}
+                className="relative flex shrink-0 items-center justify-center transition-transform active:scale-95"
               >
-                <MarketplaceMark m={item} white={active && !item.lightAccent} active={active} size={64} />
+                <Squircle
+                  as="span"
+                  cornerRadius={20}
+                  cornerSmoothing={1}
+                  style={{ background: active ? item.accent : item.bg ?? '#FFFFFF' }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <MarketplaceMark m={item} white={active && !item.lightAccent} active={active} size={64} />
+                </Squircle>
                 {item.isNew && <NewBadge dataId={`mp-tile-${item.id}-new`} />}
               </button>
             )
@@ -109,15 +119,22 @@ export default function MarketplaceSwitcherV10({ items, activeId, onChange, prog
             height: DOCK_TILE,
             top: TOP + (GROUP_H - DOCK_TILE) / 2,
             left: PAD,
-            borderRadius: 16,
-            background: m.accent,
             opacity: dockOpacity,
             x: dockX,
             pointerEvents: dockPE,
+            filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.1))',
           }}
-          className="absolute z-10 flex items-center justify-center shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition-transform active:scale-95"
+          className="absolute z-10 flex items-center justify-center transition-transform active:scale-95"
         >
-          <MarketplaceMark m={m} white={!m.lightAccent} active size={50} />
+          <Squircle
+            as="span"
+            cornerRadius={16}
+            cornerSmoothing={1}
+            style={{ background: m.accent }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            <MarketplaceMark m={m} white={!m.lightAccent} active size={50} />
+          </Squircle>
           {m.isNew && <NewBadge dataId="mp-selected-tile-new" />}
         </motion.button>
 
@@ -138,24 +155,16 @@ export default function MarketplaceSwitcherV10({ items, activeId, onChange, prog
             </svg>
           </div>
 
-          <div data-id="mp-search" className="flex h-12 items-center gap-3 rounded-[12px] border border-[#D7DAE3] bg-white px-3">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+          <div data-id="mp-search" className="flex h-12 items-center gap-2 rounded-[12px] border border-[#D7DAE3] bg-white px-3">
+            <svg width="24" height="24" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
               <circle cx="9" cy="9" r="6" stroke="#1D2539" strokeWidth="1.6" />
               <path d="m14 14 3 3" stroke="#1D2539" strokeWidth="1.6" strokeLinecap="round" />
             </svg>
             <span className="min-w-0 flex-1 truncate font-noontree text-[15px] font-medium text-[#1D2539]">
-              Search noon
+              Search iphone
             </span>
             <span className="h-6 w-px shrink-0 bg-[#D9DADB]" />
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
-              <path
-                d="M3 7.5A1.5 1.5 0 0 1 4.5 6h1.2l.9-1.5h6.8L15.3 6h.2A1.5 1.5 0 0 1 17 7.5V15A1.5 1.5 0 0 1 15.5 16.5h-11A1.5 1.5 0 0 1 3 15V7.5Z"
-                stroke="#1F1D1D"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <circle cx="10" cy="11" r="2.6" stroke="#1F1D1D" strokeWidth="1.5" />
-            </svg>
+            <CameraIcon />
           </div>
         </motion.div>
       </motion.div>
