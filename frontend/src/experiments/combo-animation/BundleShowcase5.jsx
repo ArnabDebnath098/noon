@@ -29,7 +29,7 @@ function TicketRight() {
 function ShowcaseCard({ item, onQtyChange, onWishlist, dataId }) {
   const did = (s) => `${dataId}-${s}`
   return (
-    <div data-id={dataId} className="flex w-[159px] min-w-[159px] shrink-0 flex-col rounded-2xl bg-white">
+    <div data-id={dataId} className="flex w-[180px] min-w-[180px] shrink-0 flex-col rounded-2xl bg-white">
       {/* Product image */}
       <div data-id={did('media')} className="relative flex h-[190px] items-center justify-center overflow-hidden rounded-[14px] bg-[#F2F3F7]">
         <img data-id={did('image')} src={item.image} alt="" aria-hidden="true" className="h-[157px] w-auto object-contain" />
@@ -64,7 +64,7 @@ function ShowcaseCard({ item, onQtyChange, onWishlist, dataId }) {
           {item.coupon && (
             <span
               data-id={did('coupon')}
-              className="flex h-5 w-fit items-center justify-center rounded px-1 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] text-[#0B623F]"
+              className="flex h-5 w-fit items-center justify-center whitespace-nowrap rounded px-1 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] text-[#0B623F]"
               style={{ background: '#E3FCF2', border: '0.5px dashed #CBF6E5' }}
             >
               {withDirham(item.coupon)}
@@ -120,7 +120,7 @@ export default function BundleShowcase5({
         style={{ background: 'radial-gradient(130% 135% at 8% 58%, #F1F4FE 0%, #FFFFFF 62%)', opacity: infoOpacity, scale: infoScale, transformOrigin: 'left center' }}
         className="sticky left-0 z-0 flex w-[164px] min-w-[164px] shrink-0 flex-col gap-4 overflow-hidden py-8 pl-5 pr-5"
       >
-        <div data-id={did('listings')} className="flex flex-1 flex-col gap-3">
+        <div data-id={did('listings')} className="flex flex-1 flex-col gap-5">
           <ComboGif dataId={did('icon')} className="h-8 w-8" />
 
           <div data-id={did('copy')} className="flex flex-col gap-1">
