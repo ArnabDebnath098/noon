@@ -132,7 +132,7 @@ function Hero({ images = [], dataId, controlsOpacity }) {
       // White extends up behind the fixed header (real safe area + 56px header).
       style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}
     >
-      <div data-id={d('media')} className="relative z-10 flex h-[496px] w-full items-center justify-center overflow-hidden">
+      <div data-id={d('media')} className="relative z-10 flex h-[min(460px,46dvh)] w-full items-center justify-center overflow-hidden">
         <img
           data-id={d('image')}
           src={images[index]}
