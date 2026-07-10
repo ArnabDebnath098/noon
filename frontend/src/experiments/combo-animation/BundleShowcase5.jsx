@@ -93,7 +93,7 @@ export default function BundleShowcase5({
   // scales out across roughly its own width of scroll.
   const rootRef = useRef(null)
   const progress = useMotionValue(0)
-  const infoOpacity = useTransform(progress, [0, 1], [1, 0])
+  const infoOpacity = useTransform(progress, [0, 0.35], [1, 0])
   const infoScale = useTransform(progress, [0, 1], [1, 0.85])
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function BundleShowcase5({
       <motion.div
         data-id={did('info')}
         style={{ background: 'radial-gradient(130% 135% at 8% 58%, #F1F4FE 0%, #FFFFFF 62%)', opacity: infoOpacity, scale: infoScale, transformOrigin: 'left center' }}
-        className="sticky left-0 z-0 flex w-[164px] min-w-[164px] shrink-0 flex-col gap-4 overflow-hidden py-8 pl-3 pr-5"
+        className="sticky left-0 z-0 flex w-[164px] min-w-[164px] shrink-0 flex-col gap-4 overflow-hidden py-8 pl-5 pr-5"
       >
         <div data-id={did('listings')} className="flex flex-1 flex-col gap-1">
           <ComboGif dataId={did('icon')} className="mb-3 h-8 w-8" />
