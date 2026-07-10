@@ -13,14 +13,14 @@ import { Dirham, withDirham } from '../../components/common/Dirham'
 // Serrated ticket edges (reused from the variation-3 bundle banner), tinted navy.
 function TicketLeft() {
   return (
-    <svg width="4" height="22" viewBox="0 0 4 20" fill="none" aria-hidden="true" className="shrink-0">
+    <svg width="4" viewBox="0 0 4 20" fill="none" aria-hidden="true" preserveAspectRatio="none" className="h-full shrink-0 self-stretch">
       <path d="M3.14258 20H0V18.5713C0.86787 18.5713 1.57129 17.9316 1.57129 17.1426C1.57116 16.3537 0.867791 15.7139 0 15.7139V14.2852C0.867721 14.2851 1.57105 13.6462 1.57129 12.8574C1.57129 12.1179 0.953321 11.5089 0.161133 11.4355L0 11.4287V9.28516C0.867721 9.28515 1.57105 8.64621 1.57129 7.85742C1.57129 7.11789 0.953321 6.50889 0.161133 6.43555L0 6.42871V4.28516C0.867721 4.28515 1.57105 3.64621 1.57129 2.85742C1.57129 2.11789 0.953321 1.50889 0.161133 1.43555L0 1.42871V0H3.14258V20Z" fill="#082F8C" />
     </svg>
   )
 }
 function TicketRight() {
   return (
-    <svg width="4" height="22" viewBox="0 0 4 20" fill="none" aria-hidden="true" className="shrink-0">
+    <svg width="4" viewBox="0 0 4 20" fill="none" aria-hidden="true" preserveAspectRatio="none" className="h-full shrink-0 self-stretch">
       <path d="M3.14258 1.42871C2.27482 1.42884 1.57129 2.06852 1.57129 2.85742C1.57153 3.64613 2.27497 4.28503 3.14258 4.28516V6.42871C2.27482 6.42884 1.57129 7.06852 1.57129 7.85742C1.57153 8.64613 2.27497 9.28503 3.14258 9.28516V11.4287C2.27482 11.4288 1.57129 12.0685 1.57129 12.8574C1.57153 13.6461 2.27497 14.285 3.14258 14.2852V15.7139C2.2749 15.714 1.57142 16.3538 1.57129 17.1426C1.57129 17.9315 2.27482 18.5712 3.14258 18.5713V20H0V0H3.14258V1.42871Z" fill="#082F8C" />
     </svg>
   )
@@ -120,20 +120,22 @@ export default function BundleShowcase5({
         style={{ background: 'radial-gradient(130% 135% at 8% 58%, #F1F4FE 0%, #FFFFFF 62%)', opacity: infoOpacity, scale: infoScale, transformOrigin: 'left center' }}
         className="sticky left-0 z-0 flex w-[164px] min-w-[164px] shrink-0 flex-col gap-4 overflow-hidden py-8 pl-5 pr-5"
       >
-        <div data-id={did('listings')} className="flex flex-1 flex-col gap-1">
-          <ComboGif dataId={did('icon')} className="mb-3 h-8 w-8" />
+        <div data-id={did('listings')} className="flex flex-1 flex-col gap-3">
+          <ComboGif dataId={did('icon')} className="h-8 w-8" />
 
-          <span data-id={did('title')} className="font-noontree text-[20px] font-bold leading-[28px] tracking-[-0.25px] text-[#082F8C]">
-            Get more for less
-          </span>
-          <span data-id={did('subtitle')} className="mt-1 font-noontree text-[12px] font-medium leading-[18px] tracking-[-0.1px] text-[#082F8C]">
-            {subtitle}
-          </span>
+          <div data-id={did('copy')} className="flex flex-col gap-1">
+            <span data-id={did('title')} className="font-noontree text-[18px] font-bold leading-[24px] tracking-[-0.2px] text-[#082F8C]">
+              Get more<br />for less
+            </span>
+            <span data-id={did('subtitle')} className="font-noontree text-[12px] font-medium leading-[18px] tracking-[-0.1px] text-[#082F8C]">
+              {subtitle}
+            </span>
+          </div>
 
           {/* Save upto ₫X — serrated navy ticket */}
-          <span data-id={did('save')} className="mt-3 flex w-fit items-center">
+          <span data-id={did('save')} className="flex h-[22px] w-fit items-center">
             <TicketLeft />
-            <span className="-mx-px flex h-[22px] items-center bg-[#082F8C] px-1 pb-0.5 font-noontree text-[13px] font-semibold leading-[20px] tracking-[-0.1px] text-white">
+            <span className="-mx-px flex h-full items-center bg-[#082F8C] px-1 pb-0.5 font-noontree text-[13px] font-semibold leading-[20px] tracking-[-0.1px] text-white">
               <span className="inline-flex items-center gap-1">
                 <span>Save upto</span>
                 <span className="inline-flex items-center gap-px">

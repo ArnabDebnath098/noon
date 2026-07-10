@@ -30,9 +30,15 @@ export default function MarketplaceSwitcherV9({ items, activeId, onChange }) {
   const [ref, W] = useElementWidth(390)
   const [open, setOpen] = useState(false)
   // the trigger row's third tile holds the last marketplace picked from the
-  // panel (slots 1 & 2 are fixed and select in place)
+  // panel (slots 1 & 2 are fixed and select in place); minutes is pinned as a
+  // 4th quick tile (unless it's currently the swapped third slot)
   const [thirdId, setThirdId] = useState(items[2]?.id)
-  const rowItems = [items[0], items[1], items.find((m) => m.id === thirdId)].filter(Boolean)
+  const rowItems = [
+    items[0],
+    items[1],
+    items.find((m) => m.id === thirdId),
+    thirdId !== 'minutes' ? items.find((m) => m.id === 'minutes') : null,
+  ].filter(Boolean)
   // the panel + backdrop portal into the app frame so the overlay paints
   // above EVERYTHING (bottom nav z-30, floating tabs z-40) — inside the
   // sticky header they'd be capped at its z-20 stacking context
