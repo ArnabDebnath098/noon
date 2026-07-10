@@ -9,7 +9,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
-import { SectionCard, Accordion, ProductCard } from '../../components/common'
+import { SectionCard, Accordion, ProductCard, ComboGif } from '../../components/common'
 import BundleSheet from './BundleSheet'
 import BundleContainer from './BundleContainer'
 import BundleShowcase from './BundleShowcase'
@@ -33,35 +33,6 @@ import tabbyIcon from '../../assets/icons/tabby.svg'
 
 // Payment-offer icon registry (data references these by key).
 const PAY_ICONS = { enbd: enbdIcon, tabby: tabbyIcon }
-
-// Bundle combo animation — a GIF authored to loop infinitely (27 frames ≈ 4.81s).
-const COMBO_GIF = 'https://f.nooncdn.com/s/app/com/noon/images/combo-animated.gif'
-const COMBO_GIF_MS = 4810
-
-/**
- * LoopingGif — renders an animated GIF and guarantees it keeps looping. The GIF
- * loops on its own in normal browsers; some webviews stop it after the first
- * pass, so we remount it once per loop via an incrementing `key`. The src is
- * unchanged (served from cache — no refetch) and the remount is timed to the
- * loop boundary, so the restart is seamless.
- */
-function LoopingGif({ src, durationMs, dataId, className, alt = '' }) {
-  const [tick, setTick] = useState(0)
-  useEffect(() => {
-    const t = setInterval(() => setTick((n) => n + 1), durationMs)
-    return () => clearInterval(t)
-  }, [durationMs])
-  return (
-    <img
-      key={tick}
-      data-id={dataId}
-      src={src}
-      alt={alt}
-      aria-hidden={alt ? undefined : true}
-      className={className}
-    />
-  )
-}
 
 /* ---------------------------------------------------------------- icons -- */
 
@@ -579,7 +550,7 @@ export default function PDPBody({
               style={{ background: 'linear-gradient(270deg, #FFFFFF 0%, #D6E9FF 100%)' }}
             >
               <span data-id={id('bundle-icon')} className="flex h-6 w-6 shrink-0 items-center justify-center">
-                <LoopingGif dataId={id('bundle-gif')} src={COMBO_GIF} durationMs={COMBO_GIF_MS} className="h-5 w-5" />
+                <ComboGif dataId={id('bundle-gif')} className="h-5 w-5" />
               </span>
               <span data-id={id('bundle-title-row')} className="flex flex-1 items-center gap-1.5">
                 <span data-id={id('bundle-title')} className="font-noontree text-[14px] font-bold leading-[18px] tracking-[-0.14px] text-[#242A34]">
@@ -621,7 +592,7 @@ export default function PDPBody({
         >
           <span data-id={id('bundle-left')} className="flex min-w-0 flex-1 items-center gap-0.5">
             <span data-id={id('bundle-icon')} className="flex h-[42px] w-11 shrink-0 items-center justify-center">
-              <LoopingGif dataId={id('bundle-gif')} src={COMBO_GIF} durationMs={COMBO_GIF_MS} className="h-6 w-6" />
+              <ComboGif dataId={id('bundle-gif')} className="h-6 w-6" />
             </span>
             <span data-id={id('bundle-text')} className="flex min-w-0 flex-col gap-0.5 text-left">
               <span data-id={id('bundle-title-row')} className="flex items-center gap-1.5">
@@ -658,12 +629,7 @@ export default function PDPBody({
           className="flex h-10 w-full items-center gap-3 self-stretch rounded-lg bg-white pl-2.5 pr-2"
         >
           <span data-id={id('bundle-icon')} className="flex h-[22px] w-5 shrink-0 items-center justify-center">
-            <LoopingGif
-              dataId={id('bundle-gif')}
-              src={COMBO_GIF}
-              durationMs={COMBO_GIF_MS}
-              className="h-5 w-5"
-            />
+            <ComboGif dataId={id('bundle-gif')} className="h-5 w-5" />
           </span>
           <span data-id={id('bundle-text')} className="flex-1 text-left font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
             {withDirham('Bundle up & save upto AED20')}

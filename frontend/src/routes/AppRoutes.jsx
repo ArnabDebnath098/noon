@@ -1,22 +1,32 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ExperimentsLanding from '../pages/ExperimentsLanding.jsx'
-import ComboAnimationExperiment from '../experiments/combo-animation/index.jsx'
-import MarketplaceExperiment from '../experiments/marketplace-switcher/index.jsx'
-import AddressExperiment from '../experiments/address-selection/index.jsx'
-import MarketplaceSwitcherIntroExperiment from '../experiments/marketplace-switcher-intro/index.jsx'
+
+// Experiments are lazy-loaded — each becomes its own chunk, so the landing
+// page loads instantly and an experiment's code is only fetched on navigation.
+const ComboAnimationExperiment = lazy(() => import('../experiments/combo-animation/index.jsx'))
+const MarketplaceExperiment = lazy(() => import('../experiments/marketplace-switcher/index.jsx'))
+const AddressExperiment = lazy(() => import('../experiments/address-selection/index.jsx'))
+const MarketplaceSwitcherIntroExperiment = lazy(
+  () => import('../experiments/marketplace-switcher-intro/index.jsx'),
+)
+
+// Minimal route fallback — matches the app background so the swap is invisible.
+function RouteFallback() {
+  return <div className="min-h-dvh w-full bg-[#F7F8FA]" aria-busy="true" />
+}
 
 export default function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<ExperimentsLanding />} />
-      <Route path="/combo-animation" element={<ComboAnimationExperiment />} />
-      <Route
-        path="/marketplace-switcher"
-        element={<MarketplaceExperiment />}
-      />
-      <Route path="/address-selection" element={<AddressExperiment />} />
-      <Route path="/marketplace-switcher-intro" element={<MarketplaceSwitcherIntroExperiment />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<RouteFallback />}>
+      <Routes>
+        <Route path="/" element={<ExperimentsLanding />} />
+        <Route path="/combo-animation" element={<ComboAnimationExperiment />} />
+        <Route path="/marketplace-switcher" element={<MarketplaceExperiment />} />
+        <Route path="/address-selection" element={<AddressExperiment />} />
+        <Route path="/marketplace-switcher-intro" element={<MarketplaceSwitcherIntroExperiment />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   )
 }

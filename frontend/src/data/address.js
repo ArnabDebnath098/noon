@@ -1,9 +1,9 @@
 // Data for the Address 2.0 selection experiment. The home screen reuses the
 // marketplace-switcher home (variation 1), so we borrow its marketplaces +
 // categories and add the saved-address list the selection sheet works over.
-import { marketplaces as baseMarketplaces, categories } from '../marketplace-switcher/data'
-import superYellow from '../../assets/address/super-yellow.svg'
-import mallYellow from '../../assets/address/mall-yellow.svg'
+import { marketplaces as baseMarketplaces, categories } from './marketplace'
+import superYellow from '../assets/address/super-yellow.svg'
+import mallYellow from '../assets/address/mall-yellow.svg'
 
 export { categories }
 

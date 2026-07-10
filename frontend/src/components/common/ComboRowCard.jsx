@@ -21,7 +21,7 @@ export function ComboRowCard({
       <div data-id={did('thumbs')} className="flex items-center gap-2">
         {thumbs.map((t, i) => (
           <div key={i} data-id={did(`thumb-${i}`)} className="relative h-24 w-[72px] shrink-0 rounded-xl bg-[#F9F9FB]">
-            <img src={t.image} alt="" aria-hidden="true" className="absolute inset-0 m-auto h-[78px] w-auto object-contain" />
+            <img src={t.image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-0 m-auto h-[78px] w-auto object-contain" />
             <span data-id={did(`thumb-${i}-qty`)} className="absolute bottom-2 right-2 flex h-6 min-w-6 items-center justify-center rounded-md border border-[rgba(14,14,14,0.04)] bg-white px-1 font-noontree text-[10px] font-semibold leading-none text-[#343D54]">
               x{t.qty ?? 1}
             </span>

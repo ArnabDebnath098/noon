@@ -14,7 +14,7 @@ import AddressSheet from './sections/AddressSheet'
 import RecentAddressSheet from './sections/RecentAddressSheet'
 import HomeSkeleton from '../marketplace-switcher/sections/HomeSkeleton'
 import { viewFor } from './marketplaceViews'
-import { marketplaces, categories, addresses, recentMinutesAddress } from './data'
+import { marketplaces, categories, addresses, recentMinutesAddress } from '../../data/address'
 
 /**
  * Address 2.0 selection experiment. The home screen is the marketplace-switcher

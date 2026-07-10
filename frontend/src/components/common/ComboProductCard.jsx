@@ -127,7 +127,7 @@ export function ComboProductCard({
           className="flex h-[227px] w-full items-center justify-center bg-[#F0F1F6]"
           {...mediaExtra}
         >
-          <img data-id={did('image')} src={image} alt="" aria-hidden="true" className="h-[177px] w-auto object-contain" />
+          <img data-id={did('image')} src={image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-[177px] w-auto object-contain" />
         </Media>
 
         {/* wishlist — shared animated heart (32×32) */}

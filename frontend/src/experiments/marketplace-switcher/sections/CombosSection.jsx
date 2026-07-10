@@ -1,6 +1,6 @@
 // Combos rail (reuses the combo data + ProductCard from the combo experiment).
 import { ProductCard } from '../../../components/common'
-import { combos } from '../../combo-animation/data'
+import { combos } from '../../../data/combo'
 
 export default function CombosSection() {
   return (

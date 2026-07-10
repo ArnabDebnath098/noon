@@ -15,7 +15,7 @@ import ProductRail from './sections/ProductRail'
 import { switcherVariants } from './sections/switcherVariants'
 import BottomNav from '../../components/layout/BottomNav'
 import FloatingTabs from '../../components/layout/FloatingTabs'
-import { marketplaces, address, categories, bestPicks, mobileDeals } from './data'
+import { marketplaces, address, categories, bestPicks, mobileDeals } from '../../data/marketplace'
 
 /**
  * Marketplace switcher experiment — a noon-style home. The switcher is sticky

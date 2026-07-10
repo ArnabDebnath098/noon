@@ -32,7 +32,7 @@ function ShowcaseCard({ item, onQtyChange, onWishlist, dataId }) {
     <div data-id={dataId} className="flex w-[180px] min-w-[180px] shrink-0 flex-col rounded-2xl bg-white">
       {/* Product image */}
       <div data-id={did('media')} className="relative flex h-[190px] items-center justify-center overflow-hidden rounded-[14px] bg-[#F2F3F7]">
-        <img data-id={did('image')} src={item.image} alt="" aria-hidden="true" className="h-[157px] w-auto object-contain" />
+        <img data-id={did('image')} src={item.image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-[157px] w-auto object-contain" />
 
         {/* corner "N Products" banner */}
         <span

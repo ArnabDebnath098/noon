@@ -4,11 +4,7 @@
 // inside the BundleSheet (which adds the overlay, slide-up and a Done footer via
 // the `footer` slot).
 import { Squircle } from 'corner-smoothing'
-import { ComboProductCard, ComboRowCard, ComboGif } from '../../components/common'
-import { COMBO_GIF } from '../../components/common/ComboGif'
-import { Dirham } from '../../components/common/Dirham'
-
-export { COMBO_GIF }
+import { ComboProductCard, ComboRowCard, ComboGif, COMBO_GIF, Dirham } from '../../components/common'
 
 export default function BundleContainer({
   items = [],

@@ -14,7 +14,7 @@
 // The strip stays put once docked (it is the switcher — no swap/replacement).
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { marketplaces } from '../marketplace-switcher/data'
+import { marketplaces } from '../../data/marketplace'
 import MarketplaceMark from '../marketplace-switcher/sections/MarketplaceMark'
 import MarketHeader from '../address-selection/sections/MarketHeader'
 import HomeSkeleton from '../marketplace-switcher/sections/HomeSkeleton'

@@ -15,7 +15,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
 import { springs } from '../../../utils/motion'
-import { address } from '../data'
+import { address } from '../../../data/marketplace'
 import homeIcon from '../../../assets/marketplace/home.svg'
 import MarketplaceMark from './MarketplaceMark'
 import NewBadge from './NewBadge'

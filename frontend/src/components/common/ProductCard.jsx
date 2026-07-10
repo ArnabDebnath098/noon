@@ -4,10 +4,14 @@
 //   - combos:  productCount (animated "Combo" chip) + savings badge
 //   - similar: rating, lowest-price nudge, Best Seller / Ad / dots / express
 // Every element carries a data-id namespaced under the card's `dataId`.
+// `comboAnim` picks the combo-tag animation: 'chiptop' (blue "Combo" reveals
+// into the product count below the title) or 'counter' (chip counter).
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Dirham, withDirham } from './Dirham'
 import { AddToCartButton } from './AddToCartButton'
+import { ComboCounter } from './ComboCounter'
+import { ComboChipOnce } from './ComboChipOnce'
 import expressTodayTag from '../../assets/icons/express-today.svg'
 import ratingStar from '../../assets/icons/rating-star.svg'
 import thunderIcon from '../../assets/icons/thunder.svg'
@@ -15,17 +19,12 @@ import wishlistHeartRaw from '../../assets/icons/wishlist.svg?raw'
 import heartFillRaw from '../../assets/icons/heart-fill.svg?raw'
 
 // Heart markup recoloured to inherit currentColor (outline + filled variants).
+// Both are local build-time SVG assets (no user input reaches the markup).
 const HEART_HTML = wishlistHeartRaw.replace(/fill="black"/gi, 'fill="currentColor"')
 const HEART_FILL_HTML = heartFillRaw.replace(
   /fill="#[0-9a-f]{3,8}"/gi,
   'fill="currentColor"'
 )
-import { ComboType } from './ComboType'
-import { ComboSlide } from './ComboSlide'
-import { ComboReveal } from './ComboReveal'
-import { ComboStatic } from './ComboStatic'
-import { ComboCounter } from './ComboCounter'
-import { ComboChipOnce } from './ComboChipOnce'
 
 const TONE = {
   red: 'text-[#D92626]',
@@ -43,7 +42,7 @@ export function ProductCard({
   title,
   // combos: animated "Combo" <-> count chip
   productCount,
-  comboAnim = 'type',
+  comboAnim = 'chiptop',
   comboDelay = 0,
   // similar: rating row
   rating,
@@ -71,7 +70,6 @@ export function ProductCard({
 }) {
   const did = (s) => `${dataId}-${s}`
   const hero = image ?? images[0]
-  const isMediaTag = comboAnim === 'mediatag'
 
   const [liked, setLiked] = useState(false)
   const [burst, setBurst] = useState(0) // bumps on each "like" to retrigger fx
@@ -83,31 +81,13 @@ export function ProductCard({
     onWishlist?.(next)
   }
 
-  const ComboCount =
-    comboAnim === 'slide'
-      ? ComboSlide
-      : comboAnim === 'reveal'
-        ? ComboReveal
-        : comboAnim === 'static'
-          ? ComboStatic
-          : comboAnim === 'counter'
-            ? ComboCounter
-            : ComboType
-
   return (
     <div
       data-id={dataId}
       className="relative flex shrink-0 flex-col gap-2"
       style={{ width }}
     >
-      {/* Media header with overlays. Option 7 wraps it in a blue parent with a
-          combo-tag strip below the image. */}
-      <div
-        data-id={isMediaTag ? did('media-wrap') : undefined}
-        className={
-          isMediaTag ? 'overflow-hidden rounded-xl bg-[#F5FAFF]' : 'contents'
-        }
-      >
+      {/* Media header with overlays */}
       <div
         data-id={did('media')}
         className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-[#F2F3F7]"
@@ -198,21 +178,6 @@ export function ProductCard({
         <AddToCartButton onPress={onAdd} dataId={did('atc')} />
       </div>
 
-        {/* option 7: combo tag strip below the image, on the blue parent */}
-        {isMediaTag && productCount && (
-          <div data-id={did('media-combo')} className="flex items-center justify-center py-1">
-            <ComboChipOnce
-              bare
-              centered
-              count={productCount}
-              delay={2000}
-              countColor="#666D85"
-              dataId={did('combo-chip')}
-            />
-          </div>
-        )}
-      </div>
-
       {/* Content */}
       <div data-id={did('content')} className="flex flex-col gap-2.5">
         {/* Title + count grouped together, no gap */}
@@ -237,9 +202,9 @@ export function ProductCard({
             />
           )}
 
-          {/* combos: animated "Combo" chip / count (below title) */}
-          {productCount && comboAnim !== 'chiptop' && comboAnim !== 'mediatag' && (
-            <ComboCount
+          {/* counter variant: animated "Combo" chip / count (below title) */}
+          {productCount && comboAnim === 'counter' && (
+            <ComboCounter
               count={productCount}
               delay={comboDelay}
               dataId={did('count')}

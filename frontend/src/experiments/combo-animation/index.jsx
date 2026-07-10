@@ -17,7 +17,7 @@ import {
   reviewSummary,
   bundle,
   plp,
-} from './data'
+} from '../../data/combo'
 
 // Two PDP variations — they differ only in the "Bundle & save" entry row style.
 const VARIANTS = [

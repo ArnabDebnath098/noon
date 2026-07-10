@@ -1,11 +1,11 @@
 // Shared product data scraped from noon.com (uae-en) product pages.
 // Consumed by the Home and Categories routes.
-import koreanGlassHero from '../../assets/products/korean-glass-hero.png'
-import bareAnatomyShampoo from '../../assets/products/bare-anatomy-shampoo.png'
-import bundleShampooConditioner from '../../assets/products/bundle-shampoo-conditioner.png'
-import bundleShampooRicewater from '../../assets/products/bundle-shampoo-ricewater.png'
-import comboThumbConditioner from '../../assets/products/combo-thumb-conditioner.png'
-import comboThumbShampoo from '../../assets/products/combo-thumb-shampoo.png'
+import koreanGlassHero from '../assets/products/korean-glass-hero.png'
+import bareAnatomyShampoo from '../assets/products/bare-anatomy-shampoo.png'
+import bundleShampooConditioner from '../assets/products/bundle-shampoo-conditioner.png'
+import bundleShampooRicewater from '../assets/products/bundle-shampoo-ricewater.png'
+import comboThumbConditioner from '../assets/products/combo-thumb-conditioner.png'
+import comboThumbShampoo from '../assets/products/combo-thumb-shampoo.png'
 
 // Per-combo product thumbnails (for the variation-4 horizontal row card).
 const COMBO_THUMBS = [
