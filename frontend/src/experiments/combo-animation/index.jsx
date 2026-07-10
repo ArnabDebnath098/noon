@@ -11,7 +11,7 @@ import {
   productDetails,
   product,
   topProducts,
-  paymentOffer,
+  paymentOffers,
   deliveryInfo,
   seller,
   reviewSummary,
@@ -43,7 +43,7 @@ export default function ComboAnimationExperiment() {
 
         <main
           data-id="combo-experiment-main"
-          className="flex-1 overflow-y-auto overflow-x-clip bg-[#F2F3F7]"
+          className="flex-1 overflow-y-auto overflow-x-clip bg-[#F7F8FA]"
         >
           <PDPBody
             comboAnim="chiptop"
@@ -55,7 +55,7 @@ export default function ComboAnimationExperiment() {
             similar={similar}
             topProducts={topProducts}
             productDetails={productDetails}
-            paymentOffer={paymentOffer}
+            paymentOffers={paymentOffers}
             deliveryInfo={deliveryInfo}
             seller={seller}
             reviewSummary={reviewSummary}

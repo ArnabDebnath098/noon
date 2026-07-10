@@ -6,7 +6,8 @@
 //
 // Every DOM element carries a namespaced `data-id` (derived from each section's
 // base id) so the whole page is addressable for testing / analytics.
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
 import { SectionCard, Accordion, ProductCard } from '../../components/common'
 import BundleSheet from './BundleSheet'
@@ -25,6 +26,12 @@ import expressLogo from '../../assets/icons/express.svg'
 import oneMemberLogo from '../../assets/icons/onemember.svg'
 import tagLeft from '../../assets/icons/tag-left.svg'
 import tagRight from '../../assets/icons/tag-right.svg'
+import prevOrderedIcon from '../../assets/icons/previously-ordered.svg'
+import enbdIcon from '../../assets/icons/enbd.svg'
+import tabbyIcon from '../../assets/icons/tabby.svg'
+
+// Payment-offer icon registry (data references these by key).
+const PAY_ICONS = { enbd: enbdIcon, tabby: tabbyIcon }
 
 // Bundle combo animation — a GIF authored to loop infinitely (27 frames ≈ 4.81s).
 const COMBO_GIF = 'https://f.nooncdn.com/s/app/com/noon/images/combo-animated.gif'
@@ -115,38 +122,43 @@ function EntryRow({ dataId, icon, children, trailing, style, className = '' }) {
 
 /* ----------------------------------------------------------------- hero -- */
 
-function Hero({ images = [], dataId }) {
+function Hero({ images = [], dataId, controlsOpacity }) {
   const [index, setIndex] = useState(0)
   const d = (s) => `${dataId}-${s}`
   return (
     <div
       data-id={dataId}
       className="relative -mx-3 bg-white"
-      // White extends up behind the fixed header (real safe area + 56px header)
-      // so the header's white→transparent gradient never exposes the grey page
-      // background in the unscrolled state.
+      // White extends up behind the fixed header (real safe area + 56px header).
       style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}
     >
-      <div data-id={d('media')} className="relative aspect-[3/4] w-full overflow-hidden">
+      <div data-id={d('media')} className="relative z-10 flex h-[496px] w-full items-center justify-center overflow-hidden">
         <img
           data-id={d('image')}
           src={images[index]}
           alt=""
-          className="h-full w-full object-contain"
+          className="h-4/5 w-auto object-contain"
+          style={{ aspectRatio: '3 / 4' }}
         />
 
-        {/* 360 view button */}
-        <button
+        {/* 24px transition strip — white → main bg, at the bottom of the media */}
+        <div
+          data-id={d('fade')}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-6"
+          style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #F7F8FA 100%)' }}
+        />
+
+        {/* 360 view button — hides on scroll */}
+        <motion.button
           type="button"
           data-id={d('360')}
           aria-label="360 view"
           className="absolute bottom-5 right-4 flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(2,6,12,0.15)] bg-white"
+          style={{ opacity: controlsOpacity }}
         >
-          <svg data-id={d('360-icon')} width="20" height="20" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-            <path d="M11 5.5a5.5 5.5 0 103.9 1.6" stroke="#101628" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M14 4.5l1.5 2-2.4.9" stroke="#101628" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
+          <img data-id={d('360-icon')} src={prevOrderedIcon} alt="" aria-hidden="true" className="h-5 w-5" />
+        </motion.button>
       </div>
 
       {/* Carousel indicator — only when there is more than one image */}
@@ -170,13 +182,14 @@ function Hero({ images = [], dataId }) {
           ))}
         </div>
       )}
+
     </div>
   )
 }
 
 /* ------------------------------------------------------------- main info - */
 
-function MainInfo({ product, dataId }) {
+function MainInfo({ product, dataId, bundleBanner }) {
   const {
     store, title, rating, ratingCount, price, originalPrice, discountPercent, vat,
     bestPriceWithOffers, bestsellerRankTop,
@@ -303,6 +316,9 @@ function MainInfo({ product, dataId }) {
           </span>
           <ChevronRight dataId={d('best-price-chevron')} className="h-4 w-4" color="#1D2539" />
         </Squircle>
+
+        {/* optional bundle banner slot (variation 3) — sits below Best Price */}
+        {bundleBanner}
 
         {/* Bestseller rank — Figma Frame 2147238529 (grey #F9F9FB row) */}
         <Squircle
@@ -476,7 +492,7 @@ export default function PDPBody({
   similar = [],
   topProducts,
   productDetails = [],
-  paymentOffer,
+  paymentOffers = [],
   deliveryInfo,
   seller,
   reviewSummary,
@@ -490,6 +506,27 @@ export default function PDPBody({
   const id = (s) => (idPrefix ? `${idPrefix}-${s}` : s)
   const [bundleOpen, setBundleOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
+
+  // Parallax hero: as the page scrolls, the pinned hero scales down and fades
+  // out (reaching 0 by the time the content below reaches the top), while the
+  // sections scroll up over it.
+  const heroRef = useRef(null)
+  const heroProgress = useMotionValue(0)
+  const heroScale = useTransform(heroProgress, [0, 1], [1, 0.86])
+  // 360 button hides as soon as the user starts scrolling
+  const heroControlsOpacity = useTransform(heroProgress, [0, 0.06], [1, 0])
+  useEffect(() => {
+    const wrap = heroRef.current
+    const scroller = wrap?.closest('[data-id="combo-experiment-main"]')
+    if (!wrap || !scroller) return undefined
+    const onScroll = () => {
+      const h = wrap.offsetHeight || 1
+      heroProgress.set(Math.min(1, Math.max(0, scroller.scrollTop / h)))
+    }
+    onScroll()
+    scroller.addEventListener('scroll', onScroll, { passive: true })
+    return () => scroller.removeEventListener('scroll', onScroll)
+  }, [heroProgress])
 
   const comboCards = combos.map((c, i) => (
     <ProductCard
@@ -505,14 +542,71 @@ export default function PDPBody({
   return (
     <div
       data-id={id('page')}
-      className="flex flex-col gap-3 px-3"
+      className="flex flex-col px-3"
       style={{
         paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
       }}
     >
-      <Hero images={product.images} dataId={id('hero')} />
+      <motion.div
+        ref={heroRef}
+        data-id={id('hero-parallax')}
+        className="sticky top-0 z-0"
+        style={{ scale: heroScale, transformOrigin: 'center' }}
+      >
+        <Hero images={product.images} dataId={id('hero')} controlsOpacity={heroControlsOpacity} />
+      </motion.div>
 
-      <MainInfo product={product} dataId={id('main-info')} />
+      {/* Content sheet — opaque, full-bleed surface that scrolls up over the
+          pinned hero (so the hero only peeks at the top edge, never through the
+          gaps between cards). */}
+      <div data-id={id('content')} className="relative z-10 -mx-3 flex flex-col gap-3 bg-[#F7F8FA] px-3">
+      <MainInfo
+        product={product}
+        dataId={id('main-info')}
+        bundleBanner={
+          variant === 3 ? (
+            /* Variation 3 — bundle banner below Best Price (same 36px height),
+               left→right gradient, single line + serrated ticket */
+            <Squircle
+              as="button"
+              type="button"
+              cornerRadius={8}
+              cornerSmoothing={1}
+              data-id={id('bundle')}
+              onClick={() => setBundleOpen(true)}
+              className="flex h-9 w-full items-center gap-2 self-stretch pl-1 pr-2"
+              style={{ background: 'linear-gradient(270deg, #FFFFFF 0%, #D6E9FF 100%)' }}
+            >
+              <span data-id={id('bundle-icon')} className="flex h-6 w-6 shrink-0 items-center justify-center">
+                <LoopingGif dataId={id('bundle-gif')} src={COMBO_GIF} durationMs={COMBO_GIF_MS} className="h-5 w-5" />
+              </span>
+              <span data-id={id('bundle-title-row')} className="flex flex-1 items-center gap-1.5">
+                <span data-id={id('bundle-title')} className="font-noontree text-[14px] font-bold leading-[18px] tracking-[-0.14px] text-[#242A34]">
+                  Bundle &amp; save
+                </span>
+                <span data-id={id('bundle-tag')} className="flex items-center">
+                  <svg width="4" height="20" viewBox="0 0 4 20" fill="none" aria-hidden="true" className="shrink-0">
+                    <path d="M3.14258 20H0V18.5713C0.86787 18.5713 1.57129 17.9316 1.57129 17.1426C1.57116 16.3537 0.867791 15.7139 0 15.7139V14.2852C0.867721 14.2851 1.57105 13.6462 1.57129 12.8574C1.57129 12.1179 0.953321 11.5089 0.161133 11.4355L0 11.4287V9.28516C0.867721 9.28515 1.57105 8.64621 1.57129 7.85742C1.57129 7.11789 0.953321 6.50889 0.161133 6.43555L0 6.42871V4.28516C0.867721 4.28515 1.57105 3.64621 1.57129 2.85742C1.57129 2.11789 0.953321 1.50889 0.161133 1.43555L0 1.42871V0H3.14258V20Z" fill="#2122B8" />
+                  </svg>
+                  <span data-id={id('bundle-tag-label')} className="-mx-px flex h-5 items-center bg-[#2122B8] px-1 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] text-white">
+                    <span className="inline-flex items-center gap-1">
+                      <span>upto</span>
+                      <span className="inline-flex items-center gap-px">
+                        <Dirham />
+                        {bundle?.savings ?? '20'}
+                      </span>
+                    </span>
+                  </span>
+                  <svg width="4" height="20" viewBox="0 0 4 20" fill="none" aria-hidden="true" className="shrink-0">
+                    <path d="M3.14258 1.42871C2.27482 1.42884 1.57129 2.06852 1.57129 2.85742C1.57153 3.64613 2.27497 4.28503 3.14258 4.28516V6.42871C2.27482 6.42884 1.57129 7.06852 1.57129 7.85742C1.57153 8.64613 2.27497 9.28503 3.14258 9.28516V11.4287C2.27482 11.4288 1.57129 12.0685 1.57129 12.8574C1.57153 13.6461 2.27497 14.285 3.14258 14.2852V15.7139C2.2749 15.714 1.57142 16.3538 1.57129 17.1426C1.57129 17.9315 2.27482 18.5712 3.14258 18.5713V20H0V0H3.14258V1.42871Z" fill="#2122B8" />
+                  </svg>
+                </span>
+              </span>
+              <ChevronRight dataId={id('bundle-chevron')} className="h-4 w-4" color="#0A4F4A" />
+            </Squircle>
+          ) : undefined
+        }
+      />
 
       {/* Bundle up & save (combo entry) */}
       {variant === 2 ? (
@@ -554,7 +648,7 @@ export default function PDPBody({
           </span>
           <ChevronRight dataId={id('bundle-chevron')} className="h-5 w-5" color="#0A4F4A" />
         </button>
-      ) : (
+      ) : variant === 3 ? null : (
         /* Variation 1 — Figma Frame 2147238531 */
         <button
           type="button"
@@ -581,6 +675,40 @@ export default function PDPBody({
           </span>
         </button>
       )}
+
+      {/* Everything below the bundle — grouped on the main background */}
+      <div data-id={id('content-group')} className="-mx-3 flex flex-col gap-3 bg-[#F7F8FA] px-3">
+
+      {/* Delivery information */}
+      <Squircle as="div" cornerRadius={16} cornerSmoothing={1} data-id={id('delivery')} className="flex flex-col gap-3 bg-white p-3">
+        <div data-id={id('delivery-header')} className="flex items-center justify-between">
+          <h2 data-id={id('delivery-title')} className="font-noontree text-[15px] font-bold leading-[17px] tracking-[-0.28px] text-[#101628]">
+            Delivery Information
+          </h2>
+          <span data-id={id('delivery-member')} className="flex items-center gap-1">
+            <img data-id={id('delivery-member-logo')} src={oneMemberLogo} alt="" aria-hidden="true" className="h-5 w-auto shrink-0" />
+            <span data-id={id('delivery-member-label')} className="text-right font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.14px] text-[#666D85]">
+              member
+            </span>
+          </span>
+        </div>
+        <div data-id={id('delivery-express')} className="rounded-xl border border-[#F2F3F7] p-3">
+          <div data-id={id('delivery-express-row')} className="flex items-center gap-2">
+            <img data-id={id('delivery-express-logo')} src={expressLogo} alt="express" className="h-4 w-auto shrink-0" />
+            <span data-id={id('delivery-express-text')} className="font-noontree text-[14px] font-normal leading-[17px] text-[#1D2539]">
+              {deliveryInfo.express}
+            </span>
+          </div>
+        </div>
+        <Squircle as="button" type="button" cornerRadius={12} cornerSmoothing={1} data-id={id('delivery-options')} className="flex items-center justify-between bg-[#F9F9FB] px-3 py-3">
+          <span data-id={id('delivery-options-label')} className="font-noontree text-[14px] font-semibold leading-[17px] text-[#475067]">
+            Other Delivery Options
+          </span>
+          <svg data-id={id('delivery-options-chevron')} width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M6 8l4 4 4-4" stroke="#5D5D5D" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </Squircle>
+      </Squircle>
 
       {/* Sponsored ad strip — Figma Frame 1261154665 */}
       <div data-id={id('ad-strip')} className="flex h-[35px] items-stretch overflow-hidden rounded-md border border-[#F5F5F5] bg-white">
@@ -613,63 +741,36 @@ export default function PDPBody({
         </div>
       </div>
 
-      {/* Delivery information */}
-      <Squircle as="div" cornerRadius={16} cornerSmoothing={1} data-id={id('delivery')} className="flex flex-col gap-3 bg-white p-3">
-        <div data-id={id('delivery-header')} className="flex items-center justify-between">
-          <h2 data-id={id('delivery-title')} className="font-noontree text-[15px] font-bold leading-[17px] tracking-[-0.28px] text-[#101628]">
-            Delivery Information
-          </h2>
-          <span data-id={id('delivery-member')} className="flex items-center gap-1">
-            <img data-id={id('delivery-member-logo')} src={oneMemberLogo} alt="" aria-hidden="true" className="h-5 w-auto shrink-0" />
-            <span data-id={id('delivery-member-label')} className="text-right font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.14px] text-[#666D85]">
-              member
-            </span>
-          </span>
-        </div>
-        <Squircle as="div" cornerRadius={12} cornerSmoothing={1} data-id={id('delivery-express')} className="border border-[#F2F3F7] p-3">
-          <div data-id={id('delivery-express-row')} className="flex items-center gap-2">
-            <img data-id={id('delivery-express-logo')} src={expressLogo} alt="express" className="h-4 w-auto shrink-0" />
-            <span data-id={id('delivery-express-text')} className="font-noontree text-[14px] font-normal leading-[17px] text-[#1D2539]">
-              {deliveryInfo.express}
-            </span>
-          </div>
-        </Squircle>
-        <Squircle as="button" type="button" cornerRadius={12} cornerSmoothing={1} data-id={id('delivery-options')} className="flex items-center justify-between bg-[#F9F9FB] px-3 py-3">
-          <span data-id={id('delivery-options-label')} className="font-noontree text-[14px] font-semibold leading-[17px] text-[#475067]">
-            Other Delivery Options
-          </span>
-          <svg data-id={id('delivery-options-chevron')} width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M6 8l4 4 4-4" stroke="#5D5D5D" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Squircle>
-      </Squircle>
-
       {/* Payment offers */}
       <div data-id={id('payment')} className="flex flex-col gap-3 rounded-2xl bg-white p-3">
         <h2 data-id={id('payment-title')} className="font-noontree text-[15px] font-bold leading-[17px] tracking-[-0.28px] text-[#101628]">
           Payment offers
         </h2>
-        <div data-id={id('payment-card')} className="flex items-center justify-between rounded-[10px] border border-[#F2F3F7] p-2">
-          <div data-id={id('payment-left')} className="flex items-center gap-2">
-            <div data-id={id('payment-logo')} className="flex h-10 w-[60px] items-center justify-center rounded bg-white">
-              <svg data-id={id('payment-logo-icon')} width="34" height="26" viewBox="0 0 40 30" fill="none" aria-hidden="true">
-                <rect x="2" y="6" width="36" height="20" rx="3" stroke="#343D54" strokeWidth="1.6" />
-                <path d="M2 12h36" stroke="#343D54" strokeWidth="1.6" />
-              </svg>
+        {/* coupon-content carousel (Figma Frame 2147225785) */}
+        <div data-id={id('payment-rail')} className="scrollbar-hide -mx-3 flex gap-2 overflow-x-auto px-3">
+          {paymentOffers.map((o) => (
+            <div
+              key={o.id}
+              data-id={id(`payment-card-${o.id}`)}
+              className="flex w-[300px] shrink-0 items-center gap-2 rounded-[10px] border border-[#F2F3F7] p-2"
+            >
+              <img data-id={id(`payment-${o.id}-icon`)} src={PAY_ICONS[o.icon]} alt="" aria-hidden="true" className="h-10 w-[60px] shrink-0" />
+              <div data-id={id(`payment-${o.id}-copy`)} className="flex min-w-0 flex-col gap-0.5">
+                <span className="font-noontree text-[13px] leading-[17px] tracking-[-0.12px] text-[#0E0E0E]">
+                  <span className="font-bold">{o.title}</span>
+                  {o.titleRest ? ` ${o.titleRest}` : ''}
+                </span>
+                <span className="font-noontree text-[13px] font-normal leading-[16px] tracking-[-0.12px] text-[#666D85]">
+                  {o.subtitle}
+                </span>
+                {o.cta && (
+                  <span data-id={id(`payment-${o.id}-cta`)} className="font-noontree text-[13px] font-semibold leading-[17px] text-[#0057FF]">
+                    {o.cta}
+                  </span>
+                )}
+              </div>
             </div>
-            <div data-id={id('payment-copy')} className="flex flex-col">
-              <span data-id={id('payment-title-text')} className="font-noontree text-[12px] font-normal leading-[14px] tracking-[-0.12px] text-[#666D85]">
-                {paymentOffer.title}
-              </span>
-              <span data-id={id('payment-subtitle')} className="font-noontree text-[12px] font-bold leading-[16px] tracking-[-0.12px] text-[#0E0E0E]">
-                {paymentOffer.subtitle}{' '}
-                <span data-id={id('payment-cta')} className="font-semibold text-[#0057FF]">{paymentOffer.cta}</span>
-              </span>
-            </div>
-          </div>
-          <span data-id={id('payment-provider')} className="rounded-lg bg-[#5AFEAE] px-3 py-2 font-noontree text-[13px] font-bold text-[#292929]">
-            tabby
-          </span>
+          ))}
         </div>
       </div>
 
@@ -779,6 +880,8 @@ export default function PDPBody({
           ))}
         </div>
       </SectionCard>
+      </div>
+      </div>
 
       {/* Buy together and save — bottom sheet */}
       <BundleSheet

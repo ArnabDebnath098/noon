@@ -80,12 +80,23 @@ export const bundle = {
   ],
 }
 
-// Payment offers row (tabby / bank cashback).
-export const paymentOffer = {
-  title: 'Get extra 5% cashback using',
-  subtitle: 'ENBD noon VISA credit card',
-  cta: 'Apply Now',
-}
+// Payment offers — a 2-card carousel of cashback / BNPL offers.
+export const paymentOffers = [
+  {
+    id: 'enbd',
+    icon: 'enbd',
+    title: 'Get extra 5% cashback',
+    titleRest: 'using',
+    subtitle: 'ENBD noon VISA credit card',
+    cta: 'Apply Now',
+  },
+  {
+    id: 'tabby',
+    icon: 'tabby',
+    title: 'Get extra 5% cashback',
+    subtitle: 'on using ENBD noon VISA credit card',
+  },
+]
 
 // Delivery information card.
 export const deliveryInfo = {
