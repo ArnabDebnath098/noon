@@ -13,6 +13,7 @@ import { SectionCard, Accordion, ProductCard } from '../../components/common'
 import BundleSheet from './BundleSheet'
 import BundleContainer from './BundleContainer'
 import BundleShowcase from './BundleShowcase'
+import BundleShowcase5 from './BundleShowcase5'
 import SearchPage from './SearchPage'
 import { Dirham, withDirham } from '../../components/common/Dirham'
 import ratingStar from '../../assets/icons/rating-star.svg'
@@ -564,7 +565,7 @@ export default function PDPBody({
         product={product}
         dataId={id('main-info')}
         bundleBanner={
-          variant === 3 ? (
+          variant === 3 || variant === 5 ? (
             /* Variation 3 — bundle banner below Best Price (same 36px height),
                left→right gradient, single line + serrated ticket */
             <Squircle
@@ -648,7 +649,7 @@ export default function PDPBody({
           </span>
           <ChevronRight dataId={id('bundle-chevron')} className="h-5 w-5" color="#0A4F4A" />
         </button>
-      ) : variant === 3 ? null : (
+      ) : variant === 3 || variant === 5 ? null : (
         /* Variation 1 — Figma Frame 2147238531 */
         <button
           type="button"
@@ -789,6 +790,14 @@ export default function PDPBody({
             off={bundle.off}
             viewAll={bundle.viewAll}
             benefits={bundle.benefits}
+            onViewAll={() => setSearchOpen(true)}
+          />
+        ) : variant === 5 ? (
+          <BundleShowcase5
+            dataId={id('section-bundle')}
+            items={bundle.items}
+            savings={bundle.savings}
+            viewAll={bundle.viewAll}
             onViewAll={() => setSearchOpen(true)}
           />
         ) : (
