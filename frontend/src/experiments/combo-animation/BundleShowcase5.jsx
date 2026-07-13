@@ -112,7 +112,7 @@ export default function BundleShowcase5({
     <div
       ref={rootRef}
       data-id={did('root')}
-      className={`scrollbar-hide flex items-stretch overflow-x-auto bg-white ${bleed ? '-mx-3' : ''}`}
+      className={`scrollbar-hide flex items-stretch overflow-x-auto bg-white ${bleed ? '-mx-3' : 'rounded-2xl'}`}
     >
       {/* Info panel — soft ellipse wash; sticky-left, fades/scales on scroll */}
       <motion.div

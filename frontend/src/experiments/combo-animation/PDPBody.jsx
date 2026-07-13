@@ -677,34 +677,57 @@ export default function PDPBody({
         </Squircle>
       </Squircle>
 
-      {/* Sponsored ad strip — Figma Frame 1261154665 */}
-      <div data-id={id('ad-strip')} className="flex h-[35px] items-stretch overflow-hidden rounded-md border border-[#F5F5F5] bg-white">
-        {/* thumb — full-height #FCFCFD tile, flush left */}
-        <div data-id={id('ad-strip-thumb')} className="flex w-[30px] shrink-0 items-center justify-center bg-[#FCFCFD]">
-          <img
-            data-id={id('ad-strip-image')}
-            src="https://f.nooncdn.com/p/pzsku/ZD3E2C2095909F7BE8042Z/45/1764762084/8e224320-48af-4928-ba84-5f31fc781aa9.jpg?width=480"
-            alt=""
-            aria-hidden="true"
-            className="h-[30px] w-auto object-contain"
-            style={{ mixBlendMode: 'multiply' }}
-          />
-        </div>
-        <span data-id={id('ad-strip-title')} className="ml-2 min-w-0 flex-1 self-center truncate font-figtree text-[12px] font-normal italic leading-[14px] tracking-[-0.12px] text-[#404553]">
-          Garnier Ultra Doux Rice Water
-        </span>
-        {/* price + express */}
-        <div data-id={id('ad-strip-right')} className="flex shrink-0 items-center gap-2 px-2">
-          <span data-id={id('ad-strip-price')} className="inline-flex items-center gap-px font-noontree text-[16px] font-bold leading-5 tracking-[-0.16px] text-[#404553]">
-            <Dirham />125
-          </span>
-          <img data-id={id('ad-strip-express')} src={expressLogo} alt="express" className="h-4 w-auto shrink-0" />
-        </div>
-        {/* Ad corner tab — bottom-right, rounded top-left */}
-        <div data-id={id('ad-strip-ad-col')} className="flex shrink-0 flex-col justify-end">
-          <span data-id={id('ad-strip-tag')} className="rounded-tl-[4px] bg-[#F0F2F7] px-1 text-center font-figtree text-[11px] italic leading-[12px] tracking-[-0.12px] text-[#7E859B]">
-            Ad
-          </span>
+      {/* Sponsored ad strip — Figma Frame 1261154679: bordered product card
+          (thumb tile + title / rating chip / price row with express tag) */}
+      <div data-id={id('ad-strip')} className="flex h-[88px] items-center gap-4 rounded-2xl bg-white py-1 pl-1 pr-3">
+        <div data-id={id('ad-strip-body')} className="flex min-w-0 flex-1 items-center gap-2.5 p-1">
+          {/* thumb — 53×72 rounded tile with a faint blue wash */}
+          <div
+            data-id={id('ad-strip-thumb')}
+            className="relative h-[72px] w-[53px] shrink-0 overflow-hidden rounded-[9px]"
+            style={{ background: 'rgba(0, 40, 136, 0.03)' }}
+          >
+            <img
+              data-id={id('ad-strip-image')}
+              src="https://f.nooncdn.com/p/pzsku/ZD3E2C2095909F7BE8042Z/45/1764762084/8e224320-48af-4928-ba84-5f31fc781aa9.jpg?width=480"
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 m-auto h-[62px] w-auto rounded-[9px] object-contain"
+              style={{ mixBlendMode: 'multiply' }}
+            />
+          </div>
+
+          {/* info column */}
+          <div data-id={id('ad-strip-info')} className="flex min-w-0 flex-1 flex-col gap-2">
+            <div data-id={id('ad-strip-head')} className="flex flex-col gap-0.5">
+              <span data-id={id('ad-strip-title')} className="truncate font-noontree text-[14px] font-medium leading-[18px] tracking-[-0.14px] text-[#212121]">
+                TCF09 40W Dual USB-C / Type-C 2PD Mini
+              </span>
+              {/* rating chip — same star as combo-main-info-rating */}
+              <span data-id={id('ad-strip-rating')} className="flex h-[18px] w-fit items-center gap-0.5 rounded bg-[#F9F9FB] px-[3px]">
+                <img data-id={id('ad-strip-rating-star')} src={ratingStar} alt="" aria-hidden="true" className="h-3 w-3" />
+                <span data-id={id('ad-strip-rating-value')} className="font-noontree text-[13px] font-semibold leading-[14px] tracking-[-0.12px] text-[#101628]">
+                  4.3
+                </span>
+              </span>
+            </div>
+
+            {/* price row */}
+            <div data-id={id('ad-strip-pricing')} className="flex items-end gap-1">
+              <span data-id={id('ad-strip-price')} className="inline-flex items-center gap-px font-noontree text-[16px] font-bold leading-5 tracking-[-0.16px] text-[#1D2539]">
+                <Dirham />125
+              </span>
+              <span data-id={id('ad-strip-price-was')} className="inline-flex items-center gap-px pb-0.5 font-noontree text-[12px] font-normal leading-[14px] tracking-[-0.12px] text-[#989FB3] line-through">
+                <Dirham />209
+              </span>
+              <span data-id={id('ad-strip-off')} className="pb-0.5 font-noontree text-[12px] font-semibold leading-[14px] tracking-[-0.12px] text-[#02A31E]">
+                47% OFF
+              </span>
+              <img data-id={id('ad-strip-express')} src={expressLogo} alt="express" className="mb-0.5 ml-1 h-[14px] w-auto shrink-0" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -764,6 +787,7 @@ export default function PDPBody({
             items={bundle.items}
             savings={bundle.savings}
             viewAll={bundle.viewAll}
+            bleed={false}
             onViewAll={() => setSearchOpen(true)}
           />
         ) : (

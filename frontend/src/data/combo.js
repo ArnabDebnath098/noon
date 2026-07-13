@@ -17,6 +17,16 @@ const COMBO_THUMBS_3 = [
   { image: comboThumbShampoo, qty: 1 },
   { image: comboThumbShampoo, qty: 1 },
 ]
+// 7-product combo — the row-card thumbs rail scrolls when they overflow
+const COMBO_THUMBS_7 = [
+  { image: comboThumbConditioner, qty: 1 },
+  { image: comboThumbShampoo, qty: 1 },
+  { image: comboThumbConditioner, qty: 2 },
+  { image: comboThumbShampoo, qty: 1 },
+  { image: comboThumbConditioner, qty: 1 },
+  { image: comboThumbShampoo, qty: 2 },
+  { image: comboThumbConditioner, qty: 1 },
+]
 
 // Main product for the full PDP — Bare Anatomy Expert Anti-Dandruff Shampoo.
 // The hero image already carries the "Salicylic Acid & Biotin" key-visual text,
@@ -59,8 +69,7 @@ export const bundle = {
       id: 'bundle-2',
       image: bundleShampooRicewater,
       thumbs: COMBO_THUMBS_3,
-      extra: 4,
-      productCount: '2 Products',
+      productCount: '3 Products',
       title: 'BARE ANATOMY Expert Shampoo + Hair Growth Serum',
       price: '74.99',
       comparePrice: '86.99',
@@ -70,8 +79,8 @@ export const bundle = {
     {
       id: 'bundle-3',
       image: bundleShampooRicewater,
-      thumbs: COMBO_THUMBS,
-      productCount: '2 Products',
+      thumbs: COMBO_THUMBS_7,
+      productCount: '7 Products',
       title: 'BARE ANATOMY Complete Hair Care Combo Pack',
       price: '89.99',
       comparePrice: '104.99',

@@ -29,7 +29,7 @@ export default function BundleContainer({
     >
       {rowCards ? (
         /* Variation 4 — plain title header */
-        <div data-id={did('header')} className="rounded-t-[14px] px-4 pb-2 pt-4">
+        <div data-id={did('header')} className="rounded-t-[14px] px-4 py-4">
           <span data-id={did('header-title')} className="font-noontree text-[18px] font-bold leading-6 tracking-[-0.15px] text-black">
             Save more with combos
           </span>
@@ -72,7 +72,12 @@ export default function BundleContainer({
         /* Variation 4 — stacked horizontal row cards */
         <div data-id={did('list')} className="scrollbar-hide flex max-h-[520px] flex-col gap-2 overflow-y-auto px-3 py-1">
           {items.map((it) => (
-            <ComboRowCard key={it.id} dataId={did(`card-${it.id}`)} {...it} />
+            <ComboRowCard
+              key={it.id}
+              dataId={did(`card-${it.id}`)}
+              onQtyChange={onQtyChange ? (q) => onQtyChange(it.id, q) : undefined}
+              {...it}
+            />
           ))}
         </div>
       ) : (

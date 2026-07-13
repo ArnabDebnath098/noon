@@ -70,7 +70,7 @@ function RailTile({ m, active, onChange, sp, radius }) {
   // line. "mall" position-morphs from below to the right (no crossfade).
   const rmItemH = useTransform(sp, [0, 1], [13 * K, 11.5 * K])
   const rmSuperNudge = useTransform(sp, [0, 1], [0, 2.1]) // p-descender baseline drop
-  const rmMallX = useTransform(sp, [0, 1], [0, 31])
+  const rmMallX = useTransform(sp, [0, 1], [0, 30.5])
   const rmMallY = useTransform(sp, [0, 1], [13 * K + 2, -0.5]) // slight lift so mall's cap aligns with super
   const rmWrapW = useTransform(sp, [0, 1], [35, 53])
   const rmWrapH = useTransform(sp, [0, 1], [2 * 13 * K + 2, 11.5 * K])
