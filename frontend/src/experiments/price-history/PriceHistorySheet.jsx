@@ -101,14 +101,21 @@ const TREND = {
 
 export default function PriceHistorySheet({ open, onClose, onAdd, image, data, dataId = 'ph-sheet' }) {
   const did = (s) => `${dataId}-${s}`
-  const isLower = !!data.trend?.lower
-  const tone = isLower ? TREND.lower : TREND.higher
   const [range, setRange] = useState('1y')
   const active = data.ranges[range]
   const points = active.points.map((price, i) => ({ i, price }))
   const todayPrice = active.points[active.points.length - 1]
   // average price over the SELECTED period — drives the dashed guide line
   const avgPrice = active.points.reduce((sum, p) => sum + p, 0) / active.points.length
+  // trend is COMPUTED from the data (today vs the period average) so the note
+  // always matches the chart — e.g. higher than the 1-month average but lower
+  // than the 3-month / 1-year averages
+  const diff = todayPrice - avgPrice
+  const isLower = diff < 0
+  const mag = Math.abs(diff)
+  const trendAmount = mag >= 5 ? String(Math.round(mag)) : String(Math.round(mag * 2) / 2)
+  const trendReference = `the ${active.label.toLowerCase()} average`
+  const tone = isLower ? TREND.lower : TREND.higher
   // shared y-scale: nice rounded ticks covering the range's span. The labels
   // are equal-height cells (each tick centres at (k+0.5)/n of the column), so
   // the chart domain widens by half a step per side to keep the curve aligned.
@@ -133,19 +140,42 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   // ---- scrubber: hover / press / slide reveals the price at that point ----
   const plotRef = useRef(null)
   const [scrub, setScrub] = useState(null) // { i, x, y, plotW } in plot px
-  const updateScrub = (clientX) => {
+  const [selectedStat, setSelectedStat] = useState(null) // stat card pinning the marker
+  const markerAt = (i) => {
     const el = plotRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const f = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-    const coord = domainLo + f * (domainHi - domainLo)
-    const i = Math.round(Math.min(points.length - 1, Math.max(0, coord))) // snap to nearest point
     setScrub({
       i,
       x: ((i - domainLo) / (domainHi - domainLo)) * rect.width,
       y: ((yHi - active.points[i]) / (yHi - yLo)) * rect.height,
       plotW: rect.width,
     })
+  }
+  const updateScrub = (clientX) => {
+    const el = plotRef.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const f = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+    const coord = domainLo + f * (domainHi - domainLo)
+    setSelectedStat(null) // manual scrubbing releases a stat-pinned marker
+    markerAt(Math.round(Math.min(points.length - 1, Math.max(0, coord)))) // snap to nearest point
+  }
+
+  // ---- stats: computed from the SELECTED range; tapping pins the marker ----
+  const statValues = {
+    lowest: Math.min(...active.points),
+    highest: Math.max(...active.points),
+    today: todayPrice,
+  }
+  const onStatClick = (key) => {
+    if (selectedStat === key) {
+      setSelectedStat(null)
+      setScrub(null)
+      return
+    }
+    setSelectedStat(key)
+    markerAt(key === 'today' ? points.length - 1 : active.points.indexOf(statValues[key]))
   }
   // date for point i — the series ends today and spans `days` back
   const scrubDate = (i) => {
@@ -156,6 +186,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   const selectRange = (key) => {
     setRange(key)
     setScrub(null)
+    setSelectedStat(null)
   }
   // pill flips right when there isn't ~120px of room on the left of the line
   const pillLeft = scrub ? scrub.x > 120 : true
@@ -195,8 +226,8 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
               >
                 {/* Header — product tile + title + dotted subtitle */}
                 <div data-id={did('header')} className="flex h-[72px] items-center gap-3 border-b border-[#F9F9FB] p-4">
-                  <span data-id={did('header-image')} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#EAECF0] bg-white">
-                    <img src={image} alt="" aria-hidden="true" className="h-8 w-8 object-contain" />
+                  <span data-id={did('header-image')} className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border border-[#EAECF0] bg-white">
+                    <img src={image} alt="" aria-hidden="true" className="h-12 w-12 object-contain" />
                   </span>
                   <div data-id={did('header-copy')} className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span data-id={did('title')} className="font-noontree text-[16px] font-bold leading-5 tracking-[-0.15px] text-[#1D2539]">
@@ -378,7 +409,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                               <XAxis dataKey="i" type="number" domain={[domainLo, domainHi]} hide />
                               <YAxis domain={[yLo, yHi]} hide />
                               <Area
-                                type="monotone"
+                                type="stepAfter"
                                 dataKey="price"
                                 stroke={LINE}
                                 strokeWidth={1.5}
@@ -421,55 +452,87 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                       <span className="font-noontree text-[12px] font-medium leading-5 tracking-[-0.1px]">
                         <span className="inline-flex items-center gap-px font-semibold">
                           <Dirham />
-                          {data.trend.amount}
+                          {trendAmount}
                         </span>{' '}
-                        {isLower ? 'lower' : 'higher'} than {data.trend.reference}
+                        {isLower ? 'lower' : 'higher'} than {trendReference}
                       </span>
                     </div>
                   </div>
 
-                  {/* Lowest / Highest / Today stat cards */}
+                  {/* Lowest / Highest / Today stat cards — values follow the
+                      selected range; tapping one pins the chart marker on that
+                      point (tap again to release) */}
                   <div data-id={did('stats')} className="flex gap-2">
                     {[
                       { key: 'lowest', label: 'Lowest' },
                       { key: 'highest', label: 'Highest' },
                       { key: 'today', label: 'Today' },
                     ].map(({ key, label }) => (
-                      <div key={key} data-id={did(`stat-${key}`)} className="flex flex-1 flex-col gap-2 rounded-lg bg-[#F9F9FB] px-3 py-2">
+                      <button
+                        key={key}
+                        type="button"
+                        data-id={did(`stat-${key}`)}
+                        aria-pressed={selectedStat === key}
+                        onClick={() => onStatClick(key)}
+                        className={`flex flex-1 flex-col gap-2 rounded-lg border-2 px-3 py-2 text-left transition-colors ${
+                          selectedStat === key ? 'border-[#BDDBFF] bg-white' : 'border-transparent bg-[#F9F9FB]'
+                        }`}
+                      >
                         {STAT_ICONS[key]}
                         <div className="flex flex-col">
                           <span className="inline-flex items-center gap-px font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
                             <Dirham />
-                            {data.stats[key]}
+                            {statValues[key]}
                           </span>
                           <span className="font-noontree text-[11px] font-medium leading-[14px] tracking-[-0.1px] text-[#666D85]">
                             {label}
                           </span>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
 
                   {/* Better deal row — only when the price is higher now, to
-                      steer the shopper to cheaper options (retention). */}
-                  {!isLower && (
-                    <div data-id={did('deal')} className="flex flex-col gap-3 pt-1">
-                      <span aria-hidden="true" className="h-px w-full border-t border-dashed border-[#F2F3F7]" />
-                      <button type="button" data-id={did('deal-row')} className="flex items-center justify-between">
-                        <span className="flex flex-col items-start">
-                          <span className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
-                            Looking for a better deal?
-                          </span>
-                          <span className="font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.1px] text-[#666D85]">
-                            select from other color options
-                          </span>
-                        </span>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
-                          <path d="M6 9.5l6 6 6-6" stroke="#1D2539" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
+                      steer the shopper to cheaper options (retention). Height
+                      springs open (the bottom-anchored sheet expands upward)
+                      while the row itself rises in from the bottom. */}
+                  <AnimatePresence initial={false}>
+                    {!isLower && (
+                      <motion.div
+                        key="deal"
+                        data-id={did('deal')}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={springs.snappy}
+                        className="overflow-hidden"
+                      >
+                        <motion.div
+                          data-id={did('deal-inner')}
+                          initial={{ y: 28 }}
+                          animate={{ y: 0 }}
+                          exit={{ y: 28 }}
+                          transition={springs.snappy}
+                          className="flex flex-col gap-3 pt-1"
+                        >
+                          <span aria-hidden="true" className="h-px w-full border-t border-dashed border-[#F2F3F7]" />
+                          <button type="button" data-id={did('deal-row')} className="flex items-center justify-between">
+                            <span className="flex flex-col items-start">
+                              <span className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
+                                Looking for a better deal?
+                              </span>
+                              <span className="font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.1px] text-[#666D85]">
+                                select from other color options
+                              </span>
+                            </span>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0">
+                              <path d="M6 9.5l6 6 6-6" stroke="#1D2539" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
 
                 {/* Action bar */}

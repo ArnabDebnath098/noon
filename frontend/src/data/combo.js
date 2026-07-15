@@ -96,31 +96,49 @@ export const bundle = {
 export const priceHistory = {
   subtitle: ['BARE ANATOMY', 'Shampoo', '250ml'],
   stats: { lowest: '29.99', highest: '68', today: '34.99' },
-  // trend vs the reference period. `lower: true` → current price is a good deal
-  // (green shell, no "better deal?" nudge); `false` → higher now (amber shell,
-  // show the "better deal?" nudge to retain the shopper).
-  trend: { lower: true, amount: '20', reference: 'same time last year' },
   ranges: {
+    // The trend note (higher/lower vs the period average) is computed from the
+    // points at render time, so it always matches the chart.
     '1m': {
       label: '1 Month',
       days: 30, // span — scrub labels interpolate dates across it
-      labels: ['Jun 18', 'Jun 25', 'Jul 2', 'Jul 9', 'Today'],
-      points: [38, 38, 37.5, 36, 36, 35.5, 34, 32.5, 31, 30, 31.5, 33.5, 34.99],
+      labels: ['Jun 15', 'Jun 22', 'Jun 29', 'Jul 6', 'Today'],
+      // daily prices — real listings hold a price for days, then step on a
+      // sale/repricing, so the 1M view reads as discrete plateaus and drops
+      points: [
+        33.99, 33.99, 33.99, 33.99, 33.99,
+        32.99, 32.99, 32.99, 32.99,
+        34.99, 34.99, 34.99, 34.99, 34.99,
+        31.99, 31.99, 31.99,
+        29.99, 29.99, 29.99, 29.99,
+        33.49, 33.49, 33.49, 33.49,
+        34.99, 34.99, 34.99, 34.99, 34.99,
+      ],
     },
     '3m': {
       label: '3 Month',
       days: 90,
       labels: ['Apr', 'May', 'Jun', 'Today'],
-      points: [45, 44, 42, 43, 41, 39, 38, 38, 37, 36, 35, 33, 31, 30, 29.99, 31, 33, 34.5, 34.99],
+      // ~5-day repricing cadence: high spring plateaus, a flash-sale dip to the
+      // all-time low, then settling at today's price
+      points: [
+        42.99, 42.99, 42.99, 39.99, 39.99, 39.99, 41.99, 41.99,
+        37.99, 37.99, 37.99, 34.99, 34.99, 34.99, 29.99, 29.99,
+        34.99, 34.99,
+      ],
     },
     '1y': {
       label: '1 Year',
       days: 365,
       labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
+      // ~10-day cadence over the year: launch-era pricing, a November sale, a
+      // festive-season hike to the all-time high (68, matches the Highest
+      // stat), then markdowns to a June mega-sale low and today's price
       points: [
-        55, 57, 54, 55, 50, 49.5, 49, 48, 47.5, 47, 46, 45, 44, 42,
-        40, 38, 36, 34, 32, 30, 29.99, 32, 36, 44, 56, 62, 64, 62,
-        56, 48, 40, 36, 35, 34.5, 34.7, 34.99,
+        49.99, 49.99, 49.99, 54.99, 54.99, 54.99, 47.99, 47.99, 47.99,
+        39.99, 39.99, 34.99, 34.99, 44.99, 44.99, 59.99, 59.99, 68, 68,
+        61.99, 61.99, 49.99, 49.99, 42.99, 42.99, 36.99, 36.99,
+        29.99, 29.99, 32.99, 32.99, 34.99, 34.99, 34.99,
       ],
     },
   },
