@@ -7,9 +7,7 @@ import ExperimentsLanding from '../pages/ExperimentsLanding.jsx'
 const ComboAnimationExperiment = lazy(() => import('../experiments/combo-animation/index.jsx'))
 const MarketplaceExperiment = lazy(() => import('../experiments/marketplace-switcher/index.jsx'))
 const AddressExperiment = lazy(() => import('../experiments/address-selection/index.jsx'))
-const MarketplaceSwitcherIntroExperiment = lazy(
-  () => import('../experiments/marketplace-switcher-intro/index.jsx'),
-)
+const PriceHistoryExperiment = lazy(() => import('../experiments/price-history/index.jsx'))
 
 // Minimal route fallback — matches the app background so the swap is invisible.
 function RouteFallback() {
@@ -24,7 +22,7 @@ export default function AppRoutes() {
         <Route path="/combo-animation" element={<ComboAnimationExperiment />} />
         <Route path="/marketplace-switcher" element={<MarketplaceExperiment />} />
         <Route path="/address-selection" element={<AddressExperiment />} />
-        <Route path="/marketplace-switcher-intro" element={<MarketplaceSwitcherIntroExperiment />} />
+        <Route path="/price-history" element={<PriceHistoryExperiment />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>

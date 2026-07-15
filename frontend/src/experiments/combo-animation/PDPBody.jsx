@@ -161,7 +161,7 @@ function Hero({ images = [], dataId, controlsOpacity }) {
 
 /* ------------------------------------------------------------- main info - */
 
-function MainInfo({ product, dataId, bundleBanner }) {
+function MainInfo({ product, dataId, bundleBanner, onPriceHistory }) {
   const {
     store, title, rating, ratingCount, price, originalPrice, discountPercent, vat,
     bestPriceWithOffers, bestsellerRankTop,
@@ -244,6 +244,17 @@ function MainInfo({ product, dataId, bundleBanner }) {
           <span data-id={d('price-vat')} className="pb-0.5 font-noontree text-[14px] font-normal leading-[18px] text-[#666D85]">
             {vat}
           </span>
+          {/* tertiary "Price history" — text-only, primary colour, right-aligned */}
+          {onPriceHistory && (
+            <button
+              type="button"
+              data-id={d('price-history')}
+              onClick={onPriceHistory}
+              className="ml-auto pb-0.5 font-noontree text-[13px] font-semibold leading-[15px] tracking-[-0.12px] text-[#0F7EFF] active:text-[#0F61FF]"
+            >
+              Price history
+            </button>
+          )}
         </div>
 
         {/* mega deal + lowest price */}
@@ -474,6 +485,7 @@ export default function PDPBody({
   comboAnim = 'chiptop',
   comboStagger = 800,
   idPrefix = 'combo',
+  onPriceHistory,
 }) {
   const id = (s) => (idPrefix ? `${idPrefix}-${s}` : s)
   const [bundleOpen, setBundleOpen] = useState(false)
@@ -535,6 +547,7 @@ export default function PDPBody({
       <MainInfo
         product={product}
         dataId={id('main-info')}
+        onPriceHistory={onPriceHistory}
         bundleBanner={
           variant === 3 || variant === 5 ? (
             /* Variation 3 — bundle banner below Best Price (same 36px height),

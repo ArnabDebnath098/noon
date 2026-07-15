@@ -3,7 +3,7 @@
 // the primary "Add to cart" CTA (M-PrimaryButton).
 import { PrimaryButton } from '../common/PrimaryButton'
 
-export default function ActionBar({ qty = 1, onAdd, onQty, state = 'default' }) {
+export default function ActionBar({ qty = 1, onAdd, onQty, state = 'default', addTextClassName }) {
   return (
     <div
       data-id="action-bar"
@@ -41,6 +41,7 @@ export default function ActionBar({ qty = 1, onAdd, onQty, state = 'default' }) 
           state={state}
           onPress={onAdd}
           className="flex-1"
+          textClassName={addTextClassName}
         />
       </div>
     </div>

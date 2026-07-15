@@ -27,6 +27,7 @@ export function PrimaryButton({
   type = 'button',
   dataId,
   className = '',
+  textClassName = '', // optional typography override (wins over the size preset)
 }) {
   const s = SIZES[size] ?? SIZES.h56
   const isLoading = state === 'loading'
@@ -45,6 +46,7 @@ export function PrimaryButton({
         s.text,
         STATES[state] ?? STATES.default,
         className,
+        textClassName,
       ].join(' ')}
     >
       {isLoading ? (

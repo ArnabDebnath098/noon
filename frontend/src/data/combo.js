@@ -89,6 +89,43 @@ export const bundle = {
   ],
 }
 
+// Price history (price-history experiment bottom sheet). Each range is a
+// series of price points plus `labels` — period markers spread equally along
+// the x-axis (days for 1 Month, months otherwise; the last reads "Today").
+// Prices track the shampoo PDP (now 34.99).
+export const priceHistory = {
+  subtitle: ['BARE ANATOMY', 'Shampoo', '250ml'],
+  stats: { lowest: '29.99', highest: '68', today: '34.99' },
+  // trend vs the reference period. `lower: true` → current price is a good deal
+  // (green shell, no "better deal?" nudge); `false` → higher now (amber shell,
+  // show the "better deal?" nudge to retain the shopper).
+  trend: { lower: true, amount: '20', reference: 'same time last year' },
+  ranges: {
+    '1m': {
+      label: '1 Month',
+      days: 30, // span — scrub labels interpolate dates across it
+      labels: ['Jun 18', 'Jun 25', 'Jul 2', 'Jul 9', 'Today'],
+      points: [38, 38, 37.5, 36, 36, 35.5, 34, 32.5, 31, 30, 31.5, 33.5, 34.99],
+    },
+    '3m': {
+      label: '3 Month',
+      days: 90,
+      labels: ['Apr', 'May', 'Jun', 'Today'],
+      points: [45, 44, 42, 43, 41, 39, 38, 38, 37, 36, 35, 33, 31, 30, 29.99, 31, 33, 34.5, 34.99],
+    },
+    '1y': {
+      label: '1 Year',
+      days: 365,
+      labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
+      points: [
+        55, 57, 54, 55, 50, 49.5, 49, 48, 47.5, 47, 46, 45, 44, 42,
+        40, 38, 36, 34, 32, 30, 29.99, 32, 36, 44, 56, 62, 64, 62,
+        56, 48, 40, 36, 35, 34.5, 34.7, 34.99,
+      ],
+    },
+  },
+}
+
 // Payment offers — a 2-card carousel of cashback / BNPL offers.
 export const paymentOffers = [
   {
