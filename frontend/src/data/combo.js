@@ -96,6 +96,14 @@ export const bundle = {
 export const priceHistory = {
   subtitle: ['BARE ANATOMY', 'Shampoo', '250ml'],
   stats: { lowest: '29.99', highest: '68', today: '34.99' },
+  // quantity variants for the "better deal" accordion (shampoo → sizes, not
+  // colors; `current` marks the size being viewed). Nothing selected by default.
+  // `image` feeds the sheet-header swap when a size is selected
+  variants: [
+    { id: '200ml', label: '200ml', ml: 200, price: 29.99, image: comboThumbShampoo },
+    { id: '250ml', label: '250ml', ml: 250, price: 34.99, image: bareAnatomyShampoo, current: true },
+    { id: '400ml', label: '400ml', ml: 400, price: 49.99, image: comboThumbConditioner },
+  ],
   ranges: {
     // The trend note (higher/lower vs the period average) is computed from the
     // points at render time, so it always matches the chart.

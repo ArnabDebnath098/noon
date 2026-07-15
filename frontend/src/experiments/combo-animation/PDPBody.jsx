@@ -244,13 +244,13 @@ function MainInfo({ product, dataId, bundleBanner, onPriceHistory }) {
           <span data-id={d('price-vat')} className="pb-0.5 font-noontree text-[14px] font-normal leading-[18px] text-[#666D85]">
             {vat}
           </span>
-          {/* tertiary "Price history" — text-only, primary colour, right-aligned */}
+          {/* tertiary "Price history" — text-only, primary colour, inline after the price group */}
           {onPriceHistory && (
             <button
               type="button"
               data-id={d('price-history')}
               onClick={onPriceHistory}
-              className="ml-auto pb-0.5 font-noontree text-[13px] font-semibold leading-[15px] tracking-[-0.12px] text-[#0F7EFF] active:text-[#0F61FF]"
+              className="ml-1 pb-0.5 font-noontree text-[13px] font-semibold leading-[15px] tracking-[-0.12px] text-[#0F7EFF] active:text-[#0F61FF]"
             >
               Price history
             </button>
