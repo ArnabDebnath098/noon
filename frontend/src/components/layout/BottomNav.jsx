@@ -1,10 +1,9 @@
 // BottomNav — sticky primary tab bar with a sliding active marker (Framer
 // Motion layoutId). Self-contained (internal active state); safe-area aware —
 // the bottom strip is left empty for the device's own home indicator.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
-import useElementWidth from '../../hooks/useElementWidth'
 import { springs } from '../../utils/motion'
 import homeIcon from '../../assets/icons/nav/home.svg?raw'
 import categoryIcon from '../../assets/icons/nav/category.svg?raw'
@@ -53,7 +52,18 @@ export default function BottomNav({
 }) {
   const [active, setActive] = useState('home')
   const [navOpen, setNavOpen] = useState(false)
-  const [navRef, navW] = useElementWidth(448)
+  // the nav is always w-full max-w-md, so its width is min(viewport, 448) —
+  // measured from the window (a ref-based measure goes stale when the docked
+  // branch mounts first without the floating nav element)
+  const [navW, setNavW] = useState(() =>
+    Math.min(typeof window !== 'undefined' ? window.innerWidth : 448, 448),
+  )
+  useEffect(() => {
+    const onResize = () => setNavW(Math.min(window.innerWidth, 448))
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   // Floating variant — two detached, fully-round surfaces: a left circle and a
   // right pill of nav tabs (icons only). Used by variation 2. When a `leading`
@@ -135,7 +145,6 @@ export default function BottomNav({
       {/* while the panel is open the nav rises above the floating variant
           tabs (z-40) and its backdrop (z-45) */}
       <nav
-        ref={navRef}
         data-id={dataId}
         className={`fixed bottom-0 left-1/2 ${navOpen ? 'z-50' : 'z-30'} flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4`}
         style={{ paddingTop: 10, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
@@ -219,14 +228,15 @@ export default function BottomNav({
                 ? { width: panelW, height: panelH, opacity: 1 }
                 : { width: CHIP, height: CHIP, opacity: 0 }
             }
-            transition={{ ...springs.panel, opacity: { duration: navOpen ? 0.1 : 0.2, delay: navOpen ? 0 : 0.15 } }}
+            transition={{ ...springs.snappy, opacity: { duration: navOpen ? 0.1 : 0.2, delay: navOpen ? 0 : 0.12 } }}
             style={{
               position: 'absolute',
               left: 16,
               bottom: 'env(safe-area-inset-bottom, 0px)',
               zIndex: 20,
               pointerEvents: navOpen ? 'auto' : 'none',
-              filter: 'drop-shadow(0 12px 36px rgba(16,24,40,0.24))',
+              // no drop-shadow: re-rasterising a blur every frame of the size
+              // morph janks mobile Safari; the dim backdrop separates instead
             }}
           >
             <Squircle

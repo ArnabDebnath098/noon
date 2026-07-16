@@ -58,7 +58,7 @@ const ROW_TOP = 8
 const BIG_N = 4 // marketplaces shown as row tiles (the 5th slot is the folder/grid)
 const SWAP_SLOT = 3 // the row slot a grid pick swaps into (the last row tile)
 
-const MINI_RATIO = 31 / 76 // preview icon size as a fraction of the tile
+const MINI_RATIO = 0.33 // preview icon size as a fraction of the tile
 
 // expanded panel grid
 const PADP = 14 // panel padding
@@ -382,7 +382,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   const stackOpacity = useTransform(eff, [0.55, 1], [0, 1])
 
   // 2×2 preview cells inside the folder.
-  const MP = 5 // padding inside the folder
+  const MP = Math.round(ICON * 0.1) // padding inside the folder (scales with tile)
   const MG = ICON - 2 * MP - 2 * MINI // gap between the two mini columns
   const miniCenter = (slot) => ({
     x: folderLeft + MP + MINI / 2 + (slot % 2) * (MINI + MG),
