@@ -12,9 +12,14 @@ import MarketplaceSwitcherV3 from './MarketplaceSwitcherV3'
 import MarketplaceSwitcherV7 from './MarketplaceSwitcherV7'
 import MarketplaceSwitcherV8 from './MarketplaceSwitcherV8'
 
+// Variation 5 — no switcher on top at all: variation 2's floating bottom nav
+// (marketplace chip on the left, opens the sheet) is the only switch entry.
+const NoSwitcher = () => null
+
 export const switcherVariants = [
   { value: 1, label: '1', Component: MarketplaceSwitcherV3 },
-  { value: 2, label: '2', Component: MarketplaceSwitcherV2, ownsHeader: true, floatingNav: true },
+  { value: 2, label: '2', Component: MarketplaceSwitcherV2, ownsHeader: true },
   { value: 3, label: '3', Component: MarketplaceSwitcherV7 },
   { value: 4, label: '4', Component: MarketplaceSwitcherV8 },
+  { value: 5, label: '5', Component: NoSwitcher, floatingNav: true },
 ]

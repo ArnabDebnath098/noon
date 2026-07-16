@@ -3,6 +3,7 @@
 // the bottom strip is left empty for the device's own home indicator.
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import homeIcon from '../../assets/icons/nav/home.svg?raw'
 import categoryIcon from '../../assets/icons/nav/category.svg?raw'
 import dealsIcon from '../../assets/icons/nav/deals.svg?raw'
@@ -69,14 +70,18 @@ export default function BottomNav({
           className={`relative flex items-center justify-center rounded-full transition-transform active:scale-95 ${className}`}
         >
           {isActive && (
-            <motion.span
+            <Squircle
+              as={motion.span}
               data-id={`${dataId}-${tab.key}-marker`}
               layoutId={`${dataId}-marker`}
+              cornerRadius={15}
+              cornerSmoothing={1}
               // aspect-square + height keeps the marker equal width & height
-              // (a circle) even when the tab is a wide flex-1 pill slot.
+              // even when the tab is a wide flex-1 pill slot, so the layoutId
+              // flight is pure translation (the squircle clip never distorts).
               // centered via inset-0 + m-auto (NOT translate) so it doesn't
-              // fight framer's layoutId transform
-              className="absolute inset-0 m-auto aspect-square h-[calc(100%-8px)] rounded-full bg-[#0F61FF]/[0.12]"
+              // fight framer's layoutId transform.
+              className="absolute inset-0 m-auto aspect-square h-[calc(100%-8px)] bg-[#0F61FF]/[0.12]"
               transition={{ type: 'spring', stiffness: 500, damping: 38 }}
             />
           )}
@@ -105,32 +110,60 @@ export default function BottomNav({
           }}
         />
 
-        {/* left: floating circle — the selected marketplace, or the first tab */}
+        {/* left: floating squircle — the selected marketplace, or the first
+            tab. Squircles clip with clip-path, so shadows live on the wrapper
+            as drop-shadow (a box-shadow would be clipped away). */}
         {leading ? (
           <button
             type="button"
             data-id={`${dataId}-leading`}
             aria-label="Switch marketplace"
             onClick={onLeading}
-            style={{ background: leadingBg }}
-            className="flex h-[62px] w-[62px] shrink-0 items-center justify-center overflow-hidden rounded-full shadow-[0_6px_24px_rgba(16,24,40,0.16)] transition-transform active:scale-95"
+            style={{ filter: 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))' }}
+            className="relative h-[62px] w-[62px] shrink-0 transition-transform active:scale-95"
           >
-            <span data-id={`${dataId}-leading-inner`} className="flex items-center justify-center">
-              {leading}
-            </span>
+            <Squircle
+              as="span"
+              cornerRadius={18}
+              cornerSmoothing={1}
+              style={{ background: leadingBg }}
+              className="absolute inset-0 flex items-center justify-center overflow-hidden"
+            >
+              <span data-id={`${dataId}-leading-inner`} className="flex items-center justify-center">
+                {leading}
+              </span>
+            </Squircle>
           </button>
         ) : (
-          <div data-id={`${dataId}-leading-circle`} className="h-[62px] w-[62px] shrink-0 rounded-full bg-white shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
-            {navCircle(first, 'h-full w-full')}
+          <div
+            data-id={`${dataId}-leading-circle`}
+            className="relative h-[62px] w-[62px] shrink-0"
+            style={{ filter: 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))' }}
+          >
+            <Squircle as="span" cornerRadius={18} cornerSmoothing={1} className="absolute inset-0 block bg-white">
+              {navCircle(first, 'h-full w-full')}
+            </Squircle>
           </div>
         )}
 
-        {/* right: the tabs in a floating pill (2px inset). The active tab is a
-            square; the rest split the remaining width equally. */}
-        <div data-id={`${dataId}-pill`} className="flex h-[62px] flex-1 items-center overflow-hidden rounded-full bg-white p-[2px] shadow-[0_6px_24px_rgba(16,24,40,0.16)]">
-          {pillTabs.map((tab) =>
-            navCircle(tab, tab.key === active ? 'h-full aspect-square shrink-0' : 'h-full flex-1'),
-          )}
+        {/* right: the tabs in a floating squircle bar (2px inset). The active
+            tab is a square; the rest split the remaining width equally. */}
+        <div
+          data-id={`${dataId}-pill-shadow`}
+          className="min-w-0 flex-1"
+          style={{ filter: 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))' }}
+        >
+          <Squircle
+            as="div"
+            data-id={`${dataId}-pill`}
+            cornerRadius={18}
+            cornerSmoothing={1}
+            className="flex h-[62px] items-center overflow-hidden bg-white p-[2px]"
+          >
+            {pillTabs.map((tab) =>
+              navCircle(tab, tab.key === active ? 'h-full aspect-square shrink-0' : 'h-full flex-1'),
+            )}
+          </Squircle>
         </div>
       </nav>
     )

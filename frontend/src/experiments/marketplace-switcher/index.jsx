@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useMotionValue } from 'framer-motion'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { easings } from '../../utils/motion'
@@ -65,15 +65,25 @@ export default function MarketplaceExperiment() {
   const progress = useMotionValue(0)
   const COLLAPSE_RANGE = 44 // px of scroll over which the switcher collapses
   // tapping the docked chip expands the switcher in place (scroll position
-  // retained); the override clears on the next scroll so scrolling re-collapses.
+  // retained); the override clears once the user genuinely scrolls again.
+  // NOTE: the expansion itself grows the sticky header inside the scroller,
+  // which triggers scroll-anchoring adjustments (real `scroll` events) — so
+  // clearing on ANY scroll snapped it shut before it ever opened. Only clear
+  // when the position has moved meaningfully from where the expand happened.
   const [forceExpanded, setForceExpanded] = useState(false)
-  const expand = () => setForceExpanded(true)
+  const lastTop = useRef(0)
+  const expandedAt = useRef(0)
+  const expand = () => {
+    expandedAt.current = lastTop.current
+    setForceExpanded(true)
+  }
 
   const onScroll = (e) => {
     const top = e.currentTarget.scrollTop
+    lastTop.current = top
     progress.set(Math.min(1, Math.max(0, top / COLLAPSE_RANGE)))
     setCollapsed((c) => (c ? top > 16 : top > 28)) // content-swap threshold (hysteresis)
-    if (forceExpanded) setForceExpanded(false)
+    if (forceExpanded && Math.abs(top - expandedAt.current) > 24) setForceExpanded(false)
   }
   const effectiveCollapsed = collapsed && !forceExpanded
 

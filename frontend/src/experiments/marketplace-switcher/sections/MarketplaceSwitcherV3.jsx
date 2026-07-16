@@ -51,7 +51,8 @@ import NewBadge from './NewBadge'
 // the grid reuses the same ICON. MAX_ICON caps it on wide screens.
 const MAX_ICON = 76 // reference size the marks are tuned to (upper bound)
 const COLLAPSE_H = 36 // collapsed pill height (matches V4's TILE_MIN)
-const GAP = 8 // gap between collapsed row tiles
+const GAP = 8 // gap between row tiles
+const GAP_COLLAPSED = 6 // tighter tile gap in the scroll-collapsed pill row
 const ROW_TOP = 8
 
 const BIG_N = 4 // marketplaces shown as row tiles (the 5th slot is the folder/grid)
@@ -116,6 +117,7 @@ function FolderIcon({
   collapsedOpacity,
   radius,
   bordered,
+  pillShiftX = 0,
   interactive,
   onClick,
 }) {
@@ -124,9 +126,11 @@ function FolderIcon({
   const drive = pillable ? eff : zero
   const fadeDrive = fadeOnScroll ? eff : zero
 
-  // pill morph: height shrinks; y lifts so the pill stays top-aligned
+  // pill morph: height shrinks; y lifts so the pill stays top-aligned; x pulls
+  // the tiles together as the row gap tightens (GAP → GAP_COLLAPSED)
   const h = useTransform(drive, (v) => size - (size - collapseH) * v)
   const y = useTransform(drive, (v) => (-(size - collapseH) / 2) * v)
+  const x = useTransform(drive, (v) => pillShiftX * v)
   // preview minis fade out early on scroll (the folder stack replaces them)
   const wrapOpacity = useTransform(fadeDrive, [0, 0.45], [1, 0])
 
@@ -257,7 +261,7 @@ function FolderIcon({
     >
       {/* pill wrapper — rides the scroll morph independently of the
           offset-path flight on the root */}
-      <motion.div style={{ position: 'relative', width: size, height: h, y, opacity: wrapOpacity }}>
+      <motion.div style={{ position: 'relative', width: size, height: h, x, y, opacity: wrapOpacity }}>
         <AnimatePresence initial={false}>
           <motion.div
             key={m.id}
@@ -339,6 +343,9 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   const folderLeft = rowStart + BIG_N * (ICON + slotGap)
   const folderCx = folderLeft + ICON / 2
   const folderCy = ROW_TOP + ICON / 2
+  // On scroll-collapse the gap tightens GAP → GAP_COLLAPSED: each slot slides
+  // toward the row centre by its share (row stays centred overall).
+  const pillShiftOf = (i) => ((ROW_N - 1) / 2 - i) * (GAP - GAP_COLLAPSED)
 
   // Stepped radii (whole px) — Squircle's cornerRadius is a render prop, so it
   // chases stepped state, exactly like V4. Step the RADIUS itself (~12 distinct
@@ -367,6 +374,8 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
 
   // heights ride motion values — no re-renders during the morph
   const pillHMV = useTransform(eff, (v) => lerp(ICON, COLLAPSE_H, clamp01(v)))
+  // the folder stack overlay follows the folder's gap-tightening slide
+  const stackLeftMV = useTransform(eff, (v) => folderLeft + ((ROW_N - 1) / 2 - BIG_N) * (GAP - GAP_COLLAPSED) * clamp01(v))
   // header row height follows the pill morph (like V4's rail)
   const switcherH = useTransform(eff, (v) => ROW_TOP + lerp(ICON, COLLAPSE_H, clamp01(v)) + 8)
   // the folder's 3-marketplace stack fades in late in the collapse
@@ -401,7 +410,12 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
     return lerp(panelH, pill, clamp01(g))
   })
   const panelBoxW = useTransform(gate, (g) => lerp(panelW, ICON, clamp01(g)))
-  const panelBoxLeft = useTransform(gate, (g) => lerp(panelLeft, folderLeft, clamp01(g)))
+  const panelBoxLeft = useTransform([sp, gate], ([v, g]) => {
+    const cg = clamp01(g)
+    // the folder slides with the tightening row gap while collapsed
+    const pillLeft = folderLeft + pillShiftOf(BIG_N) * clamp01(v) * cg
+    return lerp(panelLeft, pillLeft, cg)
+  })
   const cellCenter = (i) => ({
     x: panelLeft + PADP + ICON / 2 + (i % COLS) * (ICON + cellGap),
     y: ROW_TOP + PADP + ICON / 2 + Math.floor(i / COLS) * (ICON + rowGap),
@@ -553,6 +567,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
                 // shape as the tile shrinks on scroll
                 radius={pillable ? tileRadius : fullRadius}
                 bordered={!expanded}
+                pillShiftX={pillable ? pillShiftOf(i) : 0}
                 interactive={expanded || collapsedOpacity(i) > 0}
                 onClick={handleTap(i, id)}
               />
@@ -565,7 +580,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
         <motion.div
           data-id="mp-folder-stack"
           className="pointer-events-none absolute flex items-center justify-center"
-          style={{ left: folderLeft, top: ROW_TOP, width: ICON, height: pillHMV, opacity: stackOpacity, zIndex: 31 }}
+          style={{ left: stackLeftMV, top: ROW_TOP, width: ICON, height: pillHMV, opacity: stackOpacity, zIndex: 31 }}
         >
           {/* white bordered pill — fades in with the stack, covering the
               folder's gradient so the collapsed pill matches the tiles */}

@@ -12,7 +12,8 @@
 // — driven by the parent's `collapsed` boolean (a hysteresis threshold) — so it
 // always springs to fully expanded or fully collapsed. Swapping the selection
 // flips the tiles (3D rotateY).
-import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { AnimatePresence, motion, animate } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
 import { springs } from '../../../utils/motion'
 import { address } from '../../../data/marketplace'
@@ -23,7 +24,6 @@ import CameraIcon from './CameraIcon'
 
 const SMOOTH = 1 // corner-smoothing amount for the squircle tiles
 
-const SURFACE = '#DFE3EA'
 const PAD = 16
 const TOP = 8
 const GAP = 12
@@ -55,6 +55,30 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
   const selected = items.find((i) => i.id === activeId) ?? items[0]
   const rest = items.filter((i) => i.id !== selected.id)
 
+  // Scroll hint — when the rail is visible, nudge it sideways and ease back to
+  // rest so the horizontal scroll is discoverable. Skips if the user has
+  // already scrolled (don't fight them); re-arms whenever the row re-expands.
+  const railRef = useRef(null)
+  useEffect(() => {
+    const el = railRef.current
+    if (collapsed || !el) return undefined
+    let ctrl
+    const t = setTimeout(() => {
+      if (el.scrollLeft > 1) return
+      ctrl = animate(0, 1, {
+        duration: 1.1,
+        ease: 'easeInOut',
+        onUpdate: (p) => {
+          el.scrollLeft = Math.sin(p * Math.PI) * 36 // out 36px and back
+        },
+      })
+    }, 700)
+    return () => {
+      clearTimeout(t)
+      ctrl?.stop()
+    }
+  }, [collapsed])
+
   // poses
   const selPose = collapsed
     ? { width: DOCK_W, height: DOCK_H, top: TOP + (DOCK_ROW - DOCK_H) / 2, left: PAD }
@@ -74,6 +98,7 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
     >
       {/* right pill of the other marketplaces — fades out on collapse */}
       <motion.div
+        ref={railRef}
         data-id="mp-rail"
         initial={false}
         animate={{ opacity: collapsed ? 0 : 1 }}
@@ -84,7 +109,9 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
           left: PAD + BIG + GAP,
           right: PAD,
           height: ROW,
-          background: SURFACE,
+          background: 'rgba(255, 255, 255, 0.55)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           borderRadius: R + 8,
           perspective: 600,
           pointerEvents: collapsed ? 'none' : 'auto',
@@ -171,12 +198,14 @@ export default function MarketplaceSwitcherV2({ items, activeId, onChange, colla
                 transition={{ duration: 0.14 }}
                 className="flex items-center justify-center"
               >
+                {/* the mark keeps its initial (expanded) size in the dock —
+                    only stacked marks restructure to their compact form */}
                 <MarketplaceMark
                   m={selected}
                   white={!selected.lightAccent}
                   active
                   collapsed={collapsed}
-                  size={collapsed ? 84 : Math.round(markSize(selected.id) * 1.18)}
+                  size={Math.round(markSize(selected.id) * 1.18)}
                 />
               </motion.span>
             </AnimatePresence>
