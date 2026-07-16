@@ -115,6 +115,77 @@ function RollSwap({ id, className = '', transition = sheetMotion.roll, children 
   )
 }
 
+// Bar-chart column gradients (Figma "Data Visualization") — grey by default,
+// with highest / lowest / today colour-coded.
+const BAR_GRADIENTS = {
+  general: 'linear-gradient(0deg, #EDEDED 0%, #BDBDBD 149.71%)',
+  highest: 'linear-gradient(0deg, #FFF4D1 0%, #FFC567 149.71%)',
+  lowest: 'linear-gradient(0deg, #E1F6EA 0%, #00C653 149.71%)',
+  today: 'linear-gradient(0deg, #D6E1E9 0%, #89CBF9 149.71%)',
+}
+const BAR_STYLE = {
+  border: '1px solid rgba(255,255,255,0.87)',
+  borderBottom: 'none',
+  boxShadow: 'inset 0px 4px 7px 2px rgba(255,255,255,0.46)',
+}
+
+// PriceBars — variation-3 chart: gradient columns bucketed from the series, one
+// per period label, colour-coded (amber highest, green lowest, blue today) with
+// a price pill floating over the special bars. Bar heights ride the same
+// [yLo, yHi] scale as the y-ticks + average line, so everything stays aligned.
+function PriceBars({ bars, yLo, yHi, selected, onSelect, dataId }) {
+  const did = (s) => `${dataId}-${s}`
+  // thinner bars + tighter gap as the count grows (daily 1M vs monthly 1Y/3M)
+  const dense = bars.length > 14
+  return (
+    <div data-id={did('bars')} className={`flex h-full items-end ${dense ? 'gap-[2px]' : 'gap-1.5'}`}>
+      {bars.map((b, i) => {
+        const h = Math.max(3, ((b.value - yLo) / (yHi - yLo)) * 100)
+        const show = selected === i
+        return (
+          <button
+            key={i}
+            type="button"
+            data-id={did(`bar-${i}`)}
+            aria-pressed={show}
+            onClick={() => onSelect(show ? null : i)}
+            className="relative flex h-full min-w-0 flex-1 flex-col items-center justify-end outline-none"
+          >
+            {/* price pill — only after the user taps the bar (absolute + nowrap
+                so it can overflow a thin column without breaking the row) */}
+            <AnimatePresence>
+              {show && (
+                <motion.span
+                  key="pill"
+                  data-id={did(`bar-${i}-pill`)}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={sheetMotion.fade}
+                  className="absolute left-1/2 z-10 flex h-[18px] -translate-x-1/2 items-center whitespace-nowrap rounded-full border border-[#F9F9FB] bg-white px-1.5 shadow-[0px_2px_6px_rgba(0,0,0,0.12)]"
+                  style={{ bottom: `calc(${h}% + 4px)` }}
+                >
+                  <span className="inline-flex items-center gap-px font-noontree text-[11px] font-semibold leading-3 tracking-[-0.12px] text-[#1D2539]">
+                    <Dirham />
+                    {b.value}
+                  </span>
+                </motion.span>
+              )}
+            </AnimatePresence>
+            <motion.div
+              initial={false}
+              animate={{ height: `${h}%`, opacity: selected == null || show ? 1 : 0.55 }}
+              transition={sheetMotion.guide}
+              className={`w-full ${dense ? 'max-w-[10px] rounded-t-[3px]' : 'max-w-[28px] rounded-t-[4px]'}`}
+              style={{ background: BAR_GRADIENTS[b.kind], ...BAR_STYLE }}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // Trend colours by state — green = current price is a good deal, amber = higher.
 const TREND = {
   lower: {
@@ -135,6 +206,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   // ---- variant selection (deal accordion) — rescales the whole sheet ----
   const [dealOpen, setDealOpen] = useState(false)
   const [variantId, setVariantId] = useState(null) // nothing selected by default
+  const [barSel, setBarSel] = useState(null) // bar-chart: tapped bar (pill) index
 
   // Body scroll region — when the variants accordion expands past the sheet's
   // height cap, glide to the bottom so the newly revealed options are visible.
@@ -169,6 +241,47 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   const todayPrice = prices[prices.length - 1]
   // average price over the SELECTED period — drives the dashed guide line
   const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length
+
+  // variation 3 — bar chart: bucket the series into one bar per period label,
+  // colour-coded highest / lowest / today (today wins ties)
+  const isBars = data.chart === 'bars'
+  const bars = (() => {
+    if (!isBars) return []
+    // granularity per range: every day (1M), every month (3M / 1Y)
+    const n = active.barCount ?? active.labels.length
+    const raw = Array.from({ length: n }, (_, i) => {
+      const from = Math.round((i * prices.length) / n)
+      const to = Math.max(Math.round(((i + 1) * prices.length) / n), from + 1)
+      const isToday = i === n - 1
+      const slice = prices.slice(from, to)
+      const value = isToday
+        ? todayPrice
+        : Math.round((slice.reduce((a, b) => a + b, 0) / slice.length) * 100) / 100
+      return { value, isToday }
+    })
+    const hi = Math.max(...raw.map((b) => b.value))
+    const lo = Math.min(...raw.map((b) => b.value))
+    // every bar is just a period — no special "today" bar
+    return raw.map((b) => ({
+      ...b,
+      kind: b.value === hi ? 'highest' : b.value === lo ? 'lowest' : 'general',
+    }))
+  })()
+  const barsDense = bars.length > 14
+  // one x-label slot PER BAR so the axis aligns exactly; the range's sparse
+  // labels are placed on their mapped bar indices ("Today" omitted), rest blank
+  const barTicks = (() => {
+    if (!isBars) return []
+    const n = bars.length
+    // drop "Today" first, then spread the remaining labels evenly across the
+    // bars (endpoints included) so none collide — e.g. 3M → Apr/May/Jun on 3 bars
+    const labels = active.labels.filter((l) => l !== 'Today')
+    const arr = Array(n).fill('')
+    labels.forEach((lab, j) => {
+      arr[labels.length === 1 ? 0 : Math.round((j * (n - 1)) / (labels.length - 1))] = lab
+    })
+    return arr
+  })()
   // ---- hero insight: use-case driven messaging (not always avg comparison) --
   // Classified from the selected period + variant state, in priority order:
   //   better variant picked → lowest price → stable → price dropped →
@@ -215,7 +328,10 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   // shared y-scale: nice rounded ticks covering the range's span. The labels
   // are equal-height cells (each tick centres at (k+0.5)/n of the column), so
   // the chart domain widens by half a step per side to keep the curve aligned.
-  const { lo, hi, step, ticks } = niceTicks(Math.min(...prices), Math.max(...prices))
+  // In bar mode the scale follows the (bucketed) BAR values so the bars fill
+  // the plot per period, instead of the raw point range.
+  const scaleVals = isBars ? bars.map((b) => b.value) : prices
+  const { lo, hi, step, ticks } = niceTicks(Math.min(...scaleVals), Math.max(...scaleVals))
   const yLo = lo - step / 2
   const yHi = hi + step / 2
   // price column hugs the widest tick label (glyph + digits + padding)
@@ -283,6 +399,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
     setRange(key)
     setScrub(null)
     setSelectedStat(null)
+    setBarSel(null)
   }
 
   // selecting a size: toggle, release any pinned marker (positions change)
@@ -290,6 +407,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
     setVariantId((cur) => (cur === id ? null : id))
     setScrub(null)
     setSelectedStat(null)
+    setBarSel(null)
   }
   // deal section visibility — amber state, or any state once a size is picked
   const showDeal = !isLower || !!activeVariant
@@ -434,16 +552,18 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                           <div
                             ref={plotRef}
                             data-id={did('plot')}
-                            onPointerMove={(e) => updateScrub(e.clientX)}
-                            onPointerDown={(e) => {
-                              e.currentTarget.setPointerCapture?.(e.pointerId)
-                              updateScrub(e.clientX)
-                            }}
-                            onPointerUp={(e) => {
-                              if (e.pointerType !== 'mouse') setScrub(null)
-                            }}
-                            onPointerLeave={() => setScrub(null)}
-                            className="relative min-w-0 flex-1 touch-none border-b-[0.5px] border-l-[0.5px] border-[#E4E5EA]"
+                            onPointerMove={isBars ? undefined : (e) => updateScrub(e.clientX)}
+                            onPointerDown={
+                              isBars
+                                ? undefined
+                                : (e) => {
+                                    e.currentTarget.setPointerCapture?.(e.pointerId)
+                                    updateScrub(e.clientX)
+                                  }
+                            }
+                            onPointerUp={isBars ? undefined : (e) => { if (e.pointerType !== 'mouse') setScrub(null) }}
+                            onPointerLeave={isBars ? undefined : () => setScrub(null)}
+                            className={`relative min-w-0 flex-1 border-b-[0.5px] border-l-[0.5px] border-[#E4E5EA] ${isBars ? '' : 'touch-none'}`}
                           >
                             {/* average price guide — springs to the new level on
                                 period change (recharts' ReferenceLine can't move) */}
@@ -462,7 +582,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
 
                             {/* scrubber — dashed line + dot + date/price pill */}
                             <AnimatePresence>
-                              {scrub && (
+                              {!isBars && scrub && (
                                 <motion.div
                                   key="scrub"
                                   data-id={did('scrub')}
@@ -522,30 +642,34 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                 </motion.div>
                               )}
                             </AnimatePresence>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={series} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                                <defs>
-                                  <linearGradient id="ph-fill" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#E4E3FF" />
-                                    <stop offset="100%" stopColor="#FFFFFF" />
-                                  </linearGradient>
-                                </defs>
-                                <XAxis dataKey="i" type="number" domain={[domainLo, domainHi]} hide />
-                                <YAxis domain={[yLo, yHi]} hide />
-                                <Area
-                                  type="stepAfter"
-                                  dataKey="price"
-                                  stroke={LINE}
-                                  strokeWidth={1.5}
-                                  fill="url(#ph-fill)"
-                                  isAnimationActive
-                                  animationDuration={500}
-                                  animationEasing="ease-out"
-                                  dot={<EndDot todayI={points.length - 1} />}
-                                  activeDot={false}
-                                />
-                              </AreaChart>
-                            </ResponsiveContainer>
+                            {isBars ? (
+                              <PriceBars bars={bars} yLo={yLo} yHi={yHi} selected={barSel} onSelect={setBarSel} dataId={dataId} />
+                            ) : (
+                              <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={series} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                                  <defs>
+                                    <linearGradient id="ph-fill" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#E4E3FF" />
+                                      <stop offset="100%" stopColor="#FFFFFF" />
+                                    </linearGradient>
+                                  </defs>
+                                  <XAxis dataKey="i" type="number" domain={[domainLo, domainHi]} hide />
+                                  <YAxis domain={[yLo, yHi]} hide />
+                                  <Area
+                                    type="stepAfter"
+                                    dataKey="price"
+                                    stroke={LINE}
+                                    strokeWidth={1.5}
+                                    fill="url(#ph-fill)"
+                                    isAnimationActive
+                                    animationDuration={500}
+                                    animationEasing="ease-out"
+                                    dot={<EndDot todayI={points.length - 1} />}
+                                    activeDot={false}
+                                  />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            )}
                           </div>
                         </div>
 
@@ -554,19 +678,39 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                             adapt to the range (days for 1M, months for 3M/1Y). */}
                         <div data-id={did('chart-label-row')} className="flex h-7">
                           <div className="shrink-0" style={{ width: axisWidth }} />
-                          <div data-id={did('x-axis')} className="flex min-w-0 flex-1 items-end">
-                            {active.labels.map((label, i) => (
-                              <span
-                                key={`${label}-${i}`}
-                                data-id={did(`x-tick-${i}`)}
-                                className={`flex-1 text-center font-noontree text-[11px] leading-[14px] tracking-[-0.1px] ${
-                                  label === 'Today' ? 'font-semibold text-[#1D2539]' : 'font-normal text-[#989FB3]'
-                                }`}
-                              >
-                                {label}
-                              </span>
-                            ))}
-                          </div>
+                          {isBars ? (
+                            /* one cell per bar (matching gap) so labels sit under
+                               their bars; blank cells hold the alignment */
+                            <div data-id={did('x-axis')} className={`flex min-w-0 flex-1 items-end ${barsDense ? 'gap-[2px]' : 'gap-1.5'}`}>
+                              {barTicks.map((label, i) => (
+                                <span key={i} data-id={did(`x-tick-${i}`)} className="relative min-w-0 flex-1">
+                                  {label && (
+                                    <span
+                                      className={`absolute bottom-0 left-1/2 -translate-x-1/2 whitespace-nowrap font-noontree text-[11px] leading-[14px] tracking-[-0.1px] ${
+                                        label === 'Today' ? 'font-semibold text-[#1D2539]' : 'font-normal text-[#989FB3]'
+                                      }`}
+                                    >
+                                      {label}
+                                    </span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <div data-id={did('x-axis')} className="flex min-w-0 flex-1 items-end">
+                              {active.labels.map((label, i) => (
+                                <span
+                                  key={`${label}-${i}`}
+                                  data-id={did(`x-tick-${i}`)}
+                                  className={`flex-1 text-center font-noontree text-[11px] leading-[14px] tracking-[-0.1px] ${
+                                    label === 'Today' ? 'font-semibold text-[#1D2539]' : 'font-normal text-[#989FB3]'
+                                  }`}
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -701,35 +845,39 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                           key={s.id}
                                           type="button"
                                           data-id={did(`similar-${s.id}`)}
-                                          className="flex w-[150px] shrink-0 flex-col rounded-2xl border-[1.5px] border-[#EAECF0] bg-white p-2.5 text-left outline-none"
+                                          className="flex w-[150px] shrink-0 flex-col overflow-hidden rounded-2xl border-[1.5px] border-[#EAECF0] bg-white text-left outline-none"
                                         >
-                                          <span className="mb-2 flex h-[92px] items-center justify-center overflow-hidden rounded-xl bg-[#F7F8FA]">
-                                            <img src={s.image} alt="" aria-hidden="true" loading="lazy" className="h-[84px] w-auto object-contain" />
+                                          {/* image container — flush to the card edges, no padding */}
+                                          <span className="flex h-[104px] items-center justify-center bg-[#F7F8FA]">
+                                            <img src={s.image} alt="" aria-hidden="true" loading="lazy" className="h-[92px] w-auto object-contain" />
                                           </span>
-                                          <span data-id={did(`similar-${s.id}-title`)} className="line-clamp-2 min-h-8 font-noontree text-[12px] font-medium leading-4 tracking-[-0.1px] text-[#1D2539]">
-                                            {s.title}
-                                          </span>
-                                          <span className="mt-1 flex w-fit items-center gap-0.5 rounded bg-[#F7F8FA] px-1 py-0.5">
-                                            <img src={ratingStar} alt="" aria-hidden="true" className="h-3 w-3" />
-                                            <span className="font-noontree text-[11px] font-semibold leading-[14px] tracking-[-0.1px] text-[#101628]">{s.rating}</span>
-                                          </span>
-                                          <span data-id={did(`similar-${s.id}-price`)} className="mt-1.5 flex items-end gap-1">
-                                            <span className="inline-flex items-center gap-px font-noontree text-[14px] font-bold leading-5 tracking-[-0.1px] text-[#1D2539]">
-                                              <Dirham />
-                                              {s.price}
+                                          {/* details — padded */}
+                                          <span className="flex flex-col p-2.5">
+                                            <span data-id={did(`similar-${s.id}-title`)} className="line-clamp-2 min-h-8 font-noontree text-[12px] font-medium leading-4 tracking-[-0.1px] text-[#1D2539]">
+                                              {s.title}
                                             </span>
-                                            {s.comparePrice && (
-                                              <span className="inline-flex items-center gap-px pb-0.5 font-noontree text-[11px] font-normal leading-[14px] tracking-[-0.1px] text-[#989FB3] line-through">
+                                            <span className="mt-1 flex w-fit items-center gap-0.5 rounded bg-[#F7F8FA] px-1 py-0.5">
+                                              <img src={ratingStar} alt="" aria-hidden="true" className="h-3 w-3" />
+                                              <span className="font-noontree text-[11px] font-semibold leading-[14px] tracking-[-0.1px] text-[#101628]">{s.rating}</span>
+                                            </span>
+                                            <span data-id={did(`similar-${s.id}-price`)} className="mt-1.5 flex items-end gap-1">
+                                              <span className="inline-flex items-center gap-px font-noontree text-[14px] font-bold leading-5 tracking-[-0.1px] text-[#1D2539]">
                                                 <Dirham />
-                                                {s.comparePrice}
+                                                {s.price}
+                                              </span>
+                                              {s.comparePrice && (
+                                                <span className="inline-flex items-center gap-px pb-0.5 font-noontree text-[11px] font-normal leading-[14px] tracking-[-0.1px] text-[#989FB3] line-through">
+                                                  <Dirham />
+                                                  {s.comparePrice}
+                                                </span>
+                                              )}
+                                            </span>
+                                            {save > 0 && (
+                                              <span data-id={did(`similar-${s.id}-save`)} className="mt-1 w-fit rounded bg-[#DCFCE7] px-1 py-0.5 font-noontree text-[10px] font-bold leading-3 tracking-[-0.1px] text-[#0F8857]">
+                                                {withDirham(`Save AED${save}`)}
                                               </span>
                                             )}
                                           </span>
-                                          {save > 0 && (
-                                            <span data-id={did(`similar-${s.id}-save`)} className="mt-1 w-fit rounded bg-[#DCFCE7] px-1 py-0.5 font-noontree text-[10px] font-bold leading-3 tracking-[-0.1px] text-[#0F8857]">
-                                              {withDirham(`Save AED${save}`)}
-                                            </span>
-                                          )}
                                         </button>
                                       )
                                     })}

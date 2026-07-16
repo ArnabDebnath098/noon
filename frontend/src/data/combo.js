@@ -221,6 +221,7 @@ export const phonePriceHistory = {
       label: '1 Month',
       days: 30,
       labels: ['Jun 15', 'Jun 22', 'Jun 29', 'Jul 6', 'Today'],
+      barCount: 30, // bar chart (v3): one bar per day
       // dips early then climbs back to today's high → today sits above the
       // month average (reads "priced above usual", not flat/stable)
       points: [
@@ -237,6 +238,7 @@ export const phonePriceHistory = {
       label: '3 Month',
       days: 90,
       labels: ['Apr', 'May', 'Jun', 'Today'],
+      barCount: 3, // bar chart (v3): one bar per month
       // steadily climbing — today near the top, above the 3-month average
       points: [
         2949, 2949, 2999, 2999, 3049, 3049, 3099, 3099,
@@ -248,6 +250,7 @@ export const phonePriceHistory = {
       label: '1 Year',
       days: 365,
       labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
+      barCount: 12, // bar chart (v3): one bar per month
       // launch high → festive peak 3599 (= Highest) → mega-sale 2999 low → today
       // sits below the yearly average (a genuine drop from launch)
       points: [

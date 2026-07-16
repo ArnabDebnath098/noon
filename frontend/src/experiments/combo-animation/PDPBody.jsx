@@ -250,7 +250,7 @@ function MainInfo({ product, dataId, bundleBanner, onPriceHistory }) {
               type="button"
               data-id={d('price-history')}
               onClick={onPriceHistory}
-              className="ml-1 pb-0.5 font-noontree text-[13px] font-semibold leading-[15px] tracking-[-0.12px] text-[#0F7EFF] active:text-[#0F61FF]"
+              className="ml-1 pb-0.5 font-noontree text-[14px] font-semibold leading-[16px] tracking-[-0.12px] text-[#0F7EFF] active:text-[#0F61FF]"
             >
               Price history
             </button>

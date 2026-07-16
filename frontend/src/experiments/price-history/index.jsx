@@ -29,10 +29,13 @@ import {
 const VARIANTS = [
   { value: 1, label: '1' },
   { value: 2, label: '2' },
+  { value: 3, label: '3' },
 ]
 const PRODUCTS = {
   1: { product, priceHistory },
   2: { product: phoneProduct, priceHistory: phonePriceHistory },
+  // variation 3 — same phone, but the price history renders as a bar chart
+  3: { product: phoneProduct, priceHistory: { ...phonePriceHistory, chart: 'bars' } },
 }
 
 /**
