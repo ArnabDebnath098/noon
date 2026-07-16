@@ -35,6 +35,32 @@ export const springs = {
 }
 
 /**
+ * Sheet motion spec — the Apple-standard timing set for bottom sheets and
+ * everything inside them. Distilled from how iOS actually moves:
+ *   • PRESENT with a soft spring (SwiftUI response ≈ 0.55, dampingFraction
+ *     ≈ 0.9) — the barely-there overshoot sells the surface's weight.
+ *   • DISMISS with a pure deceleration on the UIKit sheet curve
+ *     cubic-bezier(0.32, 0.72, 0, 1) — ~30% faster than the entrance and
+ *     NEVER bouncing (a surface that springs on exit reads as hesitation).
+ *   • Duration tiers: micro controls 0.2–0.3s · in-sheet containers
+ *     0.35–0.45s · the sheet itself 0.5–0.6s.
+ *   • Anything the user can re-trigger mid-flight is a spring (interruptible,
+ *     retargets smoothly); one-shot moves are tweens on the iOS curve.
+ */
+export const sheetMotion = {
+  sheetIn: { type: 'spring', duration: 0.55, bounce: 0.1 },
+  sheetOut: { duration: 0.38, ease: easings.ios },
+  scrimIn: { duration: 0.45, ease: easings.ios },
+  scrimOut: { duration: 0.32, ease: easings.ios },
+  container: { type: 'spring', duration: 0.45, bounce: 0.12 }, // accordions / height reveals
+  control: { type: 'spring', duration: 0.3, bounce: 0.15 }, // pills, chevrons, selections
+  guide: { type: 'spring', duration: 0.5, bounce: 0.1 }, // in-chart guide lines
+  roll: { type: 'spring', duration: 0.4, bounce: 0.14 }, // value carousels (RollSwap)
+  rollText: { duration: 0.45, ease: easings.ios }, // text carousels — pure decel
+  fade: { duration: 0.22, ease: easings.ios }, // small opacity-only moves
+}
+
+/**
  * Physics config for `useSpring` smoothing of scroll-linked motion values.
  * (`useSpring` takes raw physics, not duration/bounce.) Tight and overdamped —
  * it's a smoothing filter, not choreography.

@@ -6,7 +6,7 @@
 import { useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts'
-import { springs } from '../../utils/motion'
+import { sheetMotion } from '../../utils/motion'
 import { Dirham, withDirham } from '../../components/common/Dirham'
 import { PrimaryButton } from '../../components/common/PrimaryButton'
 
@@ -65,14 +65,19 @@ const STAT_ICONS = {
   today: <StatIcon bg="#89CBF9" d="M4.5 8h7m0 0l-3-3m3 3l-3 3" />,
 }
 
-// trend arrow — up for a higher price (amber), down for a lower price (green)
-function TrendIcon({ lower, color }) {
+// trend arrow — up (price above usual), down (price improved) or flat (stable)
+function TrendIcon({ dir, color }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-      {lower ? (
+      {dir === 'down' ? (
         <>
           <path d="M2 4.5l3.6 3.6 2.4-2.4L14 11.3" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           <path d="M10.2 11.5H14V7.7" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        </>
+      ) : dir === 'flat' ? (
+        <>
+          <path d="M2 8h10.5" stroke={color} strokeWidth="1.7" strokeLinecap="round" fill="none" />
+          <path d="M9.8 4.8L13 8l-3.2 3.2" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </>
       ) : (
         <>
@@ -90,7 +95,7 @@ const SCRUB_SPRING = { type: 'spring', stiffness: 550, damping: 45 }
 // RollSwap — vertical-carousel swap for a single value: on `id` change the old
 // content rolls up and out while the new rolls in from below, overlapping
 // mid-flight (popLayout keeps both mounted → the "negative gap" feel).
-function RollSwap({ id, className = '', children }) {
+function RollSwap({ id, className = '', transition = sheetMotion.roll, children }) {
   return (
     <span className={`relative inline-flex overflow-hidden ${className}`}>
       <AnimatePresence initial={false} mode="popLayout">
@@ -99,7 +104,7 @@ function RollSwap({ id, className = '', children }) {
           initial={{ y: '80%', opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: '-80%', opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 420, damping: 38 }}
+          transition={transition}
           className="inline-flex items-center"
         >
           {children}
@@ -140,25 +145,40 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   const todayPrice = prices[prices.length - 1]
   // average price over the SELECTED period — drives the dashed guide line
   const avgPrice = prices.reduce((sum, p) => sum + p, 0) / prices.length
-  // trend is COMPUTED from the data (today vs the period average) so the note
-  // always matches the chart — e.g. higher than the 1-month average but lower
-  // than the 3-month / 1-year averages. Picking a size cheaper than the one
-  // being viewed flips the sheet to the "ideal to buy" green state, with the
-  // note comparing against the viewed size instead of the period average.
+  // ---- hero insight: use-case driven messaging (not always avg comparison) --
+  // Classified from the selected period + variant state, in priority order:
+  //   better variant picked → lowest price → stable → price dropped →
+  //   priced above usual → below average (fallback)
   const savingsVsBase = activeVariant && baseVariant ? Math.round((baseVariant.price - activeVariant.price) * 100) / 100 : 0
   const variantCheaper = savingsVsBase > 0
-  const diff = todayPrice - avgPrice
-  const isLower = variantCheaper || diff < 0
-  const mag = Math.abs(diff)
-  const trendAmount = variantCheaper
-    ? String(savingsVsBase)
-    : mag >= 5
-      ? String(Math.round(mag))
-      : String(Math.round(mag * 2) / 2)
-  const trendReference = variantCheaper
-    ? `the ${baseVariant.label} option`
-    : `the ${active.label.toLowerCase()} average`
-  const tone = isLower ? TREND.lower : TREND.higher
+  const periodMin = Math.min(...prices)
+  const periodMax = Math.max(...prices)
+  const dropFromHigh = Math.round((periodMax - todayPrice) * 100) / 100
+  const fmtAmt = (x) => String(x >= 5 ? Math.round(x) : Math.round(x * 2) / 2)
+  const periodLabel = active.label.toLowerCase()
+
+  let insight
+  if (variantCheaper) {
+    // Better variant exists (and picked) → switch pays off
+    insight = { tone: 'lower', icon: 'down', bold: `AED${savingsVsBase} saved`, rest: `with the ${activeVariant.label} size — great pick` }
+  } else if (todayPrice <= periodMin) {
+    // Lowest price → best time to buy
+    insight = { tone: 'lower', icon: 'down', bold: 'Best time to buy', rest: `— lowest price of the ${periodLabel}` }
+  } else if ((periodMax - periodMin) / avgPrice <= 0.05) {
+    // Stable → buy with confidence
+    insight = { tone: 'lower', icon: 'flat', bold: 'Price rarely changes', rest: '— buy with confidence' }
+  } else if (dropFromHigh / periodMax >= 0.12 && todayPrice <= avgPrice) {
+    // Price dropped → buy now
+    insight = { tone: 'lower', icon: 'down', bold: `Price dropped AED${fmtAmt(dropFromHigh)}`, rest: `from its AED${periodMax} high — buy now` }
+  } else if (todayPrice > avgPrice) {
+    // Higher than average → steer to cheaper variants (deal row below)
+    insight = { tone: 'higher', icon: 'up', bold: 'Priced above usual', rest: `— AED${fmtAmt(todayPrice - avgPrice)} over the ${periodLabel} average` }
+  } else {
+    // Below average (but not the low) → still a good moment
+    insight = { tone: 'lower', icon: 'down', bold: `AED${fmtAmt(avgPrice - todayPrice)} lower`, rest: `than the ${periodLabel} average` }
+  }
+  const isLower = insight.tone === 'lower'
+  const tone = TREND[insight.tone]
   // shared y-scale: nice rounded ticks covering the range's span. The labels
   // are equal-height cells (each tick centres at (k+0.5)/n of the column), so
   // the chart domain widens by half a step per side to keep the curve aligned.
@@ -246,17 +266,26 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   const subtitleParts = [data.subtitle[0], data.subtitle[1], activeVariant?.label ?? data.subtitle[2]]
 
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div key={dataId} data-id={dataId} className="fixed inset-0 z-[60] flex justify-center">
-          {/* frame-width column so the scrim + sheet track the phone frame */}
-          <div className="relative w-full max-w-md">
+    // Always-mounted shell whose pointer-events follow `open` — the moment the
+    // sheet closes, taps/scroll pass through to the page again, even while the
+    // exit animation is still playing (or if a nested presence delays unmount).
+    <div
+      data-id={did('root')}
+      className="fixed inset-0 z-[60]"
+      style={{ pointerEvents: open ? 'auto' : 'none' }}
+    >
+      <AnimatePresence>
+        {open && (
+          <motion.div key={dataId} data-id={dataId} className="absolute inset-0 flex justify-center">
+            {/* frame-width column so the scrim + sheet track the phone frame */}
+            <div className="relative w-full max-w-md">
             {/* Scrim — 80% #000 */}
             <motion.div
               data-id={did('scrim')}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 0, transition: sheetMotion.scrimOut }}
+              transition={sheetMotion.scrimIn}
               onClick={onClose}
               className="absolute inset-0 bg-black/80"
             />
@@ -266,8 +295,8 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
               data-id={did('wrap')}
               initial={{ y: '110%' }}
               animate={{ y: 0 }}
-              exit={{ y: '110%' }}
-              transition={springs.sheet}
+              exit={{ y: '110%', transition: sheetMotion.sheetOut }}
+              transition={sheetMotion.sheetIn}
               className="absolute inset-x-0 bottom-0 flex flex-col items-center"
             >
               <div data-id={did('grabber')} className="flex h-7 items-center justify-center">
@@ -323,7 +352,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                           {isActive && (
                             <motion.span
                               layoutId={did('switch-pill')}
-                              transition={springs.snappy}
+                              transition={sheetMotion.control}
                               className="absolute inset-0 rounded-full border border-white bg-white shadow-[0px_1px_6px_rgba(34,34,34,0.06)]"
                             />
                           )}
@@ -387,7 +416,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                             aria-hidden="true"
                             initial={false}
                             animate={{ top: `${((yHi - avgPrice) / (yHi - yLo)) * 100}%` }}
-                            transition={springs.snappy}
+                            transition={sheetMotion.guide}
                             className="pointer-events-none absolute inset-x-0 z-10 h-px"
                           >
                             <svg width="100%" height="1" preserveAspectRatio="none" className="block">
@@ -404,7 +433,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                transition={{ duration: 0.15 }}
+                                transition={sheetMotion.fade}
                                 className="pointer-events-none absolute inset-0 z-20"
                               >
                                 {/* vertical dashed line */}
@@ -474,7 +503,8 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                 strokeWidth={1.5}
                                 fill="url(#ph-fill)"
                                 isAnimationActive
-                                animationDuration={600}
+                                animationDuration={500}
+                                animationEasing="ease-out"
                                 dot={<EndDot todayI={points.length - 1} />}
                                 activeDot={false}
                               />
@@ -504,17 +534,22 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                       </div>
                     </div>
 
-                    {/* trend note — sits on the coloured bottom of the shell.
-                        Amount reads semibold, the rest medium. */}
+                    {/* hero insight — sits on the coloured bottom of the shell.
+                        The headline reads semibold, the supporting copy medium. */}
                     <div data-id={did('trend')} className="flex h-9 items-center gap-2.5 px-4" style={{ color: tone.color }}>
-                      <TrendIcon lower={isLower} color={tone.color} />
-                      <span className="font-noontree text-[12px] font-medium leading-5 tracking-[-0.1px]">
-                        <span className="inline-flex items-center gap-px font-semibold">
-                          <Dirham />
-                          {trendAmount}
-                        </span>{' '}
-                        {isLower ? 'lower' : 'higher'} than {trendReference}
-                      </span>
+                      <TrendIcon dir={insight.icon} color={tone.color} />
+                      {/* text rolls like a vertical carousel (overlapping in/out)
+                          on an iOS cubic-bezier curve whenever the insight changes */}
+                      <RollSwap
+                        id={`${insight.bold}|${insight.rest}`}
+                        transition={sheetMotion.rollText}
+                        className="min-w-0"
+                      >
+                        <span className="truncate font-noontree text-[12px] font-medium leading-5 tracking-[-0.1px]">
+                          <span className="font-semibold">{withDirham(insight.bold)}</span>{' '}
+                          {withDirham(insight.rest)}
+                        </span>
+                      </RollSwap>
                     </div>
                   </div>
 
@@ -533,7 +568,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                         data-id={did(`stat-${key}`)}
                         aria-pressed={selectedStat === key}
                         onClick={() => onStatClick(key)}
-                        className={`flex flex-1 flex-col gap-2 rounded-lg border-2 px-3 py-2 text-left transition-colors ${
+                        className={`flex flex-1 flex-col gap-2 rounded-lg border-2 px-3 py-2 text-left transition-colors duration-200 ease-out ${
                           selectedStat === key ? 'border-[#BDDBFF] bg-white' : 'border-transparent bg-[#F9F9FB]'
                         }`}
                       >
@@ -565,7 +600,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={springs.snappy}
+                        transition={sheetMotion.container}
                         className="overflow-hidden"
                       >
                         <motion.div
@@ -573,7 +608,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                           initial={{ y: 28 }}
                           animate={{ y: 0 }}
                           exit={{ y: 28 }}
-                          transition={springs.snappy}
+                          transition={sheetMotion.container}
                           className="flex flex-col gap-3 pt-1"
                         >
                           <span aria-hidden="true" className="h-px w-full border-t border-dashed border-[#F2F3F7]" />
@@ -604,7 +639,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                               aria-hidden="true"
                               className="shrink-0"
                               animate={{ rotate: dealOpen ? 180 : 0 }}
-                              transition={springs.snappy}
+                              transition={sheetMotion.control}
                             >
                               <path d="M6 9.5l6 6 6-6" stroke="#1D2539" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                             </motion.svg>
@@ -620,7 +655,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: 'auto', opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={springs.snappy}
+                                transition={sheetMotion.container}
                                 className="overflow-hidden"
                               >
                                 <div data-id={did('variants-rail')} className="scrollbar-hide flex gap-3 overflow-x-auto pb-1 pt-1">
@@ -636,7 +671,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                         data-id={did(`variant-${v.id}`)}
                                         aria-pressed={selected}
                                         onClick={() => selectVariant(v.id)}
-                                        className={`flex min-w-[101px] flex-1 items-center rounded-2xl border-[1.5px] bg-white p-3 shadow-[0px_6px_12px_rgba(14,14,14,0.02)] transition-colors ${
+                                        className={`flex min-w-[101px] flex-1 items-center rounded-2xl border-[1.5px] bg-white p-3 shadow-[0px_6px_12px_rgba(14,14,14,0.02)] transition-colors duration-200 ease-out ${
                                           selected ? 'border-[#BDDBFF]' : 'border-[#EAECF0]'
                                         }`}
                                       >
@@ -699,6 +734,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </div>
   )
 }
