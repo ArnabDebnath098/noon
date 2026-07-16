@@ -115,6 +115,7 @@ function FolderIcon({
   collapsedScale,
   collapsedOpacity,
   radius,
+  bordered,
   interactive,
   onClick,
 }) {
@@ -271,16 +272,22 @@ function FolderIcon({
             }}
           >
             {/* squircle-smoothed surface (radius steps with the pill height).
-                borderWidth draws the fill as a correctly-inset ::before, so the
-                border reads as a crisp 1px hairline (element bg = border). */}
+                When bordered, borderWidth draws the fill as a correctly-inset
+                ::before, so the border reads as a crisp 1px hairline (element
+                bg = border); borderless (expanded grid) fills directly. */}
             <Squircle
               as="span"
               cornerRadius={radius}
               cornerSmoothing={1}
-              borderWidth={1}
+              borderWidth={bordered ? 1 : undefined}
               /* position must be inline — the lib's injected border class sets
                  `position: relative` late in the cascade, beating Tailwind */
-              style={{ position: 'absolute', inset: 0, background: '#E5E7EB', '--squircle-fill': active ? m.accent : m.bg ?? '#FFFFFF' }}
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background: bordered ? '#E5E7EB' : active ? m.accent : m.bg ?? '#FFFFFF',
+                '--squircle-fill': active ? m.accent : m.bg ?? '#FFFFFF',
+              }}
               className="squircle-fill flex items-center justify-center overflow-hidden"
             >
               <span style={{ filter }} className="relative flex items-center justify-center">
@@ -309,9 +316,8 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   // full-size even when the page is scrolled.
   const fallback = useMotionValue(0)
   const sp = useSpring(progress ?? fallback, scrollSmoothing)
-  // softer than scrollSmoothing — the gate also paces the panel morph, so it
-  // should carry the weight of springs.panel (≈0.5s, hint of life)
-  const gate = useSpring(1, { stiffness: 160, damping: 24 })
+  // the gate also paces the panel morph — crisp with a hint of life (≈0.35s)
+  const gate = useSpring(1, { stiffness: 260, damping: 28 })
   useEffect(() => {
     gate.set(expanded ? 0 : 1)
   }, [expanded, gate])
@@ -334,28 +340,33 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   const folderCx = folderLeft + ICON / 2
   const folderCy = ROW_TOP + ICON / 2
 
-  // Stepped pill height (whole px) — Squircle's cornerRadius is a render prop,
-  // so it chases this state, which only changes on whole-px moves (V4 steps its
-  // radius the same way). tileRadius keeps the 0.28 squircle ratio as the pill
-  // shrinks; gateStep blends the panel radius toward 26 while the grid opens.
-  const [pillH, setPillH] = useState(ICON)
+  // Stepped radii (whole px) — Squircle's cornerRadius is a render prop, so it
+  // chases stepped state, exactly like V4. Step the RADIUS itself (~12 distinct
+  // values per collapse) rather than the pill height (~40): every step re-renders
+  // all tiles and rebuilds their clip-paths, so fewer steps = smooth scrolling.
+  // Everything that can ride a motion value (heights, opacity) does.
+  const fullRadius = Math.round(ICON * 0.28)
+  const [tileRadius, setTileRadius] = useState(fullRadius)
+  const [stackLive, setStackLive] = useState(false)
   useMotionValueEvent(eff, 'change', (v) => {
-    const h = Math.round(lerp(ICON, COLLAPSE_H, clamp01(v)))
-    setPillH((p) => (p === h ? p : h))
+    const r = Math.round(lerp(ICON, COLLAPSE_H, clamp01(v)) * 0.28)
+    setTileRadius((p) => (p === r ? p : r))
+    const live = v > 0.9 && !expanded
+    setStackLive((p) => (p === live ? p : live))
   })
   useEffect(() => {
-    setPillH(Math.round(lerp(ICON, COLLAPSE_H, clamp01(eff.get()))))
+    setTileRadius(Math.round(lerp(ICON, COLLAPSE_H, clamp01(eff.get())) * 0.28))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ICON])
   const [gateStep, setGateStep] = useState(1)
   useMotionValueEvent(gate, 'change', (g) => {
-    const q = Math.round(clamp01(g) * 50) / 50
+    const q = Math.round(clamp01(g) * 10) / 10
     setGateStep((p) => (p === q ? p : q))
   })
-  const tileRadius = Math.round(pillH * 0.28)
-  const fullRadius = Math.round(ICON * 0.28)
   const panelRadius = Math.round(lerp(26, tileRadius, gateStep))
 
+  // heights ride motion values — no re-renders during the morph
+  const pillHMV = useTransform(eff, (v) => lerp(ICON, COLLAPSE_H, clamp01(v)))
   // header row height follows the pill morph (like V4's rail)
   const switcherH = useTransform(eff, (v) => ROW_TOP + lerp(ICON, COLLAPSE_H, clamp01(v)) + 8)
   // the folder's 3-marketplace stack fades in late in the collapse
@@ -414,7 +425,6 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
     [slotOrder, byId],
   )
   const [stackStart, setStackStart] = useState(0)
-  const stackLive = !expanded && pillH <= COLLAPSE_H + 4
   useEffect(() => {
     if (!stackLive) return undefined
     const t = setInterval(() => setStackStart((s) => s + 1), 1600)
@@ -542,6 +552,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
                 // radius tracks the pill height so the squircle keeps its
                 // shape as the tile shrinks on scroll
                 radius={pillable ? tileRadius : fullRadius}
+                bordered={!expanded}
                 interactive={expanded || collapsedOpacity(i) > 0}
                 onClick={handleTap(i, id)}
               />
@@ -554,7 +565,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
         <motion.div
           data-id="mp-folder-stack"
           className="pointer-events-none absolute flex items-center justify-center"
-          style={{ left: folderLeft, top: ROW_TOP, width: ICON, height: pillH, opacity: stackOpacity, zIndex: 31 }}
+          style={{ left: folderLeft, top: ROW_TOP, width: ICON, height: pillHMV, opacity: stackOpacity, zIndex: 31 }}
         >
           {/* white bordered pill — fades in with the stack, covering the
               folder's gradient so the collapsed pill matches the tiles */}
