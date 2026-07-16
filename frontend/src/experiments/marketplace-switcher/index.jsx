@@ -53,8 +53,8 @@ export default function MarketplaceExperiment() {
   // navSwitch: no top switcher — the bottom nav's "All" tab opens the
   // marketplaces sheet, and the location bar leads with the selected chip
   const isNavVariant = !!activeVariant.navSwitch
-  // the floating-nav variant also opens the sheet from its left circle
-  const usesSheet = isNavVariant || !!activeVariant.floatingNav
+  // floating-nav variants expand the chip in place (no sheet)
+  const usesSheet = isNavVariant
   const [allOpen, setAllOpen] = useState(false)
   const activeMarketplace = marketplaces.find((m) => m.id === activeId)
   const selectFromSheet = (id) => {
@@ -213,7 +213,24 @@ export default function MarketplaceExperiment() {
           ) : undefined
         }
         leadingBg={activeVariant.floatingNav ? activeMarketplace?.accent : undefined}
-        onLeading={activeVariant.floatingNav ? () => setAllOpen(true) : undefined}
+        // the chip expands in place into a panel of all marketplaces
+        leadingExpand={
+          activeVariant.floatingNav
+            ? {
+                items: marketplaces,
+                activeId,
+                onSelect: setActiveId,
+                renderIcon: (m, isSel, tile) => (
+                  <MarketplaceMark
+                    m={m}
+                    white={isSel && !m.lightAccent}
+                    active={isSel}
+                    size={Math.round(tile * 0.78)}
+                  />
+                ),
+              }
+            : undefined
+        }
       />
 
       {usesSheet && (
