@@ -4,7 +4,43 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
-import { springs } from '../../utils/motion'
+import { curvedPath, easings } from '../../utils/motion'
+
+// leading-panel icon choreography — same App-Library flight as the
+// marketplace folder grid, but directional: icons POP out with a lively
+// spring (slight overshoot, cascading from the chip) and pour back in fast
+// and decisively (no bounce, tighter reverse stagger) so the close never
+// feels like a slow rewind.
+const EX_CONTAINER = {
+  open: { transition: { staggerChildren: 0.025, delayChildren: 0.05 } },
+  closed: { transition: { staggerChildren: 0.016, staggerDirection: -1 } },
+}
+const EX_FLIGHT = {
+  open: {
+    offsetDistance: '100%',
+    scale: 1,
+    opacity: 1,
+    transition: {
+      offsetDistance: { type: 'spring', duration: 0.55, bounce: 0.22 },
+      scale: { type: 'spring', duration: 0.55, bounce: 0.22 },
+      opacity: { duration: 0.16 },
+    },
+  },
+  closed: {
+    offsetDistance: '0%',
+    scale: 0.25,
+    opacity: 0,
+    transition: {
+      offsetDistance: { type: 'spring', duration: 0.34, bounce: 0 },
+      scale: { type: 'spring', duration: 0.34, bounce: 0 },
+      opacity: { duration: 0.14, delay: 0.1 },
+    },
+  },
+}
+// surface + chip morph — soft overshoot opening, pure decisive settle closing
+// (size changes never bounce on the way out)
+const EX_SURFACE_OPEN = { type: 'spring', duration: 0.5, bounce: 0.14 }
+const EX_SURFACE_CLOSE = { type: 'spring', duration: 0.4, bounce: 0 }
 import homeIcon from '../../assets/icons/nav/home.svg?raw'
 import categoryIcon from '../../assets/icons/nav/category.svg?raw'
 import dealsIcon from '../../assets/icons/nav/deals.svg?raw'
@@ -123,6 +159,26 @@ export default function BottomNav({
       leadingExpand.onSelect(id)
       setNavOpen(false)
     }
+    // flight geometry (panel coordinates): the chip itself becomes the
+    // bottom-left grid tile, so it stays INSIDE the expanding surface; the
+    // OTHER marketplaces fly between the chip's centre and their cell centres,
+    // staggered nearest-travel-first so the cascade radiates from the chip
+    const chipCenter = { x: CHIP / 2, y: panelH - CHIP / 2 }
+    const cellCenter = (slot) => ({
+      x: EX_PAD + exTile / 2 + (slot % EX_COLS) * (exTile + EX_GAP),
+      y: EX_PAD + exTile / 2 + Math.floor(slot / EX_COLS) * (exTile + EX_GAP),
+    })
+    const chipSlot = (exRows - 1) * EX_COLS // bottom-left cell
+    const flightItems = (leadingExpand?.items ?? []).filter(
+      (m) => m.id !== leadingExpand?.activeId,
+    )
+    const exOrder = flightItems
+      .map((m, k) => ({ m, slot: k >= chipSlot ? k + 1 : k }))
+      .sort(
+        (a, b) =>
+          Math.hypot(cellCenter(a.slot).x - chipCenter.x, cellCenter(a.slot).y - chipCenter.y) -
+          Math.hypot(cellCenter(b.slot).x - chipCenter.x, cellCenter(b.slot).y - chipCenter.y),
+      )
 
     return (
       <>
@@ -136,7 +192,7 @@ export default function BottomNav({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.3, ease: easings.ios }}
             onClick={() => setNavOpen(false)}
             className="fixed inset-0 z-[45] bg-black/60"
           />
@@ -163,28 +219,121 @@ export default function BottomNav({
 
         {/* left: floating squircle — the selected marketplace, or the first
             tab. Squircles clip with clip-path, so shadows live on the wrapper
-            as drop-shadow (a box-shadow would be clipped away). */}
+            as drop-shadow (a box-shadow would be clipped away).
+
+            With leadingExpand, the chip lives INSIDE an expanding wrapper: the
+            white surface + flying icons + the chip are all children of one
+            in-flow 62px box, everything anchored to its bottom-left. The chip
+            morphs into the panel's bottom-left grid tile, so the panel grows
+            AROUND it rather than covering it. */}
         {leading ? (
-          <button
-            type="button"
-            data-id={`${dataId}-leading`}
-            aria-label="Switch marketplace"
-            onClick={leadingExpand ? () => setNavOpen(true) : onLeading}
-            style={{ filter: 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))' }}
-            className="relative h-[62px] w-[62px] shrink-0 transition-transform active:scale-95"
+          <div
+            data-id={`${dataId}-leading-wrap`}
+            className="relative h-[62px] w-[62px] shrink-0"
+            style={{ zIndex: 20 }}
           >
-            <Squircle
-              as="span"
-              cornerRadius={18}
-              cornerSmoothing={1}
-              style={{ background: leadingBg }}
-              className="absolute inset-0 flex items-center justify-center overflow-hidden"
+            {/* expanding surface — exactly the chip's box when closed (hidden
+                behind the chip), the full panel when open */}
+            {leadingExpand && (
+              <motion.div
+                data-id={`${dataId}-leading-panel`}
+                initial={false}
+                animate={navOpen ? { width: panelW, height: panelH } : { width: CHIP, height: CHIP }}
+                transition={navOpen ? EX_SURFACE_OPEN : EX_SURFACE_CLOSE}
+                style={{ position: 'absolute', left: 0, bottom: 0 }}
+              >
+                <Squircle
+                  as="div"
+                  data-id={`${dataId}-leading-panel-surface`}
+                  cornerRadius={navOpen ? 24 : 18}
+                  cornerSmoothing={1}
+                  className="absolute inset-0 overflow-hidden bg-white"
+                />
+              </motion.div>
+            )}
+
+            {/* the other marketplaces — fixed open-size overlay so the flight
+                geometry stays stable while the surface morphs beneath */}
+            {leadingExpand && (
+              <motion.div
+                data-id={`${dataId}-leading-panel-grid`}
+                variants={EX_CONTAINER}
+                initial={false}
+                animate={navOpen ? 'open' : 'closed'}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  bottom: 0,
+                  width: panelW,
+                  height: panelH,
+                  pointerEvents: navOpen ? 'auto' : 'none',
+                }}
+              >
+                {exOrder.map(({ m, slot }) => (
+                  <motion.button
+                    key={m.id}
+                    type="button"
+                    data-id={`${dataId}-leading-panel-${m.id}`}
+                    variants={EX_FLIGHT}
+                    onClick={() => pickItem(m.id)}
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      width: exTile,
+                      height: exTile,
+                      offsetPath: curvedPath(chipCenter, cellCenter(slot)),
+                      offsetRotate: '0deg',
+                      offsetAnchor: '50% 50%',
+                    }}
+                    className="relative"
+                  >
+                    <Squircle
+                      as="span"
+                      cornerRadius={Math.round(exTile * 0.26)}
+                      cornerSmoothing={1}
+                      style={{ background: m.bg ?? '#F4F6FA' }}
+                      className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                    >
+                      {leadingExpand.renderIcon(m, false, exTile)}
+                    </Squircle>
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+
+            {/* the chip — morphs from the corner chip into its grid slot */}
+            <motion.button
+              type="button"
+              data-id={`${dataId}-leading`}
+              aria-label={navOpen ? 'Close marketplaces' : 'Switch marketplace'}
+              onClick={leadingExpand ? () => setNavOpen((o) => !o) : onLeading}
+              initial={false}
+              animate={
+                navOpen && leadingExpand
+                  ? { left: EX_PAD, bottom: EX_PAD, width: exTile, height: exTile }
+                  : { left: 0, bottom: 0, width: CHIP, height: CHIP }
+              }
+              transition={navOpen ? EX_SURFACE_OPEN : EX_SURFACE_CLOSE}
+              whileTap={{ scale: 0.94 }}
+              style={{
+                position: 'absolute',
+                filter: navOpen ? 'none' : 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))',
+              }}
             >
-              <span data-id={`${dataId}-leading-inner`} className="flex items-center justify-center">
-                {leading}
-              </span>
-            </Squircle>
-          </button>
+              <Squircle
+                as="span"
+                cornerRadius={navOpen && leadingExpand ? Math.round(exTile * 0.26) : 18}
+                cornerSmoothing={1}
+                style={{ background: leadingBg }}
+                className="absolute inset-0 flex items-center justify-center overflow-hidden"
+              >
+                <span data-id={`${dataId}-leading-inner`} className="flex items-center justify-center">
+                  {leading}
+                </span>
+              </Squircle>
+            </motion.button>
+          </div>
         ) : (
           <div
             data-id={`${dataId}-leading-circle`}
@@ -198,11 +347,16 @@ export default function BottomNav({
         )}
 
         {/* right: the tabs in a floating squircle bar (2px inset). The active
-            tab is a square; the rest split the remaining width equally. */}
-        <div
+            tab is a square; the rest split the remaining width equally.
+            Recedes (dim + slight shrink) while the marketplace panel is open
+            so attention stays on the grid. */}
+        <motion.div
           data-id={`${dataId}-pill-shadow`}
           className="min-w-0 flex-1"
-          style={{ filter: 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))' }}
+          initial={false}
+          animate={navOpen ? { opacity: 0.45, scale: 0.97 } : { opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, ease: easings.ios }}
+          style={{ filter: 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))', transformOrigin: 'right center' }}
         >
           <Squircle
             as="div"
@@ -215,76 +369,7 @@ export default function BottomNav({
               navCircle(tab, tab.key === active ? 'h-full aspect-square shrink-0' : 'h-full flex-1'),
             )}
           </Squircle>
-        </div>
-
-        {/* leading expansion — a squircle panel that morphs out of the chip's
-            box (same left/bottom anchor) showing every marketplace icon */}
-        {leadingExpand && (
-          <motion.div
-            data-id={`${dataId}-leading-panel`}
-            initial={false}
-            animate={
-              navOpen
-                ? { width: panelW, height: panelH, opacity: 1 }
-                : { width: CHIP, height: CHIP, opacity: 0 }
-            }
-            transition={{ ...springs.snappy, opacity: { duration: navOpen ? 0.1 : 0.2, delay: navOpen ? 0 : 0.12 } }}
-            style={{
-              position: 'absolute',
-              left: 16,
-              bottom: 'env(safe-area-inset-bottom, 0px)',
-              zIndex: 20,
-              pointerEvents: navOpen ? 'auto' : 'none',
-              // no drop-shadow: re-rasterising a blur every frame of the size
-              // morph janks mobile Safari; the dim backdrop separates instead
-            }}
-          >
-            <Squircle
-              as="div"
-              data-id={`${dataId}-leading-panel-surface`}
-              cornerRadius={navOpen ? 24 : 18}
-              cornerSmoothing={1}
-              className="absolute inset-0 overflow-hidden bg-white"
-            >
-              <motion.div
-                data-id={`${dataId}-leading-panel-grid`}
-                initial={false}
-                animate={navOpen ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                transition={{ duration: 0.22, delay: navOpen ? 0.12 : 0 }}
-                className="grid"
-                style={{
-                  gridTemplateColumns: `repeat(${EX_COLS}, ${exTile}px)`,
-                  gap: EX_GAP,
-                  padding: EX_PAD,
-                }}
-              >
-                {leadingExpand.items.map((m) => {
-                  const isSel = m.id === leadingExpand.activeId
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      data-id={`${dataId}-leading-panel-${m.id}`}
-                      onClick={() => pickItem(m.id)}
-                      className="relative transition-transform active:scale-95"
-                      style={{ width: exTile, height: exTile }}
-                    >
-                      <Squircle
-                        as="span"
-                        cornerRadius={Math.round(exTile * 0.26)}
-                        cornerSmoothing={1}
-                        style={{ background: isSel ? m.accent : m.bg ?? '#F4F6FA' }}
-                        className="absolute inset-0 flex items-center justify-center overflow-hidden"
-                      >
-                        {leadingExpand.renderIcon(m, isSel, exTile)}
-                      </Squircle>
-                    </button>
-                  )
-                })}
-              </motion.div>
-            </Squircle>
-          </motion.div>
-        )}
+        </motion.div>
       </nav>
       </>
     )
