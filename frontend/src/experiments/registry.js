@@ -39,4 +39,13 @@ export const experiments = [
     iconColor: '#0E9F6E',
     iconBg: '#E4F7EF',
   },
+  {
+    id: 'search',
+    title: 'Search — no results',
+    description: 'Search landing with the empty "no results" state and Magic List.',
+    path: '/search',
+    icon: 'search',
+    iconColor: '#F91A47',
+    iconBg: '#FDE7EC',
+  },
 ]
