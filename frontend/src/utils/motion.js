@@ -52,7 +52,7 @@ export const sheetMotion = {
   sheetOut: { duration: 0.38, ease: easings.ios },
   scrimIn: { duration: 0.45, ease: easings.ios },
   scrimOut: { duration: 0.32, ease: easings.ios },
-  container: { type: 'spring', duration: 0.45, bounce: 0.12 }, // accordions / height reveals
+  container: { type: 'spring', duration: 0.4, bounce: 0 }, // accordions / height reveals — size changes never bounce
   control: { type: 'spring', duration: 0.3, bounce: 0.15 }, // pills, chevrons, selections
   guide: { type: 'spring', duration: 0.5, bounce: 0.1 }, // in-chart guide lines
   roll: { type: 'spring', duration: 0.4, bounce: 0.14 }, // value carousels (RollSwap)

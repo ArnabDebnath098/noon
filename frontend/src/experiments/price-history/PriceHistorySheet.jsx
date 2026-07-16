@@ -3,12 +3,13 @@
 // gradient area chart (blue line, soft violet fill, endpoint dot, dashed
 // today-price reference) inside an amber-gradient shell with a trend note,
 // lowest/highest/today stat cards, a "better deal" row and an Add-to-cart CTA.
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts'
 import { sheetMotion } from '../../utils/motion'
 import { Dirham, withDirham } from '../../components/common/Dirham'
 import { PrimaryButton } from '../../components/common/PrimaryButton'
+import ratingStar from '../../assets/icons/rating-star.svg'
 
 const LINE = '#3536DA'
 
@@ -105,7 +106,7 @@ function RollSwap({ id, className = '', transition = sheetMotion.roll, children 
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: '-80%', opacity: 0 }}
           transition={transition}
-          className="inline-flex items-center"
+          className="inline-flex min-w-0 max-w-full items-center"
         >
           {children}
         </motion.span>
@@ -134,11 +135,34 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   // ---- variant selection (deal accordion) — rescales the whole sheet ----
   const [dealOpen, setDealOpen] = useState(false)
   const [variantId, setVariantId] = useState(null) // nothing selected by default
+
+  // Body scroll region — when the variants accordion expands past the sheet's
+  // height cap, glide to the bottom so the newly revealed options are visible.
+  const bodyRef = useRef(null)
+  useEffect(() => {
+    if (!dealOpen) return undefined
+    const t = setTimeout(() => {
+      bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight, behavior: 'smooth' })
+    }, 420) // after the container spring settles, so we scroll to the REAL bottom
+    return () => clearTimeout(t)
+  }, [dealOpen])
   const baseVariant = data.variants?.find((v) => v.current)
   const activeVariant = data.variants?.find((v) => v.id === variantId) ?? null
   // selected size scales the price series proportionally, so the graph, stats
   // and trend all follow the selection
   const priceScale = activeVariant && baseVariant ? activeVariant.price / baseVariant.price : 1
+  const noun = data.variantNoun ?? 'option' // shampoo → "bottle"
+  const cheapestVariant = Math.min(...(data.variants ?? [{ price: 0 }]).map((v) => v.price))
+  const cheapestVariantObj = (data.variants ?? []).find((v) => v.price === cheapestVariant)
+  // best-value variant: lowest price-per-unit if every variant has a unit (ml),
+  // otherwise simply the cheapest (e.g. phone colours have no unit)
+  const variantList = data.variants ?? []
+  const hasUnit = variantList.length > 0 && variantList.every((v) => v.ml != null)
+  const bestValueId = variantList.reduce(
+    (best, v) =>
+      (hasUnit ? v.price / v.ml : v.price) < (hasUnit ? best.price / best.ml : best.price) ? v : best,
+    variantList[0] ?? {},
+  )?.id
   const prices = active.points.map((p) => Math.round(p * priceScale * 100) / 100)
 
   const points = prices.map((price, i) => ({ i, price }))
@@ -151,28 +175,37 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   //   priced above usual → below average (fallback)
   const savingsVsBase = activeVariant && baseVariant ? Math.round((baseVariant.price - activeVariant.price) * 100) / 100 : 0
   const variantCheaper = savingsVsBase > 0
+  // similar-product mode (e.g. the phone) — the "better value" action shows
+  // alternative products instead of this product's own variants
+  const hasSimilar = (data.similar?.length ?? 0) > 0
+  const cheapestSimilar = hasSimilar ? Math.min(...data.similar.map((s) => s.price)) : 0
   const periodMin = Math.min(...prices)
   const periodMax = Math.max(...prices)
   const dropFromHigh = Math.round((periodMax - todayPrice) * 100) / 100
   const fmtAmt = (x) => String(x >= 5 ? Math.round(x) : Math.round(x * 2) / 2)
   const periodLabel = active.label.toLowerCase()
 
+  // Copy is kept short enough to stay on ONE line even on an iPhone SE
+  // (~42 chars max at 12px in the strip).
   let insight
   if (variantCheaper) {
     // Better variant exists (and picked) → switch pays off
-    insight = { tone: 'lower', icon: 'down', bold: `AED${savingsVsBase} saved`, rest: `with the ${activeVariant.label} size — great pick` }
+    insight = { tone: 'lower', icon: 'down', bold: `AED${savingsVsBase} saved`, rest: `with ${activeVariant.label} — great pick` }
   } else if (todayPrice <= periodMin) {
     // Lowest price → best time to buy
-    insight = { tone: 'lower', icon: 'down', bold: 'Best time to buy', rest: `— lowest price of the ${periodLabel}` }
+    insight = { tone: 'lower', icon: 'down', bold: 'Best time to buy', rest: `— ${periodLabel} low` }
   } else if ((periodMax - periodMin) / avgPrice <= 0.05) {
     // Stable → buy with confidence
     insight = { tone: 'lower', icon: 'flat', bold: 'Price rarely changes', rest: '— buy with confidence' }
   } else if (dropFromHigh / periodMax >= 0.12 && todayPrice <= avgPrice) {
     // Price dropped → buy now
-    insight = { tone: 'lower', icon: 'down', bold: `Price dropped AED${fmtAmt(dropFromHigh)}`, rest: `from its AED${periodMax} high — buy now` }
+    insight = { tone: 'lower', icon: 'down', bold: `Price dropped AED${fmtAmt(dropFromHigh)}`, rest: `from AED${periodMax} — buy now` }
   } else if (todayPrice > avgPrice) {
-    // Higher than average → steer to cheaper variants (deal row below)
-    insight = { tone: 'higher', icon: 'up', bold: 'Priced above usual', rest: `— AED${fmtAmt(todayPrice - avgPrice)} over the ${periodLabel} average` }
+    // Higher than average → steer to the cheaper option below: similar products
+    // if this product has them, else its own cheaper variants
+    insight = hasSimilar
+      ? { tone: 'higher', icon: 'up', bold: 'Priced above usual', rest: '— better value below' }
+      : { tone: 'higher', icon: 'up', bold: 'Priced above usual', rest: `— cheaper ${noun}s below` }
   } else {
     // Below average (but not the low) → still a good moment
     insight = { tone: 'lower', icon: 'down', bold: `AED${fmtAmt(avgPrice - todayPrice)} lower`, rest: `than the ${periodLabel} average` }
@@ -252,13 +285,14 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
     setSelectedStat(null)
   }
 
-  const cheapestVariant = Math.min(...(data.variants ?? [{ price: todayPrice }]).map((v) => v.price))
   // selecting a size: toggle, release any pinned marker (positions change)
   const selectVariant = (id) => {
     setVariantId((cur) => (cur === id ? null : id))
     setScrub(null)
     setSelectedStat(null)
   }
+  // deal section visibility — amber state, or any state once a size is picked
+  const showDeal = !isLower || !!activeVariant
   // pill flips right when there isn't ~120px of room on the left of the line
   const pillLeft = scrub ? scrub.x > 120 : true
   // header content follows the selected size
@@ -305,10 +339,10 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
 
               <div
                 data-id={did('sheet')}
-                className="mx-3 mb-3 flex w-[calc(100%-24px)] flex-col rounded-2xl bg-white shadow-[0px_-2px_16px_rgba(0,0,0,0.12)]"
+                className="mx-3 mb-3 flex max-h-[min(85dvh,700px)] w-[calc(100%-24px)] flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_-2px_16px_rgba(0,0,0,0.12)]"
               >
                 {/* Header — product tile + title + dotted subtitle */}
-                <div data-id={did('header')} className="flex items-center gap-3 border-b border-[#F9F9FB] p-4">
+                <div data-id={did('header')} className="flex shrink-0 items-center gap-3 border-b border-[#F9F9FB] p-4">
                   <span data-id={did('header-image')} className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#EAECF0] bg-white">
                     <RollSwap id={headerImage} className="h-12 w-12">
                       <img src={headerImage} alt="" aria-hidden="true" className="h-12 w-12 object-contain" />
@@ -335,231 +369,234 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                 </div>
 
                 {/* Body */}
-                <div data-id={did('body')} className="flex flex-col gap-3 px-4 py-2">
-                  {/* Range switch — sliding white pill */}
-                  <div data-id={did('switch')} className="flex h-10 items-center rounded-full bg-[#F9F9FB] p-1 shadow-[inset_0px_1px_4px_rgba(36,36,36,0.04)]">
-                    {Object.entries(data.ranges).map(([key, r]) => {
-                      const isActive = key === range
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          data-id={did(`switch-${key}`)}
-                          aria-pressed={isActive}
-                          onClick={() => selectRange(key)}
-                          className="relative flex h-8 flex-1 items-center justify-center rounded-full"
-                        >
-                          {isActive && (
-                            <motion.span
-                              layoutId={did('switch-pill')}
-                              transition={sheetMotion.control}
-                              className="absolute inset-0 rounded-full border border-white bg-white shadow-[0px_1px_6px_rgba(34,34,34,0.06)]"
-                            />
-                          )}
-                          <span
-                            className={`relative z-10 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] ${
-                              isActive ? 'text-[#1D2539]' : 'text-[#666D85]'
-                            }`}
+                <div ref={bodyRef} data-id={did('body')} className="scrollbar-hide flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-2">
+                  {/* Section 1 — the analysis: range tabs + graph read as ONE unit */}
+                  <div data-id={did('chart-group')} className="flex shrink-0 flex-col gap-3">
+                    {/* Range switch — sliding white pill */}
+                    <div data-id={did('switch')} className="flex h-10 items-center rounded-full bg-[#F9F9FB] p-1 shadow-[inset_0px_1px_4px_rgba(36,36,36,0.04)]">
+                      {Object.entries(data.ranges).map(([key, r]) => {
+                        const isActive = key === range
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            data-id={did(`switch-${key}`)}
+                            aria-pressed={isActive}
+                            onClick={() => selectRange(key)}
+                            className="relative flex h-8 flex-1 items-center justify-center rounded-full"
                           >
-                            {r.label}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Chart shell — gradient frame (green when the price is a good
-                      deal now, amber when it's higher) with the trend note on it */}
-                  <div
-                    data-id={did('chart-shell')}
-                    className="flex flex-col rounded-2xl p-px"
-                    style={{ background: tone.shell }}
-                  >
-                    <div data-id={did('chart-card')} className="flex flex-col rounded-[14px] bg-white px-2 py-4">
-                      {/* Section 1 — prices (left) | plot (right) */}
-                      <div data-id={did('chart-plot-row')} className="flex h-[140px]">
-                        {/* price labels — equal-height cells filling the column,
-                            each amount right-aligned and centred in its cell */}
-                        <div data-id={did('y-axis')} className="flex h-full shrink-0 flex-col" style={{ width: axisWidth }}>
-                          {ticks.map((t) => (
-                            <div
-                              key={t}
-                              data-id={did(`y-tick-${t}`)}
-                              className="flex flex-1 items-center justify-end gap-[1.5px] pr-1.5 text-[#989FB3]"
-                            >
-                              <DirhamGlyph />
-                              <span className="font-noontree text-[11px] leading-none">{t}</span>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* plot — axis hairlines drawn as borders on this box.
-                            Pointer handlers drive the scrubber (hover / slide). */}
-                        <div
-                          ref={plotRef}
-                          data-id={did('plot')}
-                          onPointerMove={(e) => updateScrub(e.clientX)}
-                          onPointerDown={(e) => {
-                            e.currentTarget.setPointerCapture?.(e.pointerId)
-                            updateScrub(e.clientX)
-                          }}
-                          onPointerUp={(e) => {
-                            if (e.pointerType !== 'mouse') setScrub(null)
-                          }}
-                          onPointerLeave={() => setScrub(null)}
-                          className="relative min-w-0 flex-1 touch-none border-b-[0.5px] border-l-[0.5px] border-[#E4E5EA]"
-                        >
-                          {/* average price guide — springs to the new level on
-                              period change (recharts' ReferenceLine can't move) */}
-                          <motion.div
-                            data-id={did('avg-line')}
-                            aria-hidden="true"
-                            initial={false}
-                            animate={{ top: `${((yHi - avgPrice) / (yHi - yLo)) * 100}%` }}
-                            transition={sheetMotion.guide}
-                            className="pointer-events-none absolute inset-x-0 z-10 h-px"
-                          >
-                            <svg width="100%" height="1" preserveAspectRatio="none" className="block">
-                              <line x1="0" y1="0.5" x2="100%" y2="0.5" stroke="#C0C2F6" strokeWidth="0.75" strokeDasharray="4 4" />
-                            </svg>
-                          </motion.div>
-
-                          {/* scrubber — dashed line + dot + date/price pill */}
-                          <AnimatePresence>
-                            {scrub && (
-                              <motion.div
-                                key="scrub"
-                                data-id={did('scrub')}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={sheetMotion.fade}
-                                className="pointer-events-none absolute inset-0 z-20"
-                              >
-                                {/* vertical dashed line */}
-                                <motion.div
-                                  data-id={did('scrub-line')}
-                                  initial={false}
-                                  animate={{ x: scrub.x }}
-                                  transition={SCRUB_SPRING}
-                                  className="absolute inset-y-0 left-0 w-px"
-                                >
-                                  <svg width="1" height="100%" preserveAspectRatio="none" className="block h-full">
-                                    <line x1="0.5" y1="0" x2="0.5" y2="100%" stroke="#666D85" strokeWidth="0.75" strokeDasharray="4 4" />
-                                  </svg>
-                                </motion.div>
-
-                                {/* dot on the curve */}
-                                <motion.span
-                                  data-id={did('scrub-dot')}
-                                  initial={false}
-                                  animate={{ x: scrub.x - 4, y: scrub.y - 4 }}
-                                  transition={SCRUB_SPRING}
-                                  className="absolute left-0 top-0 h-2 w-2 rounded-full bg-[#1D2539]"
-                                />
-
-                                {/* date + price pill — left of the line when there's
-                                    room, flipped to the right near the left edge */}
-                                <motion.div
-                                  data-id={did('scrub-pill')}
-                                  initial={false}
-                                  animate={{ x: scrub.x, y: scrub.y }}
-                                  transition={SCRUB_SPRING}
-                                  className="absolute left-0 top-0"
-                                  style={{ filter: 'drop-shadow(0px 0px 12px rgba(0,0,0,0.16))' }}
-                                >
-                                  <div
-                                    data-id={did('scrub-pill-inner')}
-                                    className={`flex h-[22px] w-max -translate-y-1/2 items-center gap-1 rounded-full border border-[#EAECF0] bg-white px-2 ${
-                                      pillLeft ? '-translate-x-[calc(100%+10px)]' : 'translate-x-[10px]'
-                                    }`}
-                                  >
-                                    <span className="font-noontree text-[11px] font-normal leading-3 tracking-[-0.12px] text-[#666D85]">
-                                      {scrub.i === points.length - 1 ? 'Today:' : `${scrubDate(scrub.i)}:`}
-                                    </span>
-                                    <span className="inline-flex items-center gap-px font-noontree text-[11px] font-semibold leading-3 tracking-[-0.12px] text-[#1D2539]">
-                                      <Dirham />
-                                      {prices[scrub.i]}
-                                    </span>
-                                  </div>
-                                </motion.div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={series} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                              <defs>
-                                <linearGradient id="ph-fill" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor="#E4E3FF" />
-                                  <stop offset="100%" stopColor="#FFFFFF" />
-                                </linearGradient>
-                              </defs>
-                              <XAxis dataKey="i" type="number" domain={[domainLo, domainHi]} hide />
-                              <YAxis domain={[yLo, yHi]} hide />
-                              <Area
-                                type="stepAfter"
-                                dataKey="price"
-                                stroke={LINE}
-                                strokeWidth={1.5}
-                                fill="url(#ph-fill)"
-                                isAnimationActive
-                                animationDuration={500}
-                                animationEasing="ease-out"
-                                dot={<EndDot todayI={points.length - 1} />}
-                                activeDot={false}
+                            {isActive && (
+                              <motion.span
+                                layoutId={did('switch-pill')}
+                                transition={sheetMotion.control}
+                                className="absolute inset-0 rounded-full border border-white bg-white shadow-[0px_1px_6px_rgba(34,34,34,0.06)]"
                               />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* Section 2 — spacer (left) | period labels (right), same
-                          column widths as section 1. Equal-width cells; labels
-                          adapt to the range (days for 1M, months for 3M/1Y). */}
-                      <div data-id={did('chart-label-row')} className="flex h-7">
-                        <div className="shrink-0" style={{ width: axisWidth }} />
-                        <div data-id={did('x-axis')} className="flex min-w-0 flex-1 items-end">
-                          {active.labels.map((label, i) => (
+                            )}
                             <span
-                              key={`${label}-${i}`}
-                              data-id={did(`x-tick-${i}`)}
-                              className={`flex-1 text-center font-noontree text-[11px] leading-[14px] tracking-[-0.1px] ${
-                                label === 'Today' ? 'font-semibold text-[#1D2539]' : 'font-normal text-[#989FB3]'
+                              className={`relative z-10 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] ${
+                                isActive ? 'text-[#1D2539]' : 'text-[#666D85]'
                               }`}
                             >
-                              {label}
+                              {r.label}
                             </span>
-                          ))}
-                        </div>
-                      </div>
+                          </button>
+                        )
+                      })}
                     </div>
 
-                    {/* hero insight — sits on the coloured bottom of the shell.
-                        The headline reads semibold, the supporting copy medium. */}
-                    <div data-id={did('trend')} className="flex h-9 items-center gap-2.5 px-4" style={{ color: tone.color }}>
-                      <TrendIcon dir={insight.icon} color={tone.color} />
-                      {/* text rolls like a vertical carousel (overlapping in/out)
-                          on an iOS cubic-bezier curve whenever the insight changes */}
-                      <RollSwap
-                        id={`${insight.bold}|${insight.rest}`}
-                        transition={sheetMotion.rollText}
-                        className="min-w-0"
-                      >
-                        <span className="truncate font-noontree text-[12px] font-medium leading-5 tracking-[-0.1px]">
-                          <span className="font-semibold">{withDirham(insight.bold)}</span>{' '}
-                          {withDirham(insight.rest)}
-                        </span>
-                      </RollSwap>
+                    {/* Chart shell — gradient frame (green when the price is a good
+                        deal now, amber when it's higher) with the trend note on it */}
+                    <div
+                      data-id={did('chart-shell')}
+                      className="flex flex-col rounded-2xl p-px"
+                      style={{ background: tone.shell }}
+                    >
+                      <div data-id={did('chart-card')} className="flex flex-col rounded-[14px] bg-white px-2 py-4">
+                        {/* Section 1 — prices (left) | plot (right) */}
+                        <div data-id={did('chart-plot-row')} className="flex h-[140px]">
+                          {/* price labels — equal-height cells filling the column,
+                              each amount right-aligned and centred in its cell */}
+                          <div data-id={did('y-axis')} className="flex h-full shrink-0 flex-col" style={{ width: axisWidth }}>
+                            {ticks.map((t) => (
+                              <div
+                                key={t}
+                                data-id={did(`y-tick-${t}`)}
+                                className="flex flex-1 items-center justify-end gap-[1.5px] pr-1.5 text-[#989FB3]"
+                              >
+                                <DirhamGlyph />
+                                <span className="font-noontree text-[11px] leading-none">{t}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* plot — axis hairlines drawn as borders on this box.
+                              Pointer handlers drive the scrubber (hover / slide). */}
+                          <div
+                            ref={plotRef}
+                            data-id={did('plot')}
+                            onPointerMove={(e) => updateScrub(e.clientX)}
+                            onPointerDown={(e) => {
+                              e.currentTarget.setPointerCapture?.(e.pointerId)
+                              updateScrub(e.clientX)
+                            }}
+                            onPointerUp={(e) => {
+                              if (e.pointerType !== 'mouse') setScrub(null)
+                            }}
+                            onPointerLeave={() => setScrub(null)}
+                            className="relative min-w-0 flex-1 touch-none border-b-[0.5px] border-l-[0.5px] border-[#E4E5EA]"
+                          >
+                            {/* average price guide — springs to the new level on
+                                period change (recharts' ReferenceLine can't move) */}
+                            <motion.div
+                              data-id={did('avg-line')}
+                              aria-hidden="true"
+                              initial={false}
+                              animate={{ top: `${((yHi - avgPrice) / (yHi - yLo)) * 100}%` }}
+                              transition={sheetMotion.guide}
+                              className="pointer-events-none absolute inset-x-0 z-10 h-px"
+                            >
+                              <svg width="100%" height="1" preserveAspectRatio="none" className="block">
+                                <line x1="0" y1="0.5" x2="100%" y2="0.5" stroke="#C0C2F6" strokeWidth="0.75" strokeDasharray="4 4" />
+                              </svg>
+                            </motion.div>
+
+                            {/* scrubber — dashed line + dot + date/price pill */}
+                            <AnimatePresence>
+                              {scrub && (
+                                <motion.div
+                                  key="scrub"
+                                  data-id={did('scrub')}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  exit={{ opacity: 0 }}
+                                  transition={sheetMotion.fade}
+                                  className="pointer-events-none absolute inset-0 z-20"
+                                >
+                                  {/* vertical dashed line */}
+                                  <motion.div
+                                    data-id={did('scrub-line')}
+                                    initial={false}
+                                    animate={{ x: scrub.x }}
+                                    transition={SCRUB_SPRING}
+                                    className="absolute inset-y-0 left-0 w-px"
+                                  >
+                                    <svg width="1" height="100%" preserveAspectRatio="none" className="block h-full">
+                                      <line x1="0.5" y1="0" x2="0.5" y2="100%" stroke="#666D85" strokeWidth="0.75" strokeDasharray="4 4" />
+                                    </svg>
+                                  </motion.div>
+
+                                  {/* dot on the curve */}
+                                  <motion.span
+                                    data-id={did('scrub-dot')}
+                                    initial={false}
+                                    animate={{ x: scrub.x - 4, y: scrub.y - 4 }}
+                                    transition={SCRUB_SPRING}
+                                    className="absolute left-0 top-0 h-2 w-2 rounded-full bg-[#1D2539]"
+                                  />
+
+                                  {/* date + price pill — left of the line when there's
+                                      room, flipped to the right near the left edge */}
+                                  <motion.div
+                                    data-id={did('scrub-pill')}
+                                    initial={false}
+                                    animate={{ x: scrub.x, y: scrub.y }}
+                                    transition={SCRUB_SPRING}
+                                    className="absolute left-0 top-0"
+                                    style={{ filter: 'drop-shadow(0px 0px 12px rgba(0,0,0,0.16))' }}
+                                  >
+                                    <div
+                                      data-id={did('scrub-pill-inner')}
+                                      className={`flex h-[22px] w-max -translate-y-1/2 items-center gap-1 rounded-full border border-[#EAECF0] bg-white px-2 ${
+                                        pillLeft ? '-translate-x-[calc(100%+10px)]' : 'translate-x-[10px]'
+                                      }`}
+                                    >
+                                      <span className="font-noontree text-[11px] font-normal leading-3 tracking-[-0.12px] text-[#666D85]">
+                                        {scrub.i === points.length - 1 ? 'Today:' : `${scrubDate(scrub.i)}:`}
+                                      </span>
+                                      <span className="inline-flex items-center gap-px font-noontree text-[11px] font-semibold leading-3 tracking-[-0.12px] text-[#1D2539]">
+                                        <Dirham />
+                                        {prices[scrub.i]}
+                                      </span>
+                                    </div>
+                                  </motion.div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={series} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                                <defs>
+                                  <linearGradient id="ph-fill" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#E4E3FF" />
+                                    <stop offset="100%" stopColor="#FFFFFF" />
+                                  </linearGradient>
+                                </defs>
+                                <XAxis dataKey="i" type="number" domain={[domainLo, domainHi]} hide />
+                                <YAxis domain={[yLo, yHi]} hide />
+                                <Area
+                                  type="stepAfter"
+                                  dataKey="price"
+                                  stroke={LINE}
+                                  strokeWidth={1.5}
+                                  fill="url(#ph-fill)"
+                                  isAnimationActive
+                                  animationDuration={500}
+                                  animationEasing="ease-out"
+                                  dot={<EndDot todayI={points.length - 1} />}
+                                  activeDot={false}
+                                />
+                              </AreaChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+
+                        {/* Section 2 — spacer (left) | period labels (right), same
+                            column widths as section 1. Equal-width cells; labels
+                            adapt to the range (days for 1M, months for 3M/1Y). */}
+                        <div data-id={did('chart-label-row')} className="flex h-7">
+                          <div className="shrink-0" style={{ width: axisWidth }} />
+                          <div data-id={did('x-axis')} className="flex min-w-0 flex-1 items-end">
+                            {active.labels.map((label, i) => (
+                              <span
+                                key={`${label}-${i}`}
+                                data-id={did(`x-tick-${i}`)}
+                                className={`flex-1 text-center font-noontree text-[11px] leading-[14px] tracking-[-0.1px] ${
+                                  label === 'Today' ? 'font-semibold text-[#1D2539]' : 'font-normal text-[#989FB3]'
+                                }`}
+                              >
+                                {label}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* hero insight — sits on the coloured bottom of the shell.
+                          The headline reads semibold, the supporting copy medium. */}
+                      <div data-id={did('trend')} className="flex min-h-9 items-center gap-2.5 px-4 py-1.5" style={{ color: tone.color }}>
+                        <TrendIcon dir={insight.icon} color={tone.color} />
+                        {/* text rolls like a vertical carousel (overlapping in/out)
+                            on an iOS cubic-bezier curve whenever the insight changes */}
+                        <RollSwap
+                          id={`${insight.bold}|${insight.rest}`}
+                          transition={sheetMotion.rollText}
+                          className="min-w-0 flex-1"
+                        >
+                          <span className="min-w-0 font-noontree text-[12px] font-medium leading-4 tracking-[-0.1px]">
+                            <span className="font-semibold">{withDirham(insight.bold)}</span>{' '}
+                            {withDirham(insight.rest)}
+                          </span>
+                        </RollSwap>
+                      </div>
                     </div>
                   </div>
 
                   {/* Lowest / Highest / Today stat cards — values follow the
                       selected range; tapping one pins the chart marker on that
                       point (tap again to release) */}
-                  <div data-id={did('stats')} className="flex gap-2">
+                  <div data-id={did('stats')} className="flex shrink-0 gap-2">
                     {[
-                      { key: 'lowest', label: 'Lowest' },
                       { key: 'highest', label: 'Highest' },
+                      { key: 'lowest', label: 'Lowest' },
                       { key: 'today', label: 'Today' },
                     ].map(({ key, label }) => (
                       <button
@@ -568,7 +605,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                         data-id={did(`stat-${key}`)}
                         aria-pressed={selectedStat === key}
                         onClick={() => onStatClick(key)}
-                        className={`flex flex-1 flex-col gap-2 rounded-lg border-2 px-3 py-2 text-left transition-colors duration-200 ease-out ${
+                        className={`flex flex-1 flex-col gap-2 rounded-lg border-2 px-3 py-2 text-left outline-none transition-colors duration-200 ease-out ${
                           selectedStat === key ? 'border-[#BDDBFF] bg-white' : 'border-transparent bg-[#F9F9FB]'
                         }`}
                       >
@@ -589,25 +626,23 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                   {/* Better deal row — shown when the price is higher now, to
                       steer the shopper to cheaper options (retention). Once a
                       size is selected it STAYS visible even if the deal turned
-                      green, so the user can keep switching options. Height
-                      springs open (the bottom-anchored sheet expands upward)
-                      while the row itself rises in from the bottom. */}
-                  <AnimatePresence initial={false}>
-                    {(!isLower || activeVariant) && (
-                      <motion.div
-                        key="deal"
-                        data-id={did('deal')}
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={sheetMotion.container}
-                        className="overflow-hidden"
-                      >
+                      green, so the user can keep switching options. MOUNTED
+                      permanently and height-animated from state — a mount-time
+                      AnimatePresence height animation can lock a stale pixel
+                      height and clip everything inside (incl. the variants). */}
+                  <motion.div
+                    data-id={did('deal')}
+                    initial={false}
+                    animate={{ height: showDeal ? 'auto' : 0, opacity: showDeal ? 1 : 0 }}
+                    transition={sheetMotion.container}
+                    className="shrink-0 overflow-hidden"
+                    aria-hidden={!showDeal}
+                    style={{ pointerEvents: showDeal ? 'auto' : 'none' }}
+                  >
                         <motion.div
                           data-id={did('deal-inner')}
-                          initial={{ y: 28 }}
-                          animate={{ y: 0 }}
-                          exit={{ y: 28 }}
+                          initial={false}
+                          animate={{ y: showDeal ? 0 : 28 }}
                           transition={sheetMotion.container}
                           className="flex flex-col gap-3 pt-1"
                         >
@@ -617,18 +652,16 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                             data-id={did('deal-row')}
                             aria-expanded={dealOpen}
                             onClick={() => setDealOpen((o) => !o)}
-                            className="flex items-center justify-between"
+                            className="flex items-center justify-between py-0.5 outline-none"
                           >
                             <span className="flex flex-col items-start">
                               <span className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
-                                {variantCheaper
-                                  ? withDirham(`Great pick — you save AED${savingsVsBase} today`)
-                                  : withDirham(`Switch size, save AED${Math.round((todayPrice - cheapestVariant) * 100) / 100} today`)}
+                                {hasSimilar ? 'Better value available' : `Try another ${noun}, pay less`}
                               </span>
                               <span className="font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.1px] text-[#666D85]">
-                                {variantCheaper
-                                  ? withDirham(`${activeVariant.label} costs AED${savingsVsBase} less than ${baseVariant.label}`)
-                                  : withDirham(`same product in other sizes, from AED${cheapestVariant}`)}
+                                {hasSimilar
+                                  ? withDirham(`${(data.specs ?? []).join(' · ')} — from AED${cheapestSimilar}`)
+                                  : `same ${data.subtitle[1].toLowerCase()}, just a different ${noun} size`}
                               </span>
                             </span>
                             <motion.svg
@@ -646,38 +679,81 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                           </button>
 
                           {/* Variants accordion — horizontally scrollable size
-                              option cards (Figma "Variants") */}
-                          <AnimatePresence initial={false}>
-                            {dealOpen && (
-                              <motion.div
-                                key="variants"
-                                data-id={did('variants')}
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={sheetMotion.container}
-                                className="overflow-hidden"
-                              >
-                                <div data-id={did('variants-rail')} className="scrollbar-hide flex gap-3 overflow-x-auto pb-1 pt-1">
-                                  {(data.variants ?? []).map((v) => {
-                                    const selected = v.id === variantId
-                                    const unit = (v.price / v.ml).toFixed(2)
-                                    const bestValue =
-                                      v.price / v.ml === Math.min(...data.variants.map((o) => o.price / o.ml))
-                                    return (
-                                      <button
-                                        key={v.id}
-                                        type="button"
-                                        data-id={did(`variant-${v.id}`)}
-                                        aria-pressed={selected}
-                                        onClick={() => selectVariant(v.id)}
-                                        className={`flex min-w-[101px] flex-1 items-center rounded-2xl border-[1.5px] bg-white p-3 shadow-[0px_6px_12px_rgba(14,14,14,0.02)] transition-colors duration-200 ease-out ${
-                                          selected ? 'border-[#BDDBFF]' : 'border-[#EAECF0]'
-                                        }`}
-                                      >
-                                        <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
-                                          {/* size + price */}
-                                          <span data-id={did(`variant-${v.id}-head`)} className="flex flex-col items-start gap-0.5">
+                              option cards (Figma "Variants"). Stays MOUNTED and
+                              animates height 0 ↔ auto: a nested AnimatePresence
+                              height animation can wedge at a partial height and
+                              permanently clip the cards. */}
+                          <motion.div
+                            data-id={did('variants')}
+                            initial={false}
+                            animate={{ height: dealOpen ? 'auto' : 0, opacity: dealOpen ? 1 : 0 }}
+                            transition={sheetMotion.container}
+                            className="overflow-hidden"
+                            aria-hidden={!dealOpen}
+                          >
+                                {hasSimilar ? (
+                                  /* similar-product comparison cards */
+                                  <div data-id={did('similar-rail')} className="scrollbar-hide flex gap-3 overflow-x-auto pb-2 pt-3">
+                                    {data.similar.map((s) => {
+                                      const save = Math.round((todayPrice - s.price) * 100) / 100
+                                      return (
+                                        <button
+                                          key={s.id}
+                                          type="button"
+                                          data-id={did(`similar-${s.id}`)}
+                                          className="flex w-[150px] shrink-0 flex-col rounded-2xl border-[1.5px] border-[#EAECF0] bg-white p-2.5 text-left outline-none"
+                                        >
+                                          <span className="mb-2 flex h-[92px] items-center justify-center overflow-hidden rounded-xl bg-[#F7F8FA]">
+                                            <img src={s.image} alt="" aria-hidden="true" loading="lazy" className="h-[84px] w-auto object-contain" />
+                                          </span>
+                                          <span data-id={did(`similar-${s.id}-title`)} className="line-clamp-2 min-h-8 font-noontree text-[12px] font-medium leading-4 tracking-[-0.1px] text-[#1D2539]">
+                                            {s.title}
+                                          </span>
+                                          <span className="mt-1 flex w-fit items-center gap-0.5 rounded bg-[#F7F8FA] px-1 py-0.5">
+                                            <img src={ratingStar} alt="" aria-hidden="true" className="h-3 w-3" />
+                                            <span className="font-noontree text-[11px] font-semibold leading-[14px] tracking-[-0.1px] text-[#101628]">{s.rating}</span>
+                                          </span>
+                                          <span data-id={did(`similar-${s.id}-price`)} className="mt-1.5 flex items-end gap-1">
+                                            <span className="inline-flex items-center gap-px font-noontree text-[14px] font-bold leading-5 tracking-[-0.1px] text-[#1D2539]">
+                                              <Dirham />
+                                              {s.price}
+                                            </span>
+                                            {s.comparePrice && (
+                                              <span className="inline-flex items-center gap-px pb-0.5 font-noontree text-[11px] font-normal leading-[14px] tracking-[-0.1px] text-[#989FB3] line-through">
+                                                <Dirham />
+                                                {s.comparePrice}
+                                              </span>
+                                            )}
+                                          </span>
+                                          {save > 0 && (
+                                            <span data-id={did(`similar-${s.id}-save`)} className="mt-1 w-fit rounded bg-[#DCFCE7] px-1 py-0.5 font-noontree text-[10px] font-bold leading-3 tracking-[-0.1px] text-[#0F8857]">
+                                              {withDirham(`Save AED${save}`)}
+                                            </span>
+                                          )}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div data-id={did('variants-rail')} className="scrollbar-hide flex gap-3 overflow-x-auto pb-2 pt-3">
+                                    {(data.variants ?? []).map((v) => {
+                                      const selected = v.id === variantId
+                                      // best value = lowest price-per-unit when a
+                                      // unit exists (shampoo ml), else lowest price
+                                      const bestValue = v.id === bestValueId
+                                      return (
+                                        <button
+                                          key={v.id}
+                                          type="button"
+                                          data-id={did(`variant-${v.id}`)}
+                                          aria-pressed={selected}
+                                          onClick={() => selectVariant(v.id)}
+                                          className={`relative flex min-w-[101px] flex-1 items-center rounded-2xl border-[1.5px] bg-white p-3 shadow-[0px_6px_12px_rgba(14,14,14,0.02)] outline-none transition-colors duration-200 ease-out ${
+                                            selected ? 'border-[#BDDBFF]' : 'border-[#EAECF0]'
+                                          }`}
+                                        >
+                                          <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                                            {/* size + price */}
                                             <span data-id={did(`variant-${v.id}-size`)} className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
                                               {v.label}
                                             </span>
@@ -687,40 +763,28 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                             </span>
                                           </span>
 
-                                          {/* dashed divider */}
-                                          <span aria-hidden="true" className="h-px w-full border-t border-dashed border-[#F2F3F7]" />
-
-                                          {/* per-ml price + best-value chip */}
-                                          <span data-id={did(`variant-${v.id}-foot`)} className="flex flex-col items-start gap-0.5">
-                                            <span data-id={did(`variant-${v.id}-unit`)} className="inline-flex items-center gap-px font-noontree text-[11px] font-medium leading-[14px] tracking-[-0.1px] text-[#666D85]">
-                                              <Dirham />
-                                              {unit}/ml
+                                          {/* best-value ribbon — centred on the card's TOP edge */}
+                                          {bestValue && (
+                                            <span
+                                              data-id={did(`variant-${v.id}-best`)}
+                                              className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded border border-white bg-[#DCFCE7] px-1.5 py-0.5 font-noontree text-[10px] font-bold leading-3 tracking-[-0.1px] text-[#0F8857]"
+                                            >
+                                              Best value
                                             </span>
-                                            {bestValue && (
-                                              <span
-                                                data-id={did(`variant-${v.id}-best`)}
-                                                className="rounded-[3px] bg-[#DCFCE7] px-1 py-0.5 font-noontree text-[8px] font-bold leading-[8px] tracking-[-0.1px] text-[#0F8857]"
-                                              >
-                                                Best value
-                                              </span>
-                                            )}
-                                          </span>
-                                        </span>
-                                      </button>
-                                    )
-                                  })}
-                                </div>
+                                          )}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                )}
                               </motion.div>
-                            )}
-                          </AnimatePresence>
                         </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  </motion.div>
+
                 </div>
 
                 {/* Action bar */}
-                <div data-id={did('footer')} className="p-3">
+                <div data-id={did('footer')} className="shrink-0 border-t border-[#F9F9FB] bg-white p-3">
                   <PrimaryButton
                     dataId={did('add')}
                     label="Add to cart"

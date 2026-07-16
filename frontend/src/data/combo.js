@@ -98,6 +98,9 @@ export const priceHistory = {
   stats: { lowest: '29.99', highest: '68', today: '34.99' },
   // quantity variants for the "better deal" accordion (shampoo → sizes, not
   // colors; `current` marks the size being viewed). Nothing selected by default.
+  // how a variant is called for THIS product (shampoo → bottle; a phone would
+  // use 'color') — drives all the deal-row / insight wording
+  variantNoun: 'bottle',
   // `image` feeds the sheet-header swap when a size is selected
   variants: [
     { id: '200ml', label: '200ml', ml: 200, price: 29.99, image: comboThumbShampoo },
@@ -147,6 +150,111 @@ export const priceHistory = {
         39.99, 39.99, 34.99, 34.99, 44.99, 44.99, 59.99, 59.99, 68, 68,
         61.99, 61.99, 49.99, 49.99, 42.99, 42.99, 36.99, 36.99,
         29.99, 29.99, 32.99, 32.99, 34.99, 34.99, 34.99,
+      ],
+    },
+  },
+}
+
+// ---- price-history variation 2: a phone PDP (Pura90s Pro 5) --------------
+const PHONE_IMAGE =
+  'https://f.nooncdn.com/p/pzsku/ZEF7AF76D2E9CBCBDCFD7Z/45/_/1784188631/6b269d53-5311-4217-918e-de3c3e7ced81.jpg?width=800'
+
+export const phoneProduct = {
+  store: 'HUAWEI',
+  title:
+    'Pura90s Pro 5.5G AI Dual SIM Mulberry Black 12GB RAM 256GB with Google Playstore + Free Gift - Middle East Version',
+  images: [PHONE_IMAGE],
+  rating: '4.3',
+  ratingCount: '1286',
+  price: '3199',
+  originalPrice: '3599',
+  discountPercent: '11%',
+  vat: '(incl. of VAT)',
+  bestPriceWithOffers: '3039',
+  lowestPrice: 'Lowest Price in 30 days',
+  bestsellerRankTop: { rank: '#2', category: 'Smartphones' },
+  bestsellerRankBottom: { rank: '#2', category: 'Smartphones' },
+}
+
+// Phone price history — colour variants (Black / Orange / Pink / White; not
+// sizes); prices in the thousands so the nice-tick y-axis and the whole sheet
+// exercise a very different scale from the shampoo.
+export const phonePriceHistory = {
+  subtitle: ['HUAWEI', 'Pura90s Pro', 'Black'],
+  stats: { lowest: '2999', highest: '3599', today: '3199' },
+  // key specs the "similar products" below are matched on
+  specs: ['12GB RAM', '256GB', '5G'],
+  // Similar phones with the same headline features but a lower price — shown as
+  // the "better value" action when this phone is priced above its usual level.
+  similar: [
+    {
+      id: 'honor-magic7',
+      title: 'HONOR Magic7 Lite 5G Dual SIM 12GB RAM 256GB - Titanium Black',
+      image: PHONE_IMAGE,
+      price: 2699,
+      comparePrice: 3199,
+      rating: '4.4',
+      express: true,
+    },
+    {
+      id: 'samsung-a56',
+      title: 'Samsung Galaxy A56 5G Dual SIM 12GB RAM 256GB - Awesome Graphite',
+      image: PHONE_IMAGE,
+      price: 2499,
+      comparePrice: 2999,
+      rating: '4.5',
+      express: true,
+    },
+    {
+      id: 'xiaomi-14t',
+      title: 'Xiaomi 14T 5G Dual SIM 12GB RAM 256GB - Titan Black',
+      image: PHONE_IMAGE,
+      price: 2849,
+      comparePrice: 3299,
+      rating: '4.3',
+    },
+  ],
+  ranges: {
+    // 1M & 3M are held HIGH (today sits above the period average) → the sheet
+    // reads "priced above usual" and steers to the cheaper similar phones.
+    '1m': {
+      label: '1 Month',
+      days: 30,
+      labels: ['Jun 15', 'Jun 22', 'Jun 29', 'Jul 6', 'Today'],
+      // dips early then climbs back to today's high → today sits above the
+      // month average (reads "priced above usual", not flat/stable)
+      points: [
+        2999, 2999, 3049, 3049, 3049,
+        3099, 3099, 3049, 2999,
+        3049, 3099, 3099, 3149, 3149,
+        3099, 3099, 3149,
+        3149, 3199, 3199, 3149,
+        3149, 3199, 3199, 3199,
+        3199, 3199, 3199, 3199, 3199,
+      ],
+    },
+    '3m': {
+      label: '3 Month',
+      days: 90,
+      labels: ['Apr', 'May', 'Jun', 'Today'],
+      // steadily climbing — today near the top, above the 3-month average
+      points: [
+        2949, 2949, 2999, 2999, 3049, 3049, 3099, 3099,
+        3149, 3149, 3099, 3099, 3149, 3149, 3199, 3199,
+        3199, 3199,
+      ],
+    },
+    '1y': {
+      label: '1 Year',
+      days: 365,
+      labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
+      // launch high → festive peak 3599 (= Highest) → mega-sale 2999 low → today
+      // sits below the yearly average (a genuine drop from launch)
+      points: [
+        3549, 3549, 3499, 3499, 3449, 3449, 3399, 3399, 3499,
+        3499, 3599, 3599, 3499, 3499, 3399, 3399, 3299, 3299, 3199,
+        3199, 3099, 3099, 3149, 3149, 3099, 3099, 2999,
+        2999, 3049, 3049, 3149, 3149, 3199, 3199,
       ],
     },
   },
