@@ -11,14 +11,10 @@ import MarketplaceSwitcherV2 from './MarketplaceSwitcherV2'
 import MarketplaceSwitcherV3 from './MarketplaceSwitcherV3'
 import MarketplaceSwitcherV7 from './MarketplaceSwitcherV7'
 import MarketplaceSwitcherV8 from './MarketplaceSwitcherV8'
-import MarketplaceSwitcherV9 from './MarketplaceSwitcherV9'
-import MarketplaceSwitcherV10 from './MarketplaceSwitcherV10'
 
 export const switcherVariants = [
   { value: 1, label: '1', Component: MarketplaceSwitcherV3 },
   { value: 2, label: '2', Component: MarketplaceSwitcherV2, ownsHeader: true, floatingNav: true },
   { value: 3, label: '3', Component: MarketplaceSwitcherV7 },
   { value: 4, label: '4', Component: MarketplaceSwitcherV8 },
-  { value: 5, label: '5', Component: MarketplaceSwitcherV9 },
-  { value: 6, label: '6', Component: MarketplaceSwitcherV10, ownsHeader: true },
 ]

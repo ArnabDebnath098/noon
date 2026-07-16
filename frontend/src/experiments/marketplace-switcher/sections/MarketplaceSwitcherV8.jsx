@@ -45,7 +45,13 @@ function Chevrons() {
       viewBox="0 0 24 24"
       aria-hidden="true"
     >
-      <g fill="#FFFFFF">
+      <defs>
+        <linearGradient id="mp-scroll-hint-gray" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#8A90A3" />
+          <stop offset="1" stopColor="#4B5163" />
+        </linearGradient>
+      </defs>
+      <g fill="url(#mp-scroll-hint-gray)">
         <path d="m12 19a1 1 0 0 1 -.71-1.71l5.3-5.29-5.3-5.29a1 1 0 0 1 1.41-1.41l6 6a1 1 0 0 1 0 1.41l-6 6a1 1 0 0 1 -.7.29z" />
         <path d="m6 19a1 1 0 0 1 -.71-1.71l5.3-5.29-5.3-5.29a1 1 0 0 1 1.42-1.42l6 6a1 1 0 0 1 0 1.41l-6 6a1 1 0 0 1 -.71.3z" />
       </g>
@@ -243,13 +249,14 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange, progr
       {/* left container: the rail fills the remaining width, showing 4 tiles.
           py-2 gives the scroll box vertical room so NEW badges / shadows that
           overhang the tiles aren't clipped by overflow-x-auto. -ml-4/pl-4
-          bleeds the scrollport to the screen edge on the left; pr-12 lets the
-          last tile scroll clear of the hint block, which OVERLAYS the rail
-          (absolute) so tiles slide under it instead of clipping at its edge. */}
+          bleeds the scrollport to the screen edge on the left; pr-4 matches the
+          left inset so the rail ends flush with the left padding. The hint block
+          OVERLAYS the rail (absolute) so tiles slide under it and it fades away
+          at the far end, revealing the last tile. */}
       <div
         ref={railRef}
         data-id="mp-switcher-rail"
-        className="scrollbar-hide -ml-4 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-2 pl-4 pr-12"
+        className="scrollbar-hide -ml-4 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-2 pl-4 pr-4"
       >
         {items.map((m) => (
           <RailTile
@@ -285,7 +292,7 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange, progr
           topRightCornerRadius={0}
           bottomRightCornerRadius={0}
           data-id="mp-scroll-hint-shell"
-          className="absolute inset-0 flex items-center justify-center bg-[#0E0E12]"
+          className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-md"
         >
           <motion.span
             data-id="mp-scroll-hint-motion"

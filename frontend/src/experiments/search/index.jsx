@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import AppShell from '../../components/layout/AppShell'
 import noonLogo from '../../assets/marketplace/noon.svg'
 
@@ -172,7 +173,7 @@ function NoResultsModal({ query, onQueryChange, onClear, onDismiss, inputRef }) 
     <motion.div
       data-id="search-modal-overlay"
       className="absolute inset-0 z-40 flex items-start justify-center px-3"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 47px) + 78px)', background: 'rgba(2, 6, 12, 0.55)' }}
+      style={{ paddingTop: 'calc(env(safe-area-inset-top, 47px) + 4px)', background: 'rgba(2, 6, 12, 0.55)' }}
       initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
       animate={{ opacity: 1, backdropFilter: 'blur(3px)' }}
       exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
@@ -181,16 +182,24 @@ function NoResultsModal({ query, onQueryChange, onClear, onDismiss, inputRef }) 
     >
       <motion.div
         data-id="search-modal-card"
-        className="flex w-full flex-col gap-3 rounded-[28px] bg-white p-3"
-        style={{ boxShadow: '0px 24px 48px rgba(2, 6, 12, 0.24)' }}
-        initial={{ opacity: 0, y: -28, scale: 0.96 }}
+        className="w-full"
+        style={{ filter: 'drop-shadow(0px 24px 48px rgba(2, 6, 12, 0.24))', transformOrigin: 'top center' }}
+        initial={{ opacity: 0, y: -8, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -20, scale: 0.97 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search bar (same as the SLP) + "No results found" block */}
-        <div data-id="search-modal-searchblock" className="flex flex-col gap-1 rounded-[16px] bg-[#F2F3F7]">
+       <Squircle
+        as="div"
+        data-id="search-modal-sheet"
+        cornerRadius={16}
+        cornerSmoothing={1}
+        className="flex w-full flex-col gap-3 bg-white p-3"
+       >
+        {/* Search bar (full modal-content width, aligned with the CTA below)
+            + "No results found", framed by a secondary surface. */}
+        <div data-id="search-modal-searchblock" className="flex flex-col gap-1 rounded-[12px] bg-[#F2F3F7]">
           <SearchRow idPrefix="search-modal" query={query} onChange={onQueryChange} onClear={onClear} inputRef={inputRef} showMagic={false} />
           <div data-id="search-modal-noresults" className="flex h-7 items-center justify-center">
             <span data-id="search-modal-noresults-text" className="font-noontree text-[12px] font-medium" style={{ color: '#475067', letterSpacing: '-0.1px' }}>
@@ -227,7 +236,7 @@ function NoResultsModal({ query, onQueryChange, onClear, onDismiss, inputRef }) 
               className="flex h-14 w-full items-center justify-center rounded-[16px] font-noontree text-[17px] font-semibold text-white transition active:scale-[0.98]"
               style={{ background: '#0F7EFF', letterSpacing: '-0.25px' }}
             >
-              Get {query.trim()} on noon
+              Get it on noon
             </button>
             <button
               type="button"
@@ -240,6 +249,7 @@ function NoResultsModal({ query, onQueryChange, onClear, onDismiss, inputRef }) 
             </button>
           </div>
         </div>
+       </Squircle>
       </motion.div>
     </motion.div>
   )

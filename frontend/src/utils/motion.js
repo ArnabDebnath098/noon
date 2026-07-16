@@ -119,6 +119,6 @@ export function pathFlightVariants(spring = springs.snappy, fade = { duration: 0
   const transition = { offsetDistance: spring, scale: spring, opacity: fade }
   return {
     open: { offsetDistance: '100%', scale: 1, opacity: 1, transition },
-    closed: ({ scale, opacity }) => ({ offsetDistance: '0%', scale, opacity, transition }),
+    closed: ({ scale = 1, opacity = 1 } = {}) => ({ offsetDistance: '0%', scale, opacity, transition }),
   }
 }

@@ -89,3 +89,10 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none; /* Chrome / Safari */
 }
+
+/* corner-smoothing bordered squircles: with `borderWidth` the lib draws the
+   fill as a ::before pseudo-element (correctly inset/radius-matched) and the
+   element background shows as the border. Set the fill via --squircle-fill. */
+.squircle-fill::before {
+  background: var(--squircle-fill, #ffffff);
+}
