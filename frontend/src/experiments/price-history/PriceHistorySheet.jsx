@@ -11,7 +11,7 @@ import { Dirham, withDirham } from '../../components/common/Dirham'
 import { PrimaryButton } from '../../components/common/PrimaryButton'
 import ratingStar from '../../assets/icons/rating-star.svg'
 
-const LINE = '#3536DA'
+const LINE = '#6C6EE6' // softened indigo — subtler line + fill
 
 // Regular-weight dirham glyph (Downloads/dirham-regular.svg, viewBox 0 0 8 8).
 // Drawn inside a viewBox'd nested <svg> so it never distorts at any size.
@@ -48,7 +48,12 @@ function niceTicks(min, max) {
 // extension points past it, so match on the point's x value, not the index)
 function EndDot({ cx, cy, payload, todayI }) {
   if (payload?.i !== todayI) return null
-  return <circle cx={cx} cy={cy} r={4} fill={LINE} stroke="#FFFFFF" strokeWidth={1} />
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={9} fill={LINE} opacity={0.12} />
+      <circle cx={cx} cy={cy} r={4.5} fill={LINE} stroke="#FFFFFF" strokeWidth={1.5} />
+    </g>
+  )
 }
 
 /* stat-card icons — filled circles with white trend arrows */
@@ -64,6 +69,23 @@ const STAT_ICONS = {
   lowest: <StatIcon bg="#7FCCC8" d="M5.5 5.5l5 5m0 0v-4m0 4h-4" />,
   highest: <StatIcon bg="#FFC567" d="M5.5 10.5l5-5m0 0h-4m4 0v4" />,
   today: <StatIcon bg="#89CBF9" d="M4.5 8h7m0 0l-3-3m3 3l-3 3" />,
+}
+
+// Filled disc-with-arrow icons for the stats row (amber up = highest, teal
+// down = lowest) — the price-up / price-down marks from the design.
+function HighestArrow() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true" className="shrink-0">
+      <path fillRule="evenodd" clipRule="evenodd" d="M1.9526 1.9526C4.55614 -0.650867 8.77723 -0.650867 11.3807 1.9526C13.9842 4.55613 13.9842 8.77723 11.3807 11.3807C8.93632 13.8251 5.06598 13.9745 2.44729 11.8289L8.6662 5.60995L8.66667 8.66666H10V3.33335H4.66667V4.66666L7.72392 4.6666L1.50448 10.886C-0.641146 8.26735 -0.491771 4.39698 1.9526 1.9526Z" fill="#FFC567" />
+    </svg>
+  )
+}
+function LowestArrow() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 14 14" fill="none" aria-hidden="true" className="shrink-0">
+      <path fillRule="evenodd" clipRule="evenodd" d="M2.44732 1.50448C5.06604 -0.641146 8.93635 -0.491771 11.3807 1.9526C13.9842 4.55614 13.9842 8.77723 11.3807 11.3807C8.77723 13.9842 4.55614 13.9842 1.9526 11.3807C-0.491771 8.93635 -0.641146 5.06601 1.50448 2.44732L7.72342 8.6662L4.66667 8.66667V10H10V4.66667H8.66667L8.66673 7.72392L2.44732 1.50448Z" fill="#7FCCC8" />
+    </svg>
+  )
 }
 
 // trend arrow — up (price above usual), down (price improved) or flat (stable)
@@ -191,16 +213,45 @@ const TREND = {
   lower: {
     color: '#0B623F',
     shell: 'linear-gradient(180deg, #F5F5F5 29.28%, #F6FEEC 67.02%, #DCFFCA 100%)',
+    bg: '#F1FBEC', // solid tint for the standalone trend box
   },
   higher: {
     color: '#A36200',
     shell: 'linear-gradient(180deg, #F5F5F5 29.28%, #FEF9EC 67.02%, #FFDAAA 100%)',
+    bg: '#FEF6EA',
   },
+}
+
+// Compact inline stat (Lowest / Highest / Today) sitting on top of the graph.
+// Tapping pins the chart marker on that point; `primary` flexes to fill.
+function StatChip({ statKey, label, value, selected, onClick, primary, did }) {
+  return (
+    <button
+      type="button"
+      data-id={did(`stat-${statKey}`)}
+      aria-pressed={selected}
+      onClick={onClick}
+      className={`flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-left outline-none transition-colors duration-200 ease-out ${
+        primary ? 'flex-1' : ''
+      } ${selected ? 'bg-[#EAF1FF]' : ''}`}
+    >
+      {STAT_ICONS[statKey]}
+      <span className="flex flex-col items-start">
+        <span className="inline-flex items-center gap-px font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
+          <Dirham />
+          {value}
+        </span>
+        <span className="font-noontree text-[12px] font-medium leading-[18px] tracking-[-0.1px] text-[#666D85]">
+          {label}
+        </span>
+      </span>
+    </button>
+  )
 }
 
 export default function PriceHistorySheet({ open, onClose, onAdd, image, data, dataId = 'ph-sheet' }) {
   const did = (s) => `${dataId}-${s}`
-  const [range, setRange] = useState('1y')
+  const [range, setRange] = useState('1m')
   const active = data.ranges[range]
 
   // ---- variant selection (deal accordion) — rescales the whole sheet ----
@@ -259,12 +310,17 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
         : Math.round((slice.reduce((a, b) => a + b, 0) / slice.length) * 100) / 100
       return { value, isToday }
     })
-    const hi = Math.max(...raw.map((b) => b.value))
-    const lo = Math.min(...raw.map((b) => b.value))
-    // every bar is just a period — no special "today" bar
-    return raw.map((b) => ({
+    // highlight only ONE highest and ONE lowest bar (most recent extreme) —
+    // colouring every tied bar reads as noise
+    let hiIdx = 0
+    let loIdx = 0
+    raw.forEach((b, i) => {
+      if (b.value >= raw[hiIdx].value) hiIdx = i
+      if (b.value <= raw[loIdx].value) loIdx = i
+    })
+    return raw.map((b, i) => ({
       ...b,
-      kind: b.value === hi ? 'highest' : b.value === lo ? 'lowest' : 'general',
+      kind: i === hiIdx ? 'highest' : i === loIdx ? 'lowest' : 'general',
     }))
   })()
   const barsDense = bars.length > 14
@@ -313,14 +369,22 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   } else if (dropFromHigh / periodMax >= 0.12 && todayPrice <= avgPrice) {
     // Price dropped → buy now
     insight = { tone: 'lower', icon: 'down', bold: `Price dropped AED${fmtAmt(dropFromHigh)}`, rest: `from AED${periodMax} — buy now` }
-  } else if (todayPrice > avgPrice) {
-    // Higher than average → steer to the cheaper option below: similar products
-    // if this product has them, else its own cheaper variants
+  } else if (todayPrice > avgPrice * 1.04 || todayPrice >= periodMax * 0.985) {
+    // Priced high — either meaningfully above the period average (>4%) OR
+    // sitting at/near the period HIGH (the chart ends at its top). Steer to the
+    // cheaper option below: similar products if any, else cheaper own variants.
+    const atHigh = todayPrice >= periodMax * 0.985
+    const bold = atHigh ? 'Near its highest price' : 'Priced above usual'
     insight = hasSimilar
-      ? { tone: 'higher', icon: 'up', bold: 'Priced above usual', rest: '— better value below' }
-      : { tone: 'higher', icon: 'up', bold: 'Priced above usual', rest: `— cheaper ${noun}s below` }
+      ? { tone: 'higher', icon: 'up', bold, rest: '— better value below' }
+      : { tone: 'higher', icon: 'up', bold, rest: `— cheaper ${noun}s below` }
+  } else if (Math.abs(todayPrice - avgPrice) / avgPrice <= 0.04) {
+    // Within ±4% of the period average — real daily ASP data hovers around its
+    // baseline, so this is "typical price", not above/below. Quote the average
+    // so the copy ties directly to the dashed guide line on the chart.
+    insight = { tone: 'lower', icon: 'flat', bold: 'Around its usual price', rest: `— avg AED${Math.round(avgPrice)}` }
   } else {
-    // Below average (but not the low) → still a good moment
+    // Meaningfully below average (but not the low) → still a good moment
     insight = { tone: 'lower', icon: 'down', bold: `AED${fmtAmt(avgPrice - todayPrice)} lower`, rest: `than the ${periodLabel} average` }
   }
   const isLower = insight.tone === 'lower'
@@ -332,6 +396,8 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   // the plot per period, instead of the raw point range.
   const scaleVals = isBars ? bars.map((b) => b.value) : prices
   const { lo, hi, step, ticks } = niceTicks(Math.min(...scaleVals), Math.max(...scaleVals))
+  // symmetric half-step padding keeps the equal-height y-tick cells aligned
+  // with the value scale (bars, curve and avg line)
   const yLo = lo - step / 2
   const yHi = hi + step / 2
   // price column hugs the widest tick label (glyph + digits + padding)
@@ -389,9 +455,11 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
     setSelectedStat(key)
     markerAt(key === 'today' ? points.length - 1 : prices.indexOf(statValues[key]))
   }
-  // date for point i — the series ends today and spans `days` back
+  // date for point i — the series ends on `data.asOf` (datasets with a fixed
+  // export date, e.g. the real wearables series) or today, and spans `days`
+  // back. Points must be UNIFORMLY spaced for these dates to line up.
   const scrubDate = (i) => {
-    const d = new Date()
+    const d = data.asOf ? new Date(data.asOf) : new Date()
     d.setDate(d.getDate() - Math.round(((points.length - 1 - i) * (active.days ?? 365)) / (points.length - 1)))
     return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
   }
@@ -470,18 +538,24 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                     <span data-id={did('title')} className="font-noontree text-[16px] font-bold leading-5 tracking-[-0.15px] text-[#1D2539]">
                       Price history
                     </span>
-                    <span data-id={did('subtitle')} className="flex items-center gap-2.5">
-                      {subtitleParts.map((part, i) => (
-                        <span key={i} className="flex items-center gap-2.5">
-                          {i > 0 && <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[#D9D9D9]" />}
-                          {/* each value rolls independently when it changes */}
-                          <RollSwap id={part}>
-                            <span className="truncate font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.1px] text-[#475067]">
-                              {part}
-                            </span>
-                          </RollSwap>
-                        </span>
-                      ))}
+                    <span data-id={did('subtitle')} className="flex min-w-0 items-center gap-2.5">
+                      {subtitleParts.map((part, i) => {
+                        // last part (the variant, e.g. "Midnight Black") flexes
+                        // and truncates so a long value can't overflow the row;
+                        // store + product keep their space
+                        const isLast = i === subtitleParts.length - 1
+                        return (
+                          <span key={i} className={`flex items-center gap-2.5 ${isLast ? 'min-w-0 flex-1' : 'shrink-0'}`}>
+                            {i > 0 && <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-[#D9D9D9]" />}
+                            {/* each value rolls independently when it changes */}
+                            <RollSwap id={part} className={isLast ? 'min-w-0' : ''}>
+                              <span className="truncate font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.1px] text-[#475067]">
+                                {part}
+                              </span>
+                            </RollSwap>
+                          </span>
+                        )
+                      })}
                     </span>
                   </div>
                 </div>
@@ -522,14 +596,85 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                       })}
                     </div>
 
-                    {/* Chart shell — gradient frame (green when the price is a good
-                        deal now, amber when it's higher) with the trend note on it */}
+                    {/* Graph container — its own white card with a hairline
+                        border; the trend note is a SEPARATE box below. Stats sit
+                        on top INSIDE the card, then the plot. */}
                     <div
-                      data-id={did('chart-shell')}
-                      className="flex flex-col rounded-2xl p-px"
-                      style={{ background: tone.shell }}
+                      data-id={did('chart-card')}
+                      className="flex flex-col gap-3 rounded-2xl border border-[#EAECF0] bg-white px-2 py-4"
                     >
-                      <div data-id={did('chart-card')} className="flex flex-col rounded-[14px] bg-white px-2 py-4">
+                    {/* Stats — Current price leads (value in the trend colour +
+                        matching arrow), then Highest (amber) and Lowest (teal).
+                        Tapping a stat pins the marker. */}
+                    <div data-id={did('stats')} className="flex items-center gap-3 p-2">
+                      {/* Current price (today) */}
+                      <button
+                        type="button"
+                        data-id={did('stat-today')}
+                        aria-pressed={selectedStat === 'today'}
+                        onClick={() => onStatClick('today')}
+                        className="flex flex-[3] flex-col items-start gap-0 text-left outline-none"
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          <span
+                            className="inline-flex items-center gap-px font-noontree text-[14px] font-bold leading-5 tracking-[-0.1px]"
+                            style={{ color: tone.color }}
+                          >
+                            <Dirham />
+                            {statValues.today}
+                          </span>
+                          <TrendIcon dir={insight.icon} color={tone.color} />
+                        </span>
+                        <span className="font-noontree text-[12px] font-medium leading-[18px] tracking-[-0.1px] text-[#666D85]">
+                          Current price
+                        </span>
+                      </button>
+
+                      {/* Highest + Lowest — grouped and sharing the remaining
+                          width evenly alongside the current-price block */}
+                      <div data-id={did('stats-hilo')} className="flex flex-[7] items-start gap-3">
+                        {/* Highest */}
+                        <button
+                          type="button"
+                          data-id={did('stat-highest')}
+                          aria-pressed={selectedStat === 'highest'}
+                          onClick={() => onStatClick('highest')}
+                          className="flex flex-1 items-start gap-2 text-left outline-none"
+                        >
+                          <HighestArrow />
+                          <span className="flex flex-col items-start gap-0">
+                            <span className="inline-flex items-center gap-px font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
+                              <Dirham />
+                              {statValues.highest}
+                            </span>
+                            <span className="font-noontree text-[12px] font-medium leading-[18px] tracking-[-0.1px] text-[#666D85]">
+                              Highest
+                            </span>
+                          </span>
+                        </button>
+
+                        {/* Lowest */}
+                        <button
+                          type="button"
+                          data-id={did('stat-lowest')}
+                          aria-pressed={selectedStat === 'lowest'}
+                          onClick={() => onStatClick('lowest')}
+                          className="flex flex-1 items-start gap-2 text-left outline-none"
+                        >
+                          <LowestArrow />
+                          <span className="flex flex-col items-start gap-0">
+                            <span className="inline-flex items-center gap-px font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
+                              <Dirham />
+                              {statValues.lowest}
+                            </span>
+                            <span className="font-noontree text-[12px] font-medium leading-[18px] tracking-[-0.1px] text-[#666D85]">
+                              Lowest
+                            </span>
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
                         {/* Section 1 — prices (left) | plot (right) */}
                         <div data-id={did('chart-plot-row')} className="flex h-[140px]">
                           {/* price labels — equal-height cells filling the column,
@@ -646,20 +791,29 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                               <PriceBars bars={bars} yLo={yLo} yHi={yHi} selected={barSel} onSelect={setBarSel} dataId={dataId} />
                             ) : (
                               <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={series} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                                <AreaChart data={series} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
                                   <defs>
                                     <linearGradient id="ph-fill" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor="#E4E3FF" />
-                                      <stop offset="100%" stopColor="#FFFFFF" />
+                                      <stop offset="0%" stopColor={LINE} stopOpacity={0.2} />
+                                      <stop offset="55%" stopColor={LINE} stopOpacity={0.06} />
+                                      <stop offset="100%" stopColor={LINE} stopOpacity={0} />
                                     </linearGradient>
+                                    {/* soft glow under the stroke so the line reads
+                                        crisp over the gradient fill */}
+                                    <filter id="ph-line-glow" x="-2%" y="-10%" width="104%" height="130%">
+                                      <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor={LINE} floodOpacity="0.18" />
+                                    </filter>
                                   </defs>
                                   <XAxis dataKey="i" type="number" domain={[domainLo, domainHi]} hide />
                                   <YAxis domain={[yLo, yHi]} hide />
                                   <Area
-                                    type="stepAfter"
+                                    type={data.curve ?? 'stepAfter'}
                                     dataKey="price"
                                     stroke={LINE}
-                                    strokeWidth={1.5}
+                                    strokeWidth={2}
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    style={{ filter: 'url(#ph-line-glow)' }}
                                     fill="url(#ph-fill)"
                                     isAnimationActive
                                     animationDuration={500}
@@ -713,58 +867,26 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                           )}
                         </div>
                       </div>
-
-                      {/* hero insight — sits on the coloured bottom of the shell.
-                          The headline reads semibold, the supporting copy medium. */}
-                      <div data-id={did('trend')} className="flex min-h-9 items-center gap-2.5 px-4 py-1.5" style={{ color: tone.color }}>
-                        <TrendIcon dir={insight.icon} color={tone.color} />
-                        {/* text rolls like a vertical carousel (overlapping in/out)
-                            on an iOS cubic-bezier curve whenever the insight changes */}
-                        <RollSwap
-                          id={`${insight.bold}|${insight.rest}`}
-                          transition={sheetMotion.rollText}
-                          className="min-w-0 flex-1"
-                        >
-                          <span className="min-w-0 font-noontree text-[12px] font-medium leading-4 tracking-[-0.1px]">
-                            <span className="font-semibold">{withDirham(insight.bold)}</span>{' '}
-                            {withDirham(insight.rest)}
-                          </span>
-                        </RollSwap>
-                      </div>
                     </div>
-                  </div>
 
-                  {/* Lowest / Highest / Today stat cards — values follow the
-                      selected range; tapping one pins the chart marker on that
-                      point (tap again to release) */}
-                  <div data-id={did('stats')} className="flex shrink-0 gap-2">
-                    {[
-                      { key: 'highest', label: 'Highest' },
-                      { key: 'lowest', label: 'Lowest' },
-                      { key: 'today', label: 'Today' },
-                    ].map(({ key, label }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        data-id={did(`stat-${key}`)}
-                        aria-pressed={selectedStat === key}
-                        onClick={() => onStatClick(key)}
-                        className={`flex flex-1 flex-col gap-2 rounded-lg border-2 px-3 py-2 text-left outline-none transition-colors duration-200 ease-out ${
-                          selectedStat === key ? 'border-[#BDDBFF] bg-white' : 'border-transparent bg-[#F9F9FB]'
-                        }`}
-                      >
-                        {STAT_ICONS[key]}
-                        <div className="flex flex-col">
-                          <span className="inline-flex items-center gap-px font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px] text-[#1D2539]">
-                            <Dirham />
-                            {statValues[key]}
-                          </span>
-                          <span className="font-noontree text-[11px] font-medium leading-[14px] tracking-[-0.1px] text-[#666D85]">
-                            {label}
-                          </span>
-                        </div>
-                      </button>
-                    ))}
+                  {/* Trend note — a SEPARATE box below the graph, filled with the
+                      tone tint and a hairline border. Headline semibold, copy
+                      medium; text rolls like a carousel when the insight changes. */}
+                  <div
+                    data-id={did('trend')}
+                    className="flex min-h-11 shrink-0 items-center gap-2.5 rounded-xl px-4 py-2.5"
+                    style={{ background: tone.bg, color: tone.color }}
+                  >
+                    <RollSwap
+                      id={`${insight.bold}|${insight.rest}`}
+                      transition={sheetMotion.rollText}
+                      className="min-w-0 flex-1"
+                    >
+                      <span className="min-w-0 font-noontree text-[12px] font-medium leading-4 tracking-[-0.1px]">
+                        <span className="font-semibold">{withDirham(insight.bold)}</span>{' '}
+                        {withDirham(insight.rest)}
+                      </span>
+                    </RollSwap>
                   </div>
 
                   {/* Better deal row — shown when the price is higher now, to

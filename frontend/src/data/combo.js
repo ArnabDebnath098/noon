@@ -6,6 +6,7 @@ import bundleShampooConditioner from '../assets/products/bundle-shampoo-conditio
 import bundleShampooRicewater from '../assets/products/bundle-shampoo-ricewater.png'
 import comboThumbConditioner from '../assets/products/combo-thumb-conditioner.png'
 import comboThumbShampoo from '../assets/products/combo-thumb-shampoo.png'
+import redmiWatch5Active from '../assets/products/redmi-watch-5-active.png'
 
 // Per-combo product thumbnails (for the variation-4 horizontal row card).
 const COMBO_THUMBS = [
@@ -155,6 +156,96 @@ export const priceHistory = {
   },
 }
 
+// ---- price-history variation 1: Redmi Watch 5 Active PDP -----------------
+export const watchProduct = {
+  store: 'XIAOMI',
+  title:
+    'Redmi Watch 5 Active - Budget-Friendly Smartwatch with 2" LCD Display, Fitness Tracking And 18 Days Battery Life Midnight Black',
+  images: [redmiWatch5Active],
+  rating: '4.4',
+  ratingCount: '6987',
+  price: '109.00',
+  originalPrice: '149.00',
+  discountPercent: '26%',
+  vat: '(incl. of VAT)',
+  bestPriceWithOffers: '99',
+  lowestPrice: 'Lowest Price in 30 days',
+  bestsellerRankTop: { rank: '#1', category: 'Smartwatches' },
+  bestsellerRankBottom: { rank: '#1', category: 'Smartwatches' },
+}
+
+// ---- price-history variation 1: REAL wearables data ----------------------
+// Xiaomi Redmi Watch 5 Active (SKU N70103815V, Midnight Black — the top-selling
+// Wearables SKU, 30K units/yr), daily offer prices Jul 14 2025 → Jul 13 2026
+// from the nAT Analyst export. The story in the numbers:
+//   • ~110–120 AED baseline with daily ASP wobble
+//   • 11.11 sale slide (Nov 8–14, ~96–99) and the White Friday plateau at
+//     ~91–93 (Nov 25–30, volume ~3×)
+//   • a Dec 23 flash dip (93.16), then January highs (~118–122)
+//   • the Ramadan crash to the yearly low 82.59 (Feb 6 — also the peak volume
+//     day, 463 units), recovering through March
+//   • spring stability → yearly high 125.35 (Jun 19) → today back at 110.47
+// The Matte Silver colorway (N70103816V) tracks it closely — today 107.23 —
+// so it appears as the cheaper color variant.
+export const watchPriceHistory = {
+  subtitle: ['XIAOMI', 'Redmi Watch 5 Active', 'Midnight Black'],
+  stats: { lowest: '82.59', highest: '125.35', today: '109' },
+  // the dataset's export date — scrub/pin marker dates count back from this
+  // (not from the live clock), so pins land on the real event dates
+  asOf: '2026-07-13',
+  variantNoun: 'color',
+  // the two real SKUs as colorways (no `ml` → the deal logic compares price);
+  // Black is the current PDP price (109), Silver runs a touch cheaper (105)
+  variants: [
+    { id: 'black', label: 'Midnight Black', price: 109, image: redmiWatch5Active, current: true },
+    { id: 'silver', label: 'Matte Silver', price: 105.85, image: redmiWatch5Active },
+  ],
+  ranges: {
+    '1m': {
+      label: '1 Month',
+      days: 30,
+      labels: ['Jun 14', 'Jun 21', 'Jun 28', 'Jul 6', 'Today'],
+      // the ACTUAL last 30 daily offer prices (Jun 14 → Jul 13) — real ASPs
+      // move a little every day, unlike hand-authored plateau data
+      points: [
+        118.42, 119.07, 114.8, 121.54, 121.37, 125.35, 112.44, 104.58,
+        115.74, 105.63, 117.16, 122.26, 110.19, 109.88, 112.09, 110.28,
+        110.81, 114.19, 113.28, 123.4, 123.46, 120.86, 121.69, 113.7,
+        114.95, 110.96, 112.33, 107.22, 109.13, 109,
+      ],
+    },
+    '3m': {
+      label: '3 Month',
+      days: 90,
+      labels: ['Apr', 'May', 'Jun', 'Today'],
+      // 5-day mean prices (Apr 14 → Jul 13): stable April, the late-May lift,
+      // the 125.35 June peak week, the Jun 21 dip (104.6) and the early-July
+      // spike (120.6) before settling back to ~110
+      points: [
+        113.2, 113.3, 112.7, 112.5, 111.6, 114.1, 111.7, 113.3,
+        118.0, 116.2, 119.1, 118.1, 118.5, 115.9, 104.6, 112.5,
+        120.6, 109,
+      ],
+    },
+    '1y': {
+      label: '1 Year',
+      days: 365,
+      labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
+      // UNIFORM ~9.9-day bucket means (38 points over 365 days) so the
+      // scrub/pin dates interpolate onto the REAL event dates: index 12 →
+      // Nov 8 (11.11 sale, 96.4), 14 → Nov 28 (White Friday, 92.0), 21 →
+      // Feb 5 (Ramadan low, exact 82.59), 34 → mid-June high (exact 125.35)
+      points: [
+        115.2, 110.9, 112.4, 112.9, 114.9, 104.9, 106.7, 112.3, 114.5,
+        114.9, 111.3, 109.5, 96.4, 101.5, 92.0, 115.8, 104.5, 113.1,
+        117.4, 104.7, 103.8, 82.59, 99.0, 107.8, 103.7, 105.5, 106.8,
+        111.5, 113.2, 112.4, 112.1, 112.5, 117.5, 118.6, 125.35, 114.4,
+        116.7, 109,
+      ],
+    },
+  },
+}
+
 // ---- price-history variation 2: a phone PDP (Pura90s Pro 5) --------------
 const PHONE_IMAGE =
   'https://f.nooncdn.com/p/pzsku/ZEF7AF76D2E9CBCBDCFD7Z/45/_/1784188631/6b269d53-5311-4217-918e-de3c3e7ced81.jpg?width=800'
@@ -182,6 +273,9 @@ export const phoneProduct = {
 export const phonePriceHistory = {
   subtitle: ['HUAWEI', 'Pura90s Pro', 'Black'],
   stats: { lowest: '2999', highest: '3599', today: '3199' },
+  // the phone's data is a smooth climb-peak-decline trend, so the line renders
+  // as a spline (default is the plateau-style stepAfter staircase)
+  curve: 'natural',
   // key specs the "similar products" below are matched on
   specs: ['12GB RAM', '256GB', '5G'],
   // Similar phones with the same headline features but a lower price — shown as
@@ -215,23 +309,22 @@ export const phonePriceHistory = {
     },
   ],
   ranges: {
-    // 1M & 3M are held HIGH (today sits above the period average) → the sheet
-    // reads "priced above usual" and steers to the cheaper similar phones.
+    // A coherent nested story across the three windows (same "today" = 3199):
+    //   • 1Y  — net INCREASE: launched cheaper (2999) → climbed to the 3599
+    //           peak ~4 months ago → declined since.
+    //   • 3M  — net DROP: that post-peak decline, from ~3399 down to a trough,
+    //           with a recovery in the final weeks.
+    //   • 1M  — net INCREASE: the recent rebound, rising to today.
     '1m': {
       label: '1 Month',
       days: 30,
       labels: ['Jun 15', 'Jun 22', 'Jun 29', 'Jul 6', 'Today'],
       barCount: 30, // bar chart (v3): one bar per day
-      // dips early then climbs back to today's high → today sits above the
-      // month average (reads "priced above usual", not flat/stable)
+      // climbs off the recent 2999 trough up to today → net INCREASE
       points: [
-        2999, 2999, 3049, 3049, 3049,
-        3099, 3099, 3049, 2999,
-        3049, 3099, 3099, 3149, 3149,
-        3099, 3099, 3149,
-        3149, 3199, 3199, 3149,
-        3149, 3199, 3199, 3199,
-        3199, 3199, 3199, 3199, 3199,
+        2999, 2999, 3019, 3009, 3039, 3029, 3059, 3049, 3079, 3069,
+        3099, 3089, 3119, 3109, 3139, 3129, 3159, 3149, 3169, 3159,
+        3179, 3169, 3189, 3179, 3199, 3189, 3199, 3199, 3199, 3199,
       ],
     },
     '3m': {
@@ -239,11 +332,11 @@ export const phonePriceHistory = {
       days: 90,
       labels: ['Apr', 'May', 'Jun', 'Today'],
       barCount: 3, // bar chart (v3): one bar per month
-      // steadily climbing — today near the top, above the 3-month average
+      // falls from the post-peak high (~3399) to the 2999 trough ~3 weeks ago,
+      // then rebounds → net DROP over the quarter
       points: [
-        2949, 2949, 2999, 2999, 3049, 3049, 3099, 3099,
-        3149, 3149, 3099, 3099, 3149, 3149, 3199, 3199,
-        3199, 3199,
+        3399, 3449, 3419, 3379, 3329, 3279, 3229, 3179, 3149,
+        3119, 3089, 3059, 3029, 2999, 3079, 3139, 3189, 3199,
       ],
     },
     '1y': {
@@ -251,13 +344,13 @@ export const phonePriceHistory = {
       days: 365,
       labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
       barCount: 12, // bar chart (v3): one bar per month
-      // launch high → festive peak 3599 (= Highest) → mega-sale 2999 low → today
-      // sits below the yearly average (a genuine drop from launch)
+      // launch low (2999) → steady climb to the 3599 festive peak (= Highest)
+      // ~4 months ago → post-peak decline to the 2999 trough → rebound to today
+      // → net UP over the year
       points: [
-        3549, 3549, 3499, 3499, 3449, 3449, 3399, 3399, 3499,
-        3499, 3599, 3599, 3499, 3499, 3399, 3399, 3299, 3299, 3199,
-        3199, 3099, 3099, 3149, 3149, 3099, 3099, 2999,
-        2999, 3049, 3049, 3149, 3149, 3199, 3199,
+        2999, 3049, 3099, 3149, 3199, 3249, 3299, 3349, 3399, 3449,
+        3499, 3549, 3599, 3549, 3479, 3399, 3319, 3229, 3129, 3049,
+        2999, 3079, 3159, 3199,
       ],
     },
   },

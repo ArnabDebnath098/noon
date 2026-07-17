@@ -10,7 +10,6 @@ import {
   combos,
   similar,
   productDetails,
-  product,
   topProducts,
   paymentOffers,
   deliveryInfo,
@@ -18,21 +17,24 @@ import {
   reviewSummary,
   bundle,
   plp,
-  priceHistory,
+  watchProduct,
+  watchPriceHistory,
   phoneProduct,
   phonePriceHistory,
 } from '../../data/combo'
 
-// Two PDPs share the same price-history sheet — variation 1 is the Bare Anatomy
-// shampoo (size/bottle variants), variation 2 is the Pura90s Pro phone (colour
-// variants, thousand-dirham scale). The floating switcher toggles the product.
+// Two PDPs share the same price-history sheet — variation 1 drives the sheet
+// with REAL wearables data (Xiaomi Redmi Watch 5 Active daily offer prices,
+// Jul 2025 → Jul 2026: 11.11/White Friday dips, the Ramadan low 82.59, the
+// June high 125.35); variation 2 is the Pura90s Pro phone (colour variants,
+// thousand-dirham scale). The floating switcher toggles the product.
 const VARIANTS = [
   { value: 1, label: '1' },
   { value: 2, label: '2' },
   { value: 3, label: '3' },
 ]
 const PRODUCTS = {
-  1: { product, priceHistory },
+  1: { product: watchProduct, priceHistory: watchPriceHistory },
   2: { product: phoneProduct, priceHistory: phonePriceHistory },
   // variation 3 — same phone, but the price history renders as a bar chart
   3: { product: phoneProduct, priceHistory: { ...phonePriceHistory, chart: 'bars' } },

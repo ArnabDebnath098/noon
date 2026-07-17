@@ -276,14 +276,16 @@ function FolderIcon({
             }}
           >
             {/* squircle-smoothed surface (radius steps with the pill height).
-                When bordered, borderWidth draws the fill as a correctly-inset
-                ::before, so the border reads as a crisp 1px hairline (element
-                bg = border); borderless (expanded grid) fills directly. */}
+                borderWidth draws the fill as a correctly-inset ::before; the
+                element bg is the border colour. ALWAYS keep borderWidth on —
+                toggling it leaves the borderless mode's stale inline clip-path
+                behind and wrecks the pill shapes — and instead paint the
+                border in the fill colour when it should read borderless. */}
             <Squircle
               as="span"
               cornerRadius={radius}
               cornerSmoothing={1}
-              borderWidth={bordered ? 1 : undefined}
+              borderWidth={1}
               /* position must be inline — the lib's injected border class sets
                  `position: relative` late in the cascade, beating Tailwind */
               style={{
