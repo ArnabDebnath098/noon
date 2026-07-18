@@ -22,15 +22,6 @@ export const experiments = [
     iconBg: '#FCF1DE',
   },
   {
-    id: 'address-selection',
-    title: 'Address 2.0 selection',
-    description: 'Redesigned bottom-sheet address picker on the marketplace home.',
-    path: '/address-selection',
-    icon: 'pin',
-    iconColor: '#7C3AED',
-    iconBg: '#F2ECFC',
-  },
-  {
     id: 'price-history',
     title: 'Price history',
     description: 'Product page with price-history explorations.',

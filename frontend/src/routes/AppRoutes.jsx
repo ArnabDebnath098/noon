@@ -6,7 +6,6 @@ import ExperimentsLanding from '../pages/ExperimentsLanding.jsx'
 // page loads instantly and an experiment's code is only fetched on navigation.
 const ComboAnimationExperiment = lazy(() => import('../experiments/combo-animation/index.jsx'))
 const MarketplaceExperiment = lazy(() => import('../experiments/marketplace-switcher/index.jsx'))
-const AddressExperiment = lazy(() => import('../experiments/address-selection/index.jsx'))
 const PriceHistoryExperiment = lazy(() => import('../experiments/price-history/index.jsx'))
 const SearchExperiment = lazy(() => import('../experiments/search/index.jsx'))
 
@@ -22,7 +21,6 @@ export default function AppRoutes() {
         <Route path="/" element={<ExperimentsLanding />} />
         <Route path="/combo-animation" element={<ComboAnimationExperiment />} />
         <Route path="/marketplace-switcher" element={<MarketplaceExperiment />} />
-        <Route path="/address-selection" element={<AddressExperiment />} />
         <Route path="/price-history" element={<PriceHistoryExperiment />} />
         <Route path="/search" element={<SearchExperiment />} />
         <Route path="*" element={<Navigate to="/" replace />} />

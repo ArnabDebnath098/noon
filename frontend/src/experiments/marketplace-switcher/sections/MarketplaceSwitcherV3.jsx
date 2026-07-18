@@ -275,26 +275,22 @@ function FolderIcon({
               backfaceVisibility: 'hidden',
             }}
           >
-            {/* squircle-smoothed surface (radius steps with the pill height).
-                borderWidth draws the fill as a correctly-inset ::before; the
-                element bg is the border colour. ALWAYS keep borderWidth on —
-                toggling it leaves the borderless mode's stale inline clip-path
-                behind and wrecks the pill shapes — and instead paint the
-                border in the fill colour when it should read borderless. */}
+            {/* squircle surface (radius steps with the pill height). The 1px
+                hairline is an INSET box-shadow, clipped to the squircle path —
+                NOT corner-smoothing's borderWidth mode, which re-injects a
+                <style> tag into <head> every frame the tile resizes and is the
+                root cause of the scroll jank. */}
             <Squircle
               as="span"
               cornerRadius={radius}
               cornerSmoothing={1}
-              borderWidth={1}
-              /* position must be inline — the lib's injected border class sets
-                 `position: relative` late in the cascade, beating Tailwind */
               style={{
                 position: 'absolute',
                 inset: 0,
-                background: bordered ? '#E5E7EB' : active ? m.accent : m.bg ?? '#FFFFFF',
-                '--squircle-fill': active ? m.accent : m.bg ?? '#FFFFFF',
+                background: active ? m.accent : m.bg ?? '#FFFFFF',
+                boxShadow: bordered ? 'inset 0 0 0 1px #E5E7EB' : 'none',
               }}
-              className="squircle-fill flex items-center justify-center overflow-hidden"
+              className="flex items-center justify-center overflow-hidden"
             >
               <span style={{ filter }} className="relative flex items-center justify-center">
                 {content}
@@ -377,7 +373,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   // heights ride motion values — no re-renders during the morph
   const pillHMV = useTransform(eff, (v) => lerp(ICON, COLLAPSE_H, clamp01(v)))
   // the folder stack overlay follows the folder's gap-tightening slide
-  const stackLeftMV = useTransform(eff, (v) => folderLeft + ((ROW_N - 1) / 2 - BIG_N) * (GAP - GAP_COLLAPSED) * clamp01(v))
+  const stackLeftMV = useTransform(eff, (v) => folderLeft + pillShiftOf(BIG_N) * clamp01(v))
   // header row height follows the pill morph (like V4's rail)
   const switcherH = useTransform(eff, (v) => ROW_TOP + lerp(ICON, COLLAPSE_H, clamp01(v)) + 8)
   // the folder's 3-marketplace stack fades in late in the collapse
@@ -449,9 +445,15 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   const stackItems = [0, 1, 2].map((o) => hiddenItems[(stackStart + o) % hiddenItems.length])
 
   // The offset-path each icon travels, and its straight-line length (used to
-  // order the stagger: nearest-travel first).
-  const pathOf = (i) => curvedPath(collapsedCenter(i), cellCenter(i))
+  // order the stagger: nearest-travel first). Paths depend only on the width-
+  // derived geometry, so memoise them — a fresh string every radius-step
+  // re-render would needlessly churn each tile's offsetPath.
   const travelOf = (i) => Math.hypot(cellCenter(i).x - collapsedCenter(i).x, cellCenter(i).y - collapsedCenter(i).y)
+  const paths = useMemo(
+    () => Array.from({ length: items.length }, (_, i) => curvedPath(collapsedCenter(i), cellCenter(i))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [W, items.length],
+  )
   const drawOrder = useMemo(
     () => slotOrder.map((id, i) => ({ id, i })).sort((a, b) => travelOf(a.i) - travelOf(b.i)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -514,15 +516,13 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
       >
         {/* folder surface → full panel (squircle-clipped); when collapsed it
             chases the stepped pill height so the folder shrinks with the row.
-            Nested inner squircle = fill (white pill when collapsed, matching
-            the marketplace pills; blue gradient when expanded); the outer
-            paints the 1px hairline border. */}
+            Gradient fill + inset-shadow hairline (no borderWidth mode — see the
+            tile note; this box also resizes every frame). */}
         <Squircle
           as={motion.div}
           data-id="mp-grid-panel"
           cornerRadius={panelRadius}
           cornerSmoothing={1}
-          borderWidth={1}
           onClick={() => !expanded && open()}
           style={{
             position: 'absolute',
@@ -530,11 +530,11 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
             top: ROW_TOP,
             width: panelBoxW,
             height: panelBoxH,
-            background: '#E5E7EB',
-            '--squircle-fill': PANEL_BG.background,
+            background: PANEL_BG.background,
+            boxShadow: 'inset 0 0 0 1px #E5E7EB',
             filter: expanded ? 'drop-shadow(0 16px 40px rgba(16,24,40,0.22))' : 'none',
           }}
-          className={`squircle-fill ${expanded ? 'backdrop-blur-xl' : ''}`}
+          className={expanded ? 'backdrop-blur-xl' : ''}
         ></Squircle>
 
         {/* icons cascade out of / back into the folder (children are ordered
@@ -562,7 +562,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
                 fadeOnScroll={isPreview(i)}
                 eff={eff}
                 active={m.id === activeId}
-                offsetPath={pathOf(i)}
+                offsetPath={paths[i]}
                 collapsedScale={collapsedScale(i)}
                 collapsedOpacity={collapsedOpacity(i)}
                 // radius tracks the pill height so the squircle keeps its
@@ -590,9 +590,8 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
             as="span"
             cornerRadius={tileRadius}
             cornerSmoothing={1}
-            borderWidth={1}
-            className="squircle-fill block"
-            style={{ position: 'absolute', inset: 0, background: '#E5E7EB', '--squircle-fill': '#FFFFFF' }}
+            className="block"
+            style={{ position: 'absolute', inset: 0, background: '#FFFFFF', boxShadow: 'inset 0 0 0 1px #E5E7EB' }}
           />
           <AnimatePresence mode="popLayout" initial={false}>
           {stackItems.map((m, idx) => {
@@ -623,9 +622,16 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
                     as="span"
                     cornerRadius={fullRadius}
                     cornerSmoothing={1}
-                    borderWidth={2}
-                    className="squircle-fill flex items-center justify-center overflow-hidden"
-                    style={{ position: 'absolute', inset: 0, background: '#E5E7EB', '--squircle-fill': m.bg ?? '#FFFFFF' }}
+                    className="flex items-center justify-center overflow-hidden"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      // solid light tint of the marketplace colour (mixed into
+                      // white, no opacity) + a white border so the overlapping
+                      // stack chips read as separate cards
+                      background: m.accent ? `color-mix(in srgb, ${m.accent} 14%, #FFFFFF)` : '#F4F6FA',
+                      boxShadow: 'inset 0 0 0 3px #FFFFFF',
+                    }}
                   >
                     <MarketplaceMark m={m} size={ICON} />
                   </Squircle>

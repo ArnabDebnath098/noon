@@ -4,38 +4,47 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
-import { curvedPath, easings } from '../../utils/motion'
+import { easings } from '../../utils/motion'
+import NewBadge from '../../experiments/marketplace-switcher/sections/NewBadge'
 
-// leading-panel icon choreography — same App-Library flight as the
-// marketplace folder grid, but directional: icons POP out with a lively
-// spring (slight overshoot, cascading from the chip) and pour back in fast
-// and decisively (no bounce, tighter reverse stagger) so the close never
-// feels like a slow rewind.
+// light blue gradient panel background (tiles sit on it as white cards)
+const SELECTED_BG = 'linear-gradient(180deg, #EAF2FF 0%, #D6E7FF 100%)'
+// 3D flip when a slot's marketplace swaps (same feel as variation 2's rotateY)
+const EX_TILE_FLIP = { rotateY: { type: 'spring', duration: 0.55, bounce: 0.3 }, opacity: { duration: 0.16 } }
+
+// leading-panel icon choreography — icons POP out of the chip with a lively
+// spring (slight overshoot, cascading), pouring back in fast and decisively on
+// close. Each tile flies via a per-tile (dx,dy) offset toward the chip corner
+// (from custom) so its resting left/top stays layout-animatable for swaps.
 const EX_CONTAINER = {
   open: { transition: { staggerChildren: 0.025, delayChildren: 0.05 } },
   closed: { transition: { staggerChildren: 0.016, staggerDirection: -1 } },
 }
 const EX_FLIGHT = {
   open: {
-    offsetDistance: '100%',
+    x: 0,
+    y: 0,
     scale: 1,
     opacity: 1,
     transition: {
-      offsetDistance: { type: 'spring', duration: 0.55, bounce: 0.22 },
+      x: { type: 'spring', duration: 0.55, bounce: 0.22 },
+      y: { type: 'spring', duration: 0.55, bounce: 0.22 },
       scale: { type: 'spring', duration: 0.55, bounce: 0.22 },
       opacity: { duration: 0.16 },
     },
   },
-  closed: {
-    offsetDistance: '0%',
+  closed: ({ dx = 0, dy = 0 } = {}) => ({
+    x: dx,
+    y: dy,
     scale: 0.25,
     opacity: 0,
     transition: {
-      offsetDistance: { type: 'spring', duration: 0.34, bounce: 0 },
+      x: { type: 'spring', duration: 0.34, bounce: 0 },
+      y: { type: 'spring', duration: 0.34, bounce: 0 },
       scale: { type: 'spring', duration: 0.34, bounce: 0 },
       opacity: { duration: 0.14, delay: 0.1 },
     },
-  },
+  }),
 }
 // surface + chip morph — soft overshoot opening, pure decisive settle closing
 // (size changes never bounce on the way out)
@@ -101,6 +110,28 @@ export default function BottomNav({
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
+  // V5 leading-expand grid — a stable slot order so selecting swaps the picked
+  // tile with the bottom-left (selected) tile, rather than reshuffling the whole
+  // grid. Kept in sync with the parent's activeId (which we set on pick), and
+  // never clobbers an in-place swap the user just made.
+  const [slotOrder, setSlotOrder] = useState([])
+  const leadItems = leadingExpand?.items
+  const leadActive = leadingExpand?.activeId
+  useEffect(() => {
+    if (!leadItems) return
+    const ids = leadItems.map((m) => m.id)
+    const chipSlot = (Math.ceil(ids.length / 4) - 1) * 4
+    const ai = ids.indexOf(leadActive)
+    if (ai !== -1 && ai !== chipSlot && chipSlot < ids.length) {
+      ;[ids[ai], ids[chipSlot]] = [ids[chipSlot], ids[ai]]
+    }
+    setSlotOrder((prev) => {
+      const sameSet = prev.length === ids.length && ids.every((id) => prev.includes(id))
+      if (sameSet && prev[chipSlot] === leadActive) return prev // keep user's swap
+      return ids
+    })
+  }, [leadItems, leadActive])
+
   // Floating variant — two detached, fully-round surfaces: a left circle and a
   // right pill of nav tabs (icons only). Used by variation 2. When a `leading`
   // slot is given the left circle shows it (the selected marketplace) and ALL
@@ -153,32 +184,37 @@ export default function BottomNav({
     const EX_COLS = 4
     const panelW = navW - 32
     const exTile = Math.floor((panelW - 2 * EX_PAD - (EX_COLS - 1) * EX_GAP) / EX_COLS)
-    const exRows = Math.ceil((leadingExpand?.items.length ?? 0) / EX_COLS)
+    const nItems = leadingExpand?.items.length ?? 0
+    const exRows = Math.ceil(nItems / EX_COLS)
     const panelH = exRows * exTile + (exRows - 1) * EX_GAP + 2 * EX_PAD
-    const pickItem = (id) => {
-      leadingExpand.onSelect(id)
-      setNavOpen(false)
-    }
-    // flight geometry (panel coordinates): the chip itself becomes the
-    // bottom-left grid tile, so it stays INSIDE the expanding surface; the
-    // OTHER marketplaces fly between the chip's centre and their cell centres,
-    // staggered nearest-travel-first so the cascade radiates from the chip
-    const chipCenter = { x: CHIP / 2, y: panelH - CHIP / 2 }
+    const chipSlot = (exRows - 1) * EX_COLS // bottom-left cell holds the selected
+    const byId = Object.fromEntries((leadingExpand?.items ?? []).map((m) => [m.id, m]))
+    // grid cell centres (panel coords); the chip sits at chipSlot's centre
     const cellCenter = (slot) => ({
       x: EX_PAD + exTile / 2 + (slot % EX_COLS) * (exTile + EX_GAP),
       y: EX_PAD + exTile / 2 + Math.floor(slot / EX_COLS) * (exTile + EX_GAP),
     })
-    const chipSlot = (exRows - 1) * EX_COLS // bottom-left cell
-    const flightItems = (leadingExpand?.items ?? []).filter(
-      (m) => m.id !== leadingExpand?.activeId,
-    )
-    const exOrder = flightItems
-      .map((m, k) => ({ m, slot: k >= chipSlot ? k + 1 : k }))
-      .sort(
-        (a, b) =>
-          Math.hypot(cellCenter(a.slot).x - chipCenter.x, cellCenter(a.slot).y - chipCenter.y) -
-          Math.hypot(cellCenter(b.slot).x - chipCenter.x, cellCenter(b.slot).y - chipCenter.y),
-      )
+    const chipCenter = cellCenter(chipSlot)
+    // pick: tapping the selected tile closes; tapping another swaps it into the
+    // bottom-left (selected) slot — the previous selection takes the vacated
+    // cell — then commits the selection (layout animation crosses the two).
+    const pick = (id) => {
+      if (id === leadActive) {
+        setNavOpen(false)
+        return
+      }
+      setSlotOrder((prev) => {
+        const cs = (Math.ceil(prev.length / EX_COLS) - 1) * EX_COLS
+        const s = prev.indexOf(id)
+        if (s === -1) return prev
+        const n = [...prev]
+        ;[n[cs], n[s]] = [n[s], n[cs]]
+        return n
+      })
+      leadingExpand.onSelect(id)
+      // let the flip play, then collapse the panel
+      setTimeout(() => setNavOpen(false), 480)
+    }
 
     return (
       <>
@@ -247,13 +283,15 @@ export default function BottomNav({
                   data-id={`${dataId}-leading-panel-surface`}
                   cornerRadius={navOpen ? 24 : 18}
                   cornerSmoothing={1}
-                  className="absolute inset-0 overflow-hidden bg-white"
+                  className="absolute inset-0 overflow-hidden"
+                  style={{ background: navOpen ? SELECTED_BG : '#FFFFFF' }}
                 />
               </motion.div>
             )}
 
-            {/* the other marketplaces — fixed open-size overlay so the flight
-                geometry stays stable while the surface morphs beneath */}
+            {/* the marketplaces — every tile lives here (the selected one at the
+                bottom-left chip slot). Tiles fly from the chip on open; picking
+                another swaps it into the chip slot via a layout animation. */}
             {leadingExpand && (
               <motion.div
                 data-id={`${dataId}-leading-panel-grid`}
@@ -269,40 +307,65 @@ export default function BottomNav({
                   pointerEvents: navOpen ? 'auto' : 'none',
                 }}
               >
-                {exOrder.map(({ m, slot }) => (
-                  <motion.button
-                    key={m.id}
-                    type="button"
-                    data-id={`${dataId}-leading-panel-${m.id}`}
-                    variants={EX_FLIGHT}
-                    onClick={() => pickItem(m.id)}
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      width: exTile,
-                      height: exTile,
-                      offsetPath: curvedPath(chipCenter, cellCenter(slot)),
-                      offsetRotate: '0deg',
-                      offsetAnchor: '50% 50%',
-                    }}
-                    className="relative"
-                  >
-                    <Squircle
-                      as="span"
-                      cornerRadius={Math.round(exTile * 0.26)}
-                      cornerSmoothing={1}
-                      style={{ background: m.bg ?? '#F4F6FA' }}
-                      className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                {/* fixed slots (keyed by position); the marketplace shown in a
+                    slot swaps via a rotateY flip IN PLACE — no tile moves. The
+                    bottom-left slot holds the selected marketplace. */}
+                {Array.from({ length: nItems }).map((_, slot) => {
+                  const id = slotOrder[slot]
+                  const m = byId[id]
+                  if (!m) return null
+                  const c = cellCenter(slot)
+                  const isSel = slot === chipSlot
+                  return (
+                    <motion.button
+                      key={slot}
+                      type="button"
+                      data-id={`${dataId}-leading-panel-${slot}`}
+                      variants={EX_FLIGHT}
+                      custom={{ dx: chipCenter.x - c.x, dy: chipCenter.y - c.y }}
+                      onClick={() => pick(id)}
+                      style={{
+                        position: 'absolute',
+                        left: c.x - exTile / 2,
+                        top: c.y - exTile / 2,
+                        width: exTile,
+                        height: exTile,
+                        perspective: 700,
+                      }}
+                      className="relative"
                     >
-                      {leadingExpand.renderIcon(m, false, exTile)}
-                    </Squircle>
-                  </motion.button>
-                ))}
+                      <AnimatePresence initial={false} mode="popLayout">
+                        <motion.span
+                          key={id}
+                          data-id={`${dataId}-leading-panel-${id}`}
+                          initial={{ rotateY: -90, opacity: 0 }}
+                          animate={{ rotateY: 0, opacity: 1 }}
+                          exit={{ rotateY: 90, opacity: 0 }}
+                          transition={EX_TILE_FLIP}
+                          style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden' }}
+                          className="flex items-center justify-center"
+                        >
+                          <Squircle
+                            as="span"
+                            cornerRadius={Math.round(exTile * 0.26)}
+                            cornerSmoothing={1}
+                            style={{ background: isSel ? m.accent ?? '#FFFFFF' : '#FFFFFF' }}
+                            className="absolute inset-0 flex items-center justify-center overflow-hidden"
+                          >
+                            {leadingExpand.renderIcon(m, isSel, exTile)}
+                          </Squircle>
+                          {m.isNew && <NewBadge dataId={`${dataId}-leading-panel-${id}-new`} />}
+                        </motion.span>
+                      </AnimatePresence>
+                    </motion.button>
+                  )
+                })}
               </motion.div>
             )}
 
-            {/* the chip — morphs from the corner chip into its grid slot */}
+            {/* the chip — the collapsed selected marketplace. When the panel is
+                open the selected GRID TILE covers the chip slot, so the chip
+                fades out (and stops taking taps) to avoid a double image. */}
             <motion.button
               type="button"
               data-id={`${dataId}-leading`}
@@ -311,13 +374,14 @@ export default function BottomNav({
               initial={false}
               animate={
                 navOpen && leadingExpand
-                  ? { left: EX_PAD, bottom: EX_PAD, width: exTile, height: exTile }
-                  : { left: 0, bottom: 0, width: CHIP, height: CHIP }
+                  ? { left: EX_PAD, bottom: EX_PAD, width: exTile, height: exTile, opacity: 0 }
+                  : { left: 0, bottom: 0, width: CHIP, height: CHIP, opacity: 1 }
               }
               transition={navOpen ? EX_SURFACE_OPEN : EX_SURFACE_CLOSE}
               whileTap={{ scale: 0.94 }}
               style={{
                 position: 'absolute',
+                pointerEvents: navOpen ? 'none' : 'auto',
                 filter: navOpen ? 'none' : 'drop-shadow(0 6px 24px rgba(16,24,40,0.16))',
               }}
             >
