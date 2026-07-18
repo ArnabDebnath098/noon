@@ -126,7 +126,7 @@ export default function SearchPage({ open, onClose, plp, bundle, variant }) {
           <div className="relative flex h-full w-full max-w-md flex-col bg-white">
             {/* sticky header */}
             <div data-id="plp-header" className="shrink-0 bg-white shadow-[0px_2px_8px_rgba(0,0,0,0.06)]">
-              <div style={{ height: 'env(safe-area-inset-top, 0px)' }} />
+              <div style={{ height: 'var(--sat, 0px)' }} />
               <SearchField query={plp.query} onBack={onClose} />
               <MarketplaceTabs tabs={plp.marketplaces} />
               <FilterChips chips={plp.chips} />
@@ -136,7 +136,7 @@ export default function SearchPage({ open, onClose, plp, bundle, variant }) {
             <div
               data-id="plp-products"
               className="scrollbar-hide flex-1 overflow-y-auto bg-white"
-              style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}
+              style={{ paddingBottom: 'calc(16px + var(--sab, 0px))' }}
             >
               {(() => {
                 const renderCard = (p) =>

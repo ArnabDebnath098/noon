@@ -94,7 +94,7 @@ export default function MarketplaceExperiment() {
         onScroll={onScroll}
         className="scrollbar-hide relative flex-1 overflow-y-auto bg-white"
         style={{
-          paddingBottom: 'calc(85px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(85px + var(--sab, 0px))',
         }}
       >
         {/* Sticky header — switcher + location + search pin together and the
@@ -105,7 +105,7 @@ export default function MarketplaceExperiment() {
           data-id="mp-sticky-header"
           className="sticky top-0 z-[45] rounded-b-[12px] transition-shadow"
           style={{
-            paddingTop: 'env(safe-area-inset-top, 47px)',
+            paddingTop: 'var(--sat, 0px)',
             background:
               'radial-gradient(187.5% 187.5% at 50% -79%, #D4EFF6 10%, #DBE1F9 50%, #EBF3F9 70%, rgba(128,213,234,0) 100%), #FFFFFF',
             backgroundSize: '100% 256px',
@@ -166,7 +166,7 @@ export default function MarketplaceExperiment() {
       <div
         className="pointer-events-none fixed left-1/2 z-40 flex w-full max-w-md -translate-x-1/2 justify-end px-4"
         style={{
-          bottom: 'calc(85px + env(safe-area-inset-bottom, 0px) + 16px)',
+          bottom: 'calc(85px + var(--sab, 0px) + 16px)',
         }}
       >
         <button
@@ -195,7 +195,7 @@ export default function MarketplaceExperiment() {
         value={variant}
         onChange={setVariant}
         accent="#15806A"
-        offset="calc(85px + env(safe-area-inset-bottom, 0px) + 16px)"
+        offset="calc(85px + var(--sab, 0px) + 16px)"
       />
 
       <BottomNav

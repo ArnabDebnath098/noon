@@ -18,8 +18,12 @@ const EX_TILE_FLIP = { rotateY: { type: 'spring', duration: 0.55, bounce: 0.3 },
 // (from custom) so its resting left/top stays layout-animatable for swaps.
 const EX_CONTAINER = {
   open: { transition: { staggerChildren: 0.025, delayChildren: 0.05 } },
-  closed: { transition: { staggerChildren: 0.016, staggerDirection: -1 } },
+  // close as ONE unified move (no reverse-stagger ripple — that read as bumpy)
+  closed: { transition: { staggerChildren: 0 } },
 }
+// close on the iOS deceleration curve (smooth, never bouncing); open keeps its
+// lively spring
+const EX_TWEEN_CLOSE = { duration: 0.32, ease: easings.ios }
 const EX_FLIGHT = {
   open: {
     x: 0,
@@ -39,17 +43,16 @@ const EX_FLIGHT = {
     scale: 0.25,
     opacity: 0,
     transition: {
-      x: { type: 'spring', duration: 0.34, bounce: 0 },
-      y: { type: 'spring', duration: 0.34, bounce: 0 },
-      scale: { type: 'spring', duration: 0.34, bounce: 0 },
-      opacity: { duration: 0.14, delay: 0.1 },
+      x: EX_TWEEN_CLOSE,
+      y: EX_TWEEN_CLOSE,
+      scale: EX_TWEEN_CLOSE,
+      opacity: { duration: 0.24, ease: easings.ios },
     },
   }),
 }
-// surface + chip morph — soft overshoot opening, pure decisive settle closing
-// (size changes never bounce on the way out)
+// surface + chip morph — soft overshoot opening, smooth cubic-bezier close
 const EX_SURFACE_OPEN = { type: 'spring', duration: 0.5, bounce: 0.14 }
-const EX_SURFACE_CLOSE = { type: 'spring', duration: 0.4, bounce: 0 }
+const EX_SURFACE_CLOSE = { duration: 0.34, ease: easings.ios }
 import homeIcon from '../../assets/icons/nav/home.svg?raw'
 import categoryIcon from '../../assets/icons/nav/category.svg?raw'
 import dealsIcon from '../../assets/icons/nav/deals.svg?raw'
@@ -194,7 +197,10 @@ export default function BottomNav({
       x: EX_PAD + exTile / 2 + (slot % EX_COLS) * (exTile + EX_GAP),
       y: EX_PAD + exTile / 2 + Math.floor(slot / EX_COLS) * (exTile + EX_GAP),
     })
-    const chipCenter = cellCenter(chipSlot)
+    // tiles fly to/from the COLLAPSED chip's centre (the panel's bottom-left
+    // corner), not the chip-slot cell — so on close they tuck cleanly into the
+    // chip as it and the surface collapse to that corner.
+    const chipCenter = { x: CHIP / 2, y: panelH - CHIP / 2 }
     // pick: tapping the selected tile closes; tapping another swaps it into the
     // bottom-left (selected) slot — the previous selection takes the vacated
     // cell — then commits the selection (layout animation crosses the two).
@@ -239,7 +245,7 @@ export default function BottomNav({
       <nav
         data-id={dataId}
         className={`fixed bottom-0 left-1/2 ${navOpen ? 'z-50' : 'z-30'} flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4`}
-        style={{ paddingTop: 10, paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        style={{ paddingTop: 10, paddingBottom: 'var(--sab, 0px)' }}
       >
         {/* white fade behind the floating bar — spans up past the top and down
             through the safe area (transparent at top → white by 80%) */}
@@ -443,7 +449,7 @@ export default function BottomNav({
     <nav
       data-id={dataId}
       className="fixed bottom-0 left-1/2 z-30 flex h-[85px] w-full max-w-md -translate-x-1/2 flex-col border-t border-[#F2F3F7] bg-white"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      style={{ paddingBottom: 'var(--sab, 0px)' }}
     >
       <div className="relative flex flex-1">
         {/* optional "All" entry — opens the marketplaces sheet */}

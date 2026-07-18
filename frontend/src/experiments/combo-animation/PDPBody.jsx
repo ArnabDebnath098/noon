@@ -102,7 +102,7 @@ function Hero({ images = [], dataId, controlsOpacity }) {
       data-id={dataId}
       className="relative -mx-3 bg-white"
       // White extends up behind the fixed header (real safe area + 56px header).
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 56px)' }}
+      style={{ paddingTop: 'calc(var(--sat, 0px) + 56px)' }}
     >
       <div data-id={d('media')} className="relative z-10 flex h-[min(460px,46dvh)] w-full items-center justify-center overflow-hidden">
         <img
@@ -528,7 +528,7 @@ export default function PDPBody({
       data-id={id('page')}
       className="flex flex-col px-3"
       style={{
-        paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
+        paddingBottom: 'calc(72px + var(--sab, 0px) + 12px)',
       }}
     >
       <motion.div

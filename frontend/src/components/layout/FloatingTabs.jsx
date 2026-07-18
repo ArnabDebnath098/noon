@@ -9,7 +9,7 @@ export default function FloatingTabs({
   onChange,
   dataId,
   accent = '#0F61FF',
-  offset = 'calc(72px + env(safe-area-inset-bottom, 0px) + 12px)',
+  offset = 'calc(72px + var(--sab, 0px) + 12px)',
 }) {
   // z-40: must stay above pushed/translated page surfaces (e.g. the
   // marketplace push-down reveal raises the page to z-30)

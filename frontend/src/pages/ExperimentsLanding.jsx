@@ -80,7 +80,7 @@ export default function ExperimentsLanding() {
       <div
         data-id="experiments-landing"
         className="flex flex-1 flex-col overflow-y-auto px-4 pb-10 font-questrial"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top, 47px) + 28px)' }}
+        style={{ paddingTop: 'calc(var(--sat, 0px) + 28px)' }}
       >
         {/* Brand hero */}
         <div data-id="landing-hero" className="flex items-center gap-3 px-1">

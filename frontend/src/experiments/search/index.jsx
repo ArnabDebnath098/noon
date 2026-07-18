@@ -25,45 +25,6 @@ const CATALOG = [
   { name: 'Apple Watch Series 9', price: 'AED 1,699', tint: '#FFF1E8' },
 ]
 
-/* ── iOS status bar ─────────────────────────────────────────────────────── */
-function StatusBar() {
-  return (
-    <div
-      data-id="search-statusbar"
-      className="relative flex h-[47px] w-full shrink-0 items-end justify-between px-[27px] pb-2"
-    >
-      <span
-        data-id="search-statusbar-time"
-        className="font-noontree text-[17px] font-semibold leading-none"
-        style={{ color: INK, letterSpacing: '-0.408px' }}
-      >
-        9:41
-      </span>
-      <div data-id="search-statusbar-icons" className="flex items-center gap-[7px]">
-        {/* mobile signal */}
-        <svg data-id="search-statusbar-signal" width="18" height="12" viewBox="0 0 18 12" fill="none" aria-hidden="true">
-          <rect x="0" y="8" width="3" height="4" rx="1" fill="#02060C" />
-          <rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#02060C" />
-          <rect x="10" y="3" width="3" height="9" rx="1" fill="#02060C" />
-          <rect x="15" y="0.5" width="3" height="11.5" rx="1" fill="#02060C" />
-        </svg>
-        {/* wifi */}
-        <svg data-id="search-statusbar-wifi" width="17" height="12" viewBox="0 0 17 12" fill="none" aria-hidden="true">
-          <path d="M8.5 2C11.4 2 14 3.1 15.9 5l-1.5 1.5C12.9 5 10.8 4.1 8.5 4.1S4.1 5 2.6 6.5L1.1 5C3 3.1 5.6 2 8.5 2Z" fill="#02060C" />
-          <path d="M8.5 5.7c1.7 0 3.3.6 4.5 1.7l-1.6 1.6a4 4 0 0 0-5.8 0L4 7.4a6.5 6.5 0 0 1 4.5-1.7Z" fill="#02060C" />
-          <path d="M8.5 9.3c.7 0 1.4.3 1.9.8l-1.9 1.9-1.9-1.9c.5-.5 1.2-.8 1.9-.8Z" fill="#02060C" />
-        </svg>
-        {/* battery */}
-        <div data-id="search-statusbar-battery" className="relative flex h-[13px] w-[25px] items-center">
-          <div data-id="search-statusbar-battery-outline" className="absolute inset-0 rounded-[4px] border" style={{ borderColor: '#02060C', opacity: 0.35 }} />
-          <div data-id="search-statusbar-battery-cap" className="absolute right-[-3px] top-1/2 h-[4px] w-[1.4px] -translate-y-1/2 rounded-r" style={{ background: '#02060C', opacity: 0.4 }} />
-          <div data-id="search-statusbar-battery-fill" className="absolute left-[2px] top-1/2 h-[9px] w-[19px] -translate-y-1/2 rounded-[2px]" style={{ background: '#02060C' }} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 /* ── "Shop with Magic List" AI button ───────────────────────────────────── */
 function MagicListButton() {
   return (
@@ -173,7 +134,7 @@ function NoResultsModal({ query, onQueryChange, onClear, onDismiss, inputRef }) 
     <motion.div
       data-id="search-modal-overlay"
       className="absolute inset-0 z-40 flex items-start justify-center px-3"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 47px) + 4px)', background: 'rgba(2, 6, 12, 0.55)' }}
+      style={{ paddingTop: 'calc(var(--sat, 0px) + 4px)', background: 'rgba(2, 6, 12, 0.55)' }}
       initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
       animate={{ opacity: 1, backdropFilter: 'blur(3px)' }}
       exit={{ opacity: 0, backdropFilter: 'blur(0px)' }}
@@ -300,7 +261,9 @@ export default function SearchExperiment() {
 
   return (
     <AppShell className="!bg-white">
-      <StatusBar />
+      {/* status-bar safe area — the device frame (web) / real device (phone)
+          draws the status bar; just reserve its height here */}
+      <div className="w-full shrink-0" style={{ height: 'var(--sat, 0px)' }} />
 
       {/* Search bar row */}
       <div data-id="search-bar-wrap" className="w-full shrink-0 px-3 py-4">
@@ -315,7 +278,7 @@ export default function SearchExperiment() {
       </div>
 
       {/* Body — results when the query matches, otherwise trending searches */}
-      <main data-id="search-main" className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
+      <main data-id="search-main" className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: 'calc(24px + var(--sab, 0px))' }}>
         {results.length > 0 ? (
           <div data-id="search-results" className="flex flex-col gap-3 px-3 pb-6 pt-1">
             <p data-id="search-results-count" className="px-1 font-noontree text-[13px]" style={{ color: MUTED }}>

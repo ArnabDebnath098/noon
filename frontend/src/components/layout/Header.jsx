@@ -20,12 +20,13 @@ export default function Header({ onBack, onSearch, onWishlist, onShare }) {
           'linear-gradient(180deg, #FFFFFF 40%, rgba(255, 255, 255, 0) 100%)',
       }}
     >
-      {/* Safe area — reserves the real device status-bar inset (0 when there
-          is none; no artificial fallback height). */}
+      {/* Safe area — reserves the device status-bar inset. Falls back to 47px
+          (iPhone status bar) so the web device frame's faux status bar has room;
+          real devices use their actual inset. */}
       <div
         data-id="header-safe-area"
         className="w-full shrink-0"
-        style={{ height: 'env(safe-area-inset-top, 0px)' }}
+        style={{ height: 'var(--sat, 0px)' }}
       />
 
       {/* Header stack — 56px row, back on the left, actions on the right. */}
