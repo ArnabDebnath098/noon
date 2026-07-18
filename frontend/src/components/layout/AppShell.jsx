@@ -8,8 +8,11 @@ const PHONE_RADIUS = 48
 const SAFE_TOP = 47 // status-bar inset
 const SAFE_BOTTOM = 34 // home-indicator inset
 
-// Show the framed device only when there's room for it (desktop / large web).
-const DEVICE_QUERY = '(min-width: 768px) and (min-height: 720px)'
+// Show the framed device only on a real desktop — enough room AND a fine
+// pointer with hover (a mouse). Touch devices (phones, tablets) stay full-bleed
+// so they never get the faux status-bar / home-indicator safe area.
+const DEVICE_QUERY =
+  '(min-width: 768px) and (min-height: 720px) and (hover: hover) and (pointer: fine)'
 
 const INK = 'rgba(2, 6, 12, 0.92)'
 

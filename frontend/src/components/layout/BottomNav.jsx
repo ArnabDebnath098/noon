@@ -1,7 +1,7 @@
 // BottomNav — sticky primary tab bar with a sliding active marker (Framer
 // Motion layoutId). Self-contained (internal active state); safe-area aware —
 // the bottom strip is left empty for the device's own home indicator.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
 import { easings } from '../../utils/motion'
@@ -100,18 +100,22 @@ export default function BottomNav({
 }) {
   const [active, setActive] = useState('home')
   const [navOpen, setNavOpen] = useState(false)
-  // the nav is always w-full max-w-md, so its width is min(viewport, 448) —
-  // measured from the window (a ref-based measure goes stale when the docked
-  // branch mounts first without the floating nav element)
+  // Measure the nav's ACTUAL width — inside the web device frame it's the frame
+  // width (390), not the viewport, so the expansion panel (navW − 32) must be
+  // sized from the element, not window.innerWidth (which overflowed the frame).
+  const navRef = useRef(null)
   const [navW, setNavW] = useState(() =>
     Math.min(typeof window !== 'undefined' ? window.innerWidth : 448, 448),
   )
   useEffect(() => {
-    const onResize = () => setNavW(Math.min(window.innerWidth, 448))
-    onResize()
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+    const el = navRef.current
+    if (!el) return undefined
+    const measure = () => setNavW(el.offsetWidth)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [floating])
 
   // V5 leading-expand grid — a stable slot order so selecting swaps the picked
   // tile with the bottom-left (selected) tile, rather than reshuffling the whole
@@ -243,6 +247,7 @@ export default function BottomNav({
       {/* while the panel is open the nav rises above the floating variant
           tabs (z-40) and its backdrop (z-45) */}
       <nav
+        ref={navRef}
         data-id={dataId}
         className={`fixed bottom-0 left-1/2 ${navOpen ? 'z-50' : 'z-30'} flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4`}
         style={{ paddingTop: 10, paddingBottom: 'var(--sab, 0px)' }}
