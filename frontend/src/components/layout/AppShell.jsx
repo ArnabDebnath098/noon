@@ -137,9 +137,11 @@ export default function AppShell({ children, className = '' }) {
         data-id="app-frame"
         className={`relative flex h-[100dvh] max-h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
         style={{
-          // on real devices --sat/--sab resolve to the actual safe-area insets
-          '--sat': 'env(safe-area-inset-top, 0px)',
-          '--sab': 'env(safe-area-inset-bottom, 0px)',
+          // real device insets, but CAPPED so tall notches / the browser's own
+          // bottom chrome don't reserve excessive empty space (top keeps room
+          // for the status-bar gradient; bottom stays a slim home-indicator gap)
+          '--sat': 'min(env(safe-area-inset-top, 0px), 44px)',
+          '--sab': 'min(env(safe-area-inset-bottom, 0px), 8px)',
         }}
       >
         {children}
