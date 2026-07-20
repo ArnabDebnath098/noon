@@ -16,7 +16,25 @@
 // FOOD, 15 MINUTES → MINUTES) — the compact form used when a tile shrinks.
 const REF = 76
 
-export default function MarketplaceMark({ m, white, active, collapsed, size = 72 }) {
+// `collapsedStackH` / `collapsedStackGap` let a caller tune the one-line
+// logoStack (supermall) in its collapsed form WITHOUT affecting other variants
+// — defaults reproduce the original look, so callers that don't pass them are
+// unchanged.
+// `collapsedLogoScale` shrinks a `logo` mark in its collapsed form (default 1 =
+// unchanged). `collapsedLabelPill` shows only the short `m.pill` word for a text
+// label when collapsed (e.g. "noon out" → "out"). Both default to the original
+// behaviour so callers that don't pass them are unaffected.
+export default function MarketplaceMark({
+  m,
+  white,
+  active,
+  collapsed,
+  size = 72,
+  collapsedStackH = 11.5,
+  collapsedStackGap = 1,
+  collapsedLogoScale = 1,
+  collapsedLabelPill = false,
+}) {
   const k = size / REF
   // pre-coloured active stacks carry their own colours — never filter them;
   // otherwise: white → invert to white (dark accent fill); mono → force black
@@ -62,13 +80,14 @@ export default function MarketplaceMark({ m, white, active, collapsed, size = 72
     // "super" is drawn larger than "mall" in these assets, so bump mall up to
     // match its cap height.
     if (collapsed) {
-      const h = 11.5 * k
+      const h = collapsedStackH * k
       // same scale (matched weight); super has a 'p' descender so drop it a
-      // touch to sit "super" and "mall" on the same baseline
+      // touch to sit "super" and "mall" on the same baseline. collapsedStackGap
+      // (px) sets the space between "super" and "mall" — negative to tighten.
       return (
-        <span className="flex flex-row items-end gap-px" style={{ filter }}>
+        <span className="flex flex-row items-end" style={{ filter }}>
           <img src={stack[0]} alt="" className="w-auto" style={{ height: h, marginBottom: -0.22 * h }} />
-          <img src={stack[1]} alt="" className="w-auto" style={{ height: h }} />
+          <img src={stack[1]} alt="" className="w-auto" style={{ height: h, marginLeft: collapsedStackGap }} />
         </span>
       )
     }
@@ -80,19 +99,23 @@ export default function MarketplaceMark({ m, white, active, collapsed, size = 72
     )
   }
 
-  if (m.logo)
+  if (m.logo) {
+    const ls = collapsed ? collapsedLogoScale : 1
     return m.logoH ? (
-      <img src={m.logo} alt="" style={{ filter, height: m.logoH * k }} className="w-auto" />
+      <img src={m.logo} alt="" style={{ filter, height: m.logoH * k * ls }} className="w-auto" />
     ) : (
-      <img src={m.logo} alt="" style={{ filter, width: (m.logoW ?? 56) * k }} className="h-auto" />
+      <img src={m.logo} alt="" style={{ filter, width: (m.logoW ?? 56) * k * ls }} className="h-auto" />
     )
+  }
 
+  // collapsed text label → only the short pill word (e.g. "noon out" → "out")
+  const label = collapsed && collapsedLabelPill && m.pill ? m.pill : m.label
   return (
     <span
       className="whitespace-pre-line text-center font-noontree font-black lowercase"
       style={{ color: white ? '#fff' : m.fg, fontSize: 15 * k, lineHeight: `${15 * k}px` }}
     >
-      {m.label}
+      {label}
     </span>
   )
 }

@@ -9,6 +9,7 @@
 //   navSwitch   — no top switcher; the bottom nav's "All" tab opens the sheet
 import MarketplaceSwitcherV2 from './MarketplaceSwitcherV2'
 import MarketplaceSwitcherV3 from './MarketplaceSwitcherV3'
+import MarketplaceSwitcherV6 from './MarketplaceSwitcherV6'
 import MarketplaceSwitcherV7 from './MarketplaceSwitcherV7'
 import MarketplaceSwitcherV8 from './MarketplaceSwitcherV8'
 
@@ -22,4 +23,6 @@ export const switcherVariants = [
   { value: 3, label: '3', Component: MarketplaceSwitcherV7 },
   { value: 4, label: '4', Component: MarketplaceSwitcherV8 },
   { value: 5, label: '5', Component: NoSwitcher, floatingNav: true },
+  // variation 2's layout + the scroll-hint shell inside the rail
+  { value: 6, label: '6', Component: MarketplaceSwitcherV6, ownsHeader: true },
 ]

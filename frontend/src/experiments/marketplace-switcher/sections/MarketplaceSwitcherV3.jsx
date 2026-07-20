@@ -59,6 +59,7 @@ const BIG_N = 4 // marketplaces shown as row tiles (the 5th slot is the folder/g
 const SWAP_SLOT = 3 // the row slot a grid pick swaps into (the last row tile)
 
 const MINI_RATIO = 0.33 // preview icon size as a fraction of the tile
+const RADIUS_RATIO = 0.32 // tile corner radius as a fraction of size (squircle)
 
 // expanded panel grid
 const PADP = 14 // panel padding
@@ -262,42 +263,43 @@ function FolderIcon({
       {/* pill wrapper — rides the scroll morph independently of the
           offset-path flight on the root */}
       <motion.div style={{ position: 'relative', width: size, height: h, x, y, opacity: wrapOpacity }}>
-        <AnimatePresence initial={false}>
-          <motion.div
-            key={m.id}
-            initial={{ rotateY: -110, opacity: 0 }}
-            animate={{ rotateY: 0, opacity: 1 }}
-            exit={{ rotateY: 110, opacity: 0 }}
-            transition={FLIP_TRANSITION}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backfaceVisibility: 'hidden',
-            }}
-          >
-            {/* squircle surface (radius steps with the pill height). The 1px
-                hairline is an INSET box-shadow, clipped to the squircle path —
-                NOT corner-smoothing's borderWidth mode, which re-injects a
-                <style> tag into <head> every frame the tile resizes and is the
-                root cause of the scroll jank. */}
-            <Squircle
-              as="span"
-              cornerRadius={radius}
-              cornerSmoothing={1}
+        {/* Squircle CLIP lives OUTSIDE the 3D flip. corner-smoothing draws the
+            squircle via clip-path, which browsers drop when it's applied to an
+            element that also has a 3D transform (the rotateY/backface flip) —
+            so the tile rendered as a plain rounded rect. Clipping the (2D)
+            container and rotating the card inside keeps the squircle shape. */}
+        <Squircle
+          as="span"
+          cornerRadius={radius}
+          cornerSmoothing={1}
+          style={{ position: 'absolute', inset: 0 }}
+          className="block overflow-hidden"
+        >
+          <AnimatePresence initial={false}>
+            <motion.div
+              key={m.id}
+              initial={{ rotateY: -110, opacity: 0 }}
+              animate={{ rotateY: 0, opacity: 1 }}
+              exit={{ rotateY: 110, opacity: 0 }}
+              transition={FLIP_TRANSITION}
               style={{
                 position: 'absolute',
                 inset: 0,
+                backfaceVisibility: 'hidden',
                 background: active ? m.accent : m.bg ?? '#FFFFFF',
-                boxShadow: bordered ? 'inset 0 0 0 1px #E5E7EB' : 'none',
               }}
-              className="flex items-center justify-center overflow-hidden"
+              className="flex items-center justify-center"
             >
               <span style={{ filter }} className="relative flex items-center justify-center">
                 {content}
               </span>
-            </Squircle>
-          </motion.div>
-        </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
+          {/* 1px hairline, on top, clipped to the squircle (not on the 3D card) */}
+          {bordered && (
+            <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 1px #E5E7EB' }} />
+          )}
+        </Squircle>
         {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
       </motion.div>
     </motion.div>
@@ -350,17 +352,17 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   // values per collapse) rather than the pill height (~40): every step re-renders
   // all tiles and rebuilds their clip-paths, so fewer steps = smooth scrolling.
   // Everything that can ride a motion value (heights, opacity) does.
-  const fullRadius = Math.round(ICON * 0.28)
+  const fullRadius = Math.round(ICON * RADIUS_RATIO)
   const [tileRadius, setTileRadius] = useState(fullRadius)
   const [stackLive, setStackLive] = useState(false)
   useMotionValueEvent(eff, 'change', (v) => {
-    const r = Math.round(lerp(ICON, COLLAPSE_H, clamp01(v)) * 0.28)
+    const r = Math.round(lerp(ICON, COLLAPSE_H, clamp01(v)) * RADIUS_RATIO)
     setTileRadius((p) => (p === r ? p : r))
     const live = v > 0.9 && !expanded
     setStackLive((p) => (p === live ? p : live))
   })
   useEffect(() => {
-    setTileRadius(Math.round(lerp(ICON, COLLAPSE_H, clamp01(eff.get())) * 0.28))
+    setTileRadius(Math.round(lerp(ICON, COLLAPSE_H, clamp01(eff.get())) * RADIUS_RATIO))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ICON])
   const [gateStep, setGateStep] = useState(1)
