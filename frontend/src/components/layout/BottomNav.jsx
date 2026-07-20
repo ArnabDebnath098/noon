@@ -139,6 +139,16 @@ export default function BottomNav({
     })
   }, [leadItems, leadActive])
 
+  // drag-to-cycle: index of the currently-selected marketplace (kept synced),
+  // and the accumulated pan distance so each ~step advances one marketplace
+  const selIndexRef = useRef(0)
+  const panAccRef = useRef(0)
+  useEffect(() => {
+    if (!leadItems) return
+    const i = leadItems.findIndex((m) => m.id === leadActive)
+    if (i >= 0) selIndexRef.current = i
+  }, [leadItems, leadActive])
+
   // Floating variant — two detached, fully-round surfaces: a left circle and a
   // right pill of nav tabs (icons only). Used by variation 2. When a `leading`
   // slot is given the left circle shows it (the selected marketplace) and ALL
@@ -208,22 +218,47 @@ export default function BottomNav({
     // pick: tapping the selected tile closes; tapping another swaps it into the
     // bottom-left (selected) slot — the previous selection takes the vacated
     // cell — then commits the selection (layout animation crosses the two).
+    // swap a marketplace into the bottom-left (selected) slot; `commit` also
+    // reports the selection up (skipped mid-drag so it isn't reloaded per step)
+    const swapToChip = (id, commit) => {
+      setSlotOrder((prev) => {
+        const cs = (Math.ceil(prev.length / EX_COLS) - 1) * EX_COLS
+        const s = prev.indexOf(id)
+        if (s === -1 || s === cs) return prev
+        const n = [...prev]
+        ;[n[cs], n[s]] = [n[s], n[cs]]
+        return n
+      })
+      if (commit) leadingExpand.onSelect(id)
+    }
     const pick = (id) => {
       if (id === leadActive) {
         setNavOpen(false)
         return
       }
-      setSlotOrder((prev) => {
-        const cs = (Math.ceil(prev.length / EX_COLS) - 1) * EX_COLS
-        const s = prev.indexOf(id)
-        if (s === -1) return prev
-        const n = [...prev]
-        ;[n[cs], n[s]] = [n[s], n[cs]]
-        return n
-      })
-      leadingExpand.onSelect(id)
-      // let the flip play, then collapse the panel
-      setTimeout(() => setNavOpen(false), 480)
+      swapToChip(id, true)
+      setTimeout(() => setNavOpen(false), 480) // let the flip play, then collapse
+    }
+
+    // drag up / down anywhere in the open panel to scrub the selection (like
+    // swiping across an account switcher). Each ~step flips the next / previous
+    // marketplace into the selected slot; the choice commits on release and the
+    // panel stays open so you can keep scrubbing.
+    const mpList = leadingExpand?.items ?? []
+    const cycle = (dir) => {
+      if (!mpList.length) return
+      selIndexRef.current = (selIndexRef.current + dir + mpList.length) % mpList.length
+      swapToChip(mpList[selIndexRef.current].id, false)
+    }
+    const onGridPan = (_e, info) => {
+      panAccRef.current += info.delta.y
+      const STEP = 42
+      while (panAccRef.current <= -STEP) { cycle(1); panAccRef.current += STEP } // up → next
+      while (panAccRef.current >= STEP) { cycle(-1); panAccRef.current -= STEP } // down → prev
+    }
+    const onGridPanEnd = () => {
+      panAccRef.current = 0
+      if (mpList.length) leadingExpand.onSelect(mpList[selIndexRef.current].id)
     }
 
     return (
@@ -250,7 +285,10 @@ export default function BottomNav({
         ref={navRef}
         data-id={dataId}
         className={`fixed bottom-0 left-1/2 ${navOpen ? 'z-50' : 'z-30'} flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4`}
-        style={{ paddingTop: 10, paddingBottom: 'var(--sab, 0px)' }}
+        // bottom safe area — 24px on mobile (so the bar isn't flush to the
+        // edge); on the web frame --sab (home indicator, 34px) already covers
+        // it, so take the larger of the two rather than stacking both
+        style={{ paddingTop: 10, paddingBottom: 'max(24px, var(--sab, 0px))' }}
       >
         {/* white fade behind the floating bar — spans up past the top and down
             through the safe area (transparent at top → white by 80%) */}
@@ -309,6 +347,8 @@ export default function BottomNav({
                 variants={EX_CONTAINER}
                 initial={false}
                 animate={navOpen ? 'open' : 'closed'}
+                onPan={navOpen ? onGridPan : undefined}
+                onPanEnd={navOpen ? onGridPanEnd : undefined}
                 style={{
                   position: 'absolute',
                   left: 0,
@@ -316,6 +356,7 @@ export default function BottomNav({
                   width: panelW,
                   height: panelH,
                   pointerEvents: navOpen ? 'auto' : 'none',
+                  touchAction: navOpen ? 'none' : undefined,
                 }}
               >
                 {/* fixed slots (keyed by position); the marketplace shown in a

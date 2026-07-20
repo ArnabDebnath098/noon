@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon-192.png?v=3" />
-    <!-- Mobile-first: lock viewport to device width. No viewport-fit=cover so
-         mobile browsers keep content in the safe visible area (env() insets = 0,
-         no reserved safe-area gaps); the desktop device frame supplies its own
-         --sat/--sab insets instead. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Mobile-first: lock viewport to device width. viewport-fit=cover so the
+         app extends edge-to-edge behind the status bar / home indicator (the
+         header gradient shows through the status bar) and env(safe-area-inset-*)
+         reports the real device insets, which the layout reserves via --sat/--sab. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="theme-color" content="#1D2539" />
 
     <!-- Add to Home Screen (iOS + Android) -->
