@@ -12,6 +12,7 @@ import MarketplaceSwitcherV3 from './MarketplaceSwitcherV3'
 import MarketplaceSwitcherV6 from './MarketplaceSwitcherV6'
 import MarketplaceSwitcherV7 from './MarketplaceSwitcherV7'
 import MarketplaceSwitcherV8 from './MarketplaceSwitcherV8'
+import MarketplaceSwitcherV9 from './MarketplaceSwitcherV9'
 
 // Variation 5 — no switcher on top at all: variation 2's floating bottom nav
 // (marketplace chip on the left, opens the sheet) is the only switch entry.
@@ -25,4 +26,6 @@ export const switcherVariants = [
   { value: 5, label: '5', Component: NoSwitcher, floatingNav: true },
   // variation 2's layout + the scroll-hint shell inside the rail
   { value: 6, label: '6', Component: MarketplaceSwitcherV6, ownsHeader: true },
+  // variation 6 layout, no scroll: 3 fixed tiles + a carousel 4th tile
+  { value: 7, label: '7', Component: MarketplaceSwitcherV9, ownsHeader: true },
 ]
