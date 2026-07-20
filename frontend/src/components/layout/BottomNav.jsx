@@ -285,10 +285,9 @@ export default function BottomNav({
         ref={navRef}
         data-id={dataId}
         className={`fixed bottom-0 left-1/2 ${navOpen ? 'z-50' : 'z-30'} flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4`}
-        // bottom safe area — 24px on mobile (so the bar isn't flush to the
-        // edge); on the web frame --sab (home indicator, 34px) already covers
-        // it, so take the larger of the two rather than stacking both
-        style={{ paddingTop: 10, paddingBottom: 'max(24px, var(--sab, 0px))' }}
+        // hug the bottom like a native tab bar: a small 10px gap on mobile,
+        // and the frame's home-indicator inset (--sab) on web — whichever wins
+        style={{ paddingTop: 10, paddingBottom: 'max(10px, var(--sab, 0px))' }}
       >
         {/* white fade behind the floating bar — spans up past the top and down
             through the safe area (transparent at top → white by 80%) */}
