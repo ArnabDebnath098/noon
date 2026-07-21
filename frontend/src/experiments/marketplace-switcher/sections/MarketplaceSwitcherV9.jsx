@@ -47,11 +47,11 @@ const RAIL_PAD_MIN = 4
 
 // outer height shared by the rail container AND the selected tile
 const OUTER_MAX = 72
-const OUTER_MIN = 32
+const OUTER_MIN = 40 // collapsed rail/selected height
 const SEL_W = 72 // selected tile width (square at rest: 72×72)
 // rail tiles — square at rest (fill the rail minus its padding), width fixed
 const TILE_MAX = OUTER_MAX - RAIL_PAD_MAX * 2 // 56
-const TILE_MIN = OUTER_MIN - RAIL_PAD_MIN * 2 // 24
+const TILE_MIN = OUTER_MIN - RAIL_PAD_MIN * 2 // 32
 
 const FIXED_N = 3 // fixed rail tiles before the carousel
 const CAROUSEL_MS = 2400 // dwell per carousel face
@@ -64,7 +64,9 @@ const H0 = TOP + OUTER_MAX + GAP + LOC_H + GAP + SEARCH_H + BOTTOM
 const H1 = TOP + OUTER_MIN + GAP + LOC_H + GAP + SEARCH_H + BOTTOM
 
 const FLIP = { rotateY: springs.flip, opacity: { duration: 0.16 } }
-const SLIDE = { type: 'tween', duration: 0.5, ease: [0.16, 1, 0.3, 1] } // carousel slide
+// carousel swap: each marketplace is its OWN squircle tile that slides in
+// horizontally from the right while the previous slides out to the left
+const SLIDE = { type: 'spring', stiffness: 300, damping: 32 }
 
 const MARK = 52
 const MARK_SIZE = {
@@ -124,10 +126,10 @@ function RailTile({ m, onChange, sp, radius, compact }) {
   )
 }
 
-// Horizontal carousel — the 4th rail slot (default/expanded mode only). A fixed
-// squircle window; each marketplace slides in from the right as its OWN tile
-// (its own background) while the previous slides out left, auto-advancing.
-// Tapping selects whichever face is showing.
+// Horizontal carousel — the 4th rail slot (default/expanded mode only). Each
+// marketplace is its OWN squircle tile (its own background); on advance the new
+// tile slides in horizontally from the right ON TOP while the old one recedes
+// below it (scales down + fades), auto-advancing. Tapping selects the shown one.
 function HCarousel({ pool, onChange, sp, radius, compact }) {
   const height = useTransform(sp, [0, 1], [TILE_MAX, TILE_MIN])
   const [idx, setIdx] = useState(0)
@@ -137,7 +139,7 @@ function HCarousel({ pool, onChange, sp, radius, compact }) {
   useEffect(() => {
     setIdx(0)
     if (pool.length <= 1) return undefined
-    const t = setInterval(() => setIdx((p) => (p + 1) % pool.length), CAROUSEL_MS)
+    const t = setInterval(() => setIdx((p) => p + 1), CAROUSEL_MS) // monotonic (drives z-order)
     return () => clearInterval(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ids])
@@ -152,31 +154,39 @@ function HCarousel({ pool, onChange, sp, radius, compact }) {
       style={{ width: TILE_MAX, height, filter: 'drop-shadow(0 1px 3px rgba(16,24,40,0.08))' }}
       className="relative shrink-0"
     >
-      {/* fixed squircle window — the sliding tiles are clipped to it */}
-      <Squircle
-        as="span"
-        cornerRadius={radius}
-        cornerSmoothing={SMOOTH}
-        className="absolute inset-0 overflow-hidden"
-      >
+      {/* window contains the horizontal slide (clip-path insets left/right) but
+          lets the bottom NEW badge overhang; each marketplace is its OWN squircle
+          tile — and carries its OWN NEW badge — that slides through it */}
+      <div className="absolute inset-0" style={{ clipPath: 'inset(0px 0px -28px 0px)' }}>
         <AnimatePresence initial={false} mode="popLayout">
           <motion.button
             type="button"
             key={cur.id}
             aria-label={`More marketplaces — ${cur.pill ?? cur.id}`}
             onClick={() => onChange(cur.id)}
-            initial={{ x: '100%' }}
-            animate={{ x: '0%' }}
-            exit={{ x: '-100%' }}
-            transition={SLIDE}
-            style={{ position: 'absolute', inset: 0, background: cur.bg ?? '#FFFFFF' }}
+            // new tile slides in horizontally ON TOP; the old one stays put and
+            // recedes below it (scales down + fades) — its NEW badge goes with it
+            initial={{ x: '108%', scale: 1, opacity: 1 }}
+            animate={{ x: '0%', scale: 1, opacity: 1 }}
+            exit={{ x: '0%', scale: 0.78, opacity: 0, y: 4 }}
+            transition={{ x: SLIDE, scale: { duration: 0.3 }, opacity: { duration: 0.3 }, y: { duration: 0.3 } }}
+            style={{ position: 'absolute', inset: 0, zIndex: idx }}
             className="flex items-center justify-center"
           >
-            <MarketplaceMark m={cur} size={markSize(cur.id)} collapsed={compact} collapsedLogoScale={collapsedLogoScale(cur.id)} {...COMPACT_MARK_PROPS} />
+            <Squircle
+              as="span"
+              cornerRadius={radius}
+              cornerSmoothing={SMOOTH}
+              style={{ background: cur.bg ?? '#FFFFFF' }}
+              className="absolute inset-0 flex items-center justify-center overflow-hidden"
+            >
+              <MarketplaceMark m={cur} size={markSize(cur.id)} collapsed={compact} collapsedLogoScale={collapsedLogoScale(cur.id)} {...COMPACT_MARK_PROPS} />
+            </Squircle>
+            {/* NEW badge belongs to THIS tile — arrives with it, recedes with it */}
+            {cur.isNew && !compact && <NewBadge dataId="mp-tile-carousel-new" />}
           </motion.button>
         </AnimatePresence>
-      </Squircle>
-      {cur.isNew && !compact && <NewBadge dataId="mp-tile-carousel-new" />}
+      </div>
     </motion.div>
   )
 }

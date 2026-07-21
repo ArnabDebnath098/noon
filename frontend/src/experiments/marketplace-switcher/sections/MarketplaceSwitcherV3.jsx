@@ -21,7 +21,7 @@
 //   • the folder pill crossfades its 2×2 preview for a 3-marketplace stack
 // Opening the grid gates the collapse off (a spring multiplier) so the panel
 // always expands from full-size tiles, even while scrolled.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   motion,
   AnimatePresence,
@@ -60,6 +60,7 @@ const SWAP_SLOT = 3 // the row slot a grid pick swaps into (the last row tile)
 
 const MINI_RATIO = 0.33 // preview icon size as a fraction of the tile
 const RADIUS_RATIO = 0.32 // tile corner radius as a fraction of size (squircle)
+const COLLAPSED_RADIUS = 8 // fixed pill corner radius once collapsed
 
 // expanded panel grid
 const PADP = 14 // panel padding
@@ -72,6 +73,8 @@ const COLS = 4
 // Every other folder position stays hidden (tucked in the folder centre).
 const PREVIEW_SLOT = { 4: 0, 5: 1, 6: 2, 7: 3 }
 const isPreview = (i) => PREVIEW_SLOT[i] !== undefined
+// clockwise walk of the 2×2 mini slots: TL(0) → TR(1) → BR(3) → BL(2) → TL
+const CW_ORDER = [0, 1, 3, 2]
 
 // ---- animation config (see utils/motion) ----
 const ICONS_CONTAINER = staggerContainer({ stagger: 0.022, delayChildren: 0.03 })
@@ -93,6 +96,12 @@ const FLIP_TRANSITION = {
   opacity: { duration: 0.18 },
   borderRadius: springs.snappy,
 }
+const PREVIEW_MS = 1600 // dwell between folder-preview rotations
+// smooth glide as the 4 preview icons rotate clockwise around the 2×2
+const PREVIEW_SPRING = { type: 'spring', stiffness: 210, damping: 24 }
+// a preview marketplace that swaps in pops (scale + fade) so it clearly reads
+// as a NEW marketplace, rather than a Y-flip masked by the rotation glide
+const POP_TRANSITION = { scale: springs.snappy, opacity: { duration: 0.2 } }
 
 /**
  * One marketplace tile. Flies along `offsetPath` between its collapsed pose
@@ -119,6 +128,9 @@ function FolderIcon({
   radius,
   bordered,
   pillShiftX = 0,
+  shiftX = 0,
+  shiftY = 0,
+  preview,
   interactive,
   onClick,
 }) {
@@ -126,6 +138,18 @@ function FolderIcon({
   const zero = useMotionValue(0)
   const drive = pillable ? eff : zero
   const fadeDrive = fadeOnScroll ? eff : zero
+
+  // clockwise rotation glide: springs chase the target cell-to-cell delta so the
+  // preview icon slides to its next 2×2 slot (unscaled px on the root transform,
+  // which composes with offset-path + the mini scale)
+  const shiftSrcX = useMotionValue(shiftX)
+  const shiftSrcY = useMotionValue(shiftY)
+  const sx = useSpring(shiftSrcX, PREVIEW_SPRING)
+  const sy = useSpring(shiftSrcY, PREVIEW_SPRING)
+  useEffect(() => {
+    shiftSrcX.set(shiftX)
+    shiftSrcY.set(shiftY)
+  }, [shiftX, shiftY, shiftSrcX, shiftSrcY])
 
   // pill morph: height shrinks; y lifts so the pill stays top-aligned; x pulls
   // the tiles together as the row gap tightens (GAP → GAP_COLLAPSED)
@@ -252,6 +276,9 @@ function FolderIcon({
         offsetPath,
         offsetRotate: '0deg',
         offsetAnchor: '50% 50%',
+        // clockwise preview glide (composes with offset-path + variant scale)
+        x: sx,
+        y: sy,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -261,13 +288,27 @@ function FolderIcon({
       }}
     >
       {/* pill wrapper — rides the scroll morph independently of the
-          offset-path flight on the root */}
-      <motion.div style={{ position: 'relative', width: size, height: h, x, y, opacity: wrapOpacity }}>
-        {/* Squircle CLIP lives OUTSIDE the 3D flip. corner-smoothing draws the
-            squircle via clip-path, which browsers drop when it's applied to an
-            element that also has a 3D transform (the rotateY/backface flip) —
-            so the tile rendered as a plain rounded rect. Clipping the (2D)
-            container and rotating the card inside keeps the squircle shape. */}
+          offset-path flight on the root. A drop-shadow (follows the squircle
+          silhouette) gives the tiles separation from the background instead of
+          an inset hairline, which clipped to a rectangle read as a grey backing
+          peeking out at the squircle corners. */}
+      <motion.div
+        style={{
+          position: 'relative',
+          width: size,
+          height: h,
+          x,
+          y,
+          opacity: wrapOpacity,
+          filter: bordered ? 'drop-shadow(0 1px 4px rgba(16,24,40,0.12))' : undefined,
+        }}
+      >
+        {/* Clip is a STATIC Squircle span so its cornerRadius keeps updating as
+            the pill collapses — an `as={motion.div}` Squircle only runs corner-
+            smoothing's ref callback once on mount, freezing the radius (→ the
+            collapsed pills went stadium). The background sits on a NON-3D child
+            so the squircle shape never drops; only the small mark flips in 3D,
+            safely inside the clip. Fill colour crossfades on a swap. */}
         <Squircle
           as="span"
           cornerRadius={radius}
@@ -275,19 +316,21 @@ function FolderIcon({
           style={{ position: 'absolute', inset: 0 }}
           className="block overflow-hidden"
         >
-          <AnimatePresence initial={false}>
+          <motion.span
+            aria-hidden="true"
+            initial={false}
+            animate={{ backgroundColor: active ? m.accent : m.bg ?? '#FFFFFF' }}
+            transition={{ duration: 0.25, ease: easings.ios }}
+            style={{ position: 'absolute', inset: 0 }}
+          />
+          <AnimatePresence initial={false} mode="popLayout">
             <motion.div
               key={m.id}
-              initial={{ rotateY: -110, opacity: 0 }}
-              animate={{ rotateY: 0, opacity: 1 }}
-              exit={{ rotateY: 110, opacity: 0 }}
-              transition={FLIP_TRANSITION}
-              style={{
-                position: 'absolute',
-                inset: 0,
-                backfaceVisibility: 'hidden',
-                background: active ? m.accent : m.bg ?? '#FFFFFF',
-              }}
+              initial={preview ? { scale: 0.4, opacity: 0 } : { rotateY: -110, opacity: 0 }}
+              animate={preview ? { scale: 1, opacity: 1 } : { rotateY: 0, opacity: 1 }}
+              exit={preview ? { scale: 0.4, opacity: 0 } : { rotateY: 110, opacity: 0 }}
+              transition={preview ? POP_TRANSITION : FLIP_TRANSITION}
+              style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden' }}
               className="flex items-center justify-center"
             >
               <span style={{ filter }} className="relative flex items-center justify-center">
@@ -295,10 +338,6 @@ function FolderIcon({
               </span>
             </motion.div>
           </AnimatePresence>
-          {/* 1px hairline, on top, clipped to the squircle (not on the 3D card) */}
-          {bordered && (
-            <span aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ boxShadow: 'inset 0 0 0 1px #E5E7EB' }} />
-          )}
         </Squircle>
         {m.isNew && <NewBadge dataId={`mp-tile-${m.id}-new`} />}
       </motion.div>
@@ -352,17 +391,19 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
   // values per collapse) rather than the pill height (~40): every step re-renders
   // all tiles and rebuilds their clip-paths, so fewer steps = smooth scrolling.
   // Everything that can ride a motion value (heights, opacity) does.
+  // radius eases from the full squircle down to a fixed 8px pill on collapse
   const fullRadius = Math.round(ICON * RADIUS_RATIO)
+  const radiusAt = (v) => Math.round(lerp(fullRadius, COLLAPSED_RADIUS, v))
   const [tileRadius, setTileRadius] = useState(fullRadius)
   const [stackLive, setStackLive] = useState(false)
   useMotionValueEvent(eff, 'change', (v) => {
-    const r = Math.round(lerp(ICON, COLLAPSE_H, clamp01(v)) * RADIUS_RATIO)
+    const r = radiusAt(clamp01(v))
     setTileRadius((p) => (p === r ? p : r))
     const live = v > 0.9 && !expanded
     setStackLive((p) => (p === live ? p : live))
   })
   useEffect(() => {
-    setTileRadius(Math.round(lerp(ICON, COLLAPSE_H, clamp01(eff.get())) * RADIUS_RATIO))
+    setTileRadius(radiusAt(clamp01(eff.get())))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ICON])
   const [gateStep, setGateStep] = useState(1)
@@ -462,6 +503,52 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
     [slotOrder, W],
   )
 
+  // ---- folder-preview rotation -------------------------------------------
+  // While the folder sits closed in the row (not expanded, not scroll-collapsed
+  // to the pill), the 4 preview icons run as a CLOCKWISE CONVEYOR: each glides
+  // to the next 2×2 slot (TL→TR→BR→BL), and the tile wrapping BL→TL swaps to a
+  // fresh marketplace from the hidden queue (its old one recycles to the back),
+  // so exactly one marketplace changes per step. Row tiles stay put.
+  const rotRef = useRef(0)
+  const [previewRot, setPreviewRot] = useState(0)
+  useEffect(() => {
+    if (expanded || stackLive) {
+      rotRef.current = 0
+      setPreviewRot(0)
+      return undefined
+    }
+    const previewPositions = Object.keys(PREVIEW_SLOT).map(Number)
+    const queueStart = BIG_N + previewPositions.length // first hidden (queued) slot
+    const t = setInterval(() => {
+      const newR = rotRef.current + 1
+      rotRef.current = newR
+      setPreviewRot(newR)
+      // the preview position that wraps to TL this step gets the new marketplace
+      const tlPos = previewPositions.find(
+        (i) => (CW_ORDER.indexOf(PREVIEW_SLOT[i]) + newR) % CW_ORDER.length === 0,
+      )
+      setSlotOrder((prev) => {
+        if (tlPos === undefined || prev.length <= queueStart) return prev
+        const next = [...prev]
+        const old = next[tlPos]
+        next[tlPos] = next[queueStart] // queue front → TL entry
+        for (let q = queueStart; q < next.length - 1; q++) next[q] = next[q + 1]
+        next[next.length - 1] = old // recycle the leaver to the back
+        return next
+      })
+    }, PREVIEW_MS)
+    return () => clearInterval(t)
+  }, [expanded, stackLive])
+  // px delta from a preview tile's home mini-slot to its current clockwise slot
+  const previewShiftOf = (i) => {
+    const base = PREVIEW_SLOT[i]
+    if (base === undefined || expanded) return { x: 0, y: 0 }
+    const cur = CW_ORDER[(CW_ORDER.indexOf(base) + previewRot) % CW_ORDER.length]
+    const from = miniCenter(base)
+    const to = miniCenter(cur)
+    return { x: to.x - from.x, y: to.y - from.y }
+  }
+
   // ---- interactions ------------------------------------------------------
   const open = () => {
     setPressed(true)
@@ -516,15 +603,14 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
         animate={{ scale: pressed ? 0.97 : 1 }}
         transition={springs.press}
       >
-        {/* folder surface → full panel (squircle-clipped); when collapsed it
-            chases the stepped pill height so the folder shrinks with the row.
-            Gradient fill + inset-shadow hairline (no borderWidth mode — see the
-            tile note; this box also resizes every frame). */}
-        <Squircle
-          as={motion.div}
+        {/* folder surface → full panel. The animated box is a plain motion.div
+            (size/position ride motion values); the squircle clip + gradient fill
+            live on a STATIC Squircle inside it so the cornerRadius keeps updating
+            as it resizes (an `as={motion.div}` Squircle freezes its radius on
+            mount). Separation is a drop-shadow that follows the squircle — no
+            grey inset hairline (which peeked at the corners). */}
+        <motion.div
           data-id="mp-grid-panel"
-          cornerRadius={panelRadius}
-          cornerSmoothing={1}
           onClick={() => !expanded && open()}
           style={{
             position: 'absolute',
@@ -532,12 +618,19 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
             top: ROW_TOP,
             width: panelBoxW,
             height: panelBoxH,
-            background: PANEL_BG.background,
-            boxShadow: 'inset 0 0 0 1px #E5E7EB',
-            filter: expanded ? 'drop-shadow(0 16px 40px rgba(16,24,40,0.22))' : 'none',
+            filter: expanded
+              ? 'drop-shadow(0 16px 40px rgba(16,24,40,0.22))'
+              : 'drop-shadow(0 1px 4px rgba(16,24,40,0.12))',
           }}
-          className={expanded ? 'backdrop-blur-xl' : ''}
-        ></Squircle>
+        >
+          <Squircle
+            as="div"
+            cornerRadius={panelRadius}
+            cornerSmoothing={1}
+            style={{ position: 'absolute', inset: 0, background: PANEL_BG.background }}
+            className={`block overflow-hidden ${expanded ? 'backdrop-blur-xl' : ''}`}
+          />
+        </motion.div>
 
         {/* icons cascade out of / back into the folder (children are ordered
             nearest-travel-first so the stagger matches the geometry).
@@ -554,6 +647,7 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
           {drawOrder.map(({ id, i }) => {
             const m = byId.get(id)
             const pillable = i < BIG_N
+            const shift = previewShiftOf(i)
             return (
               <FolderIcon
                 key={i}
@@ -572,6 +666,9 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
                 radius={pillable ? tileRadius : fullRadius}
                 bordered={!expanded}
                 pillShiftX={pillable ? pillShiftOf(i) : 0}
+                shiftX={shift.x}
+                shiftY={shift.y}
+                preview={!expanded && isPreview(i)}
                 interactive={expanded || collapsedOpacity(i) > 0}
                 onClick={handleTap(i, id)}
               />
@@ -586,14 +683,15 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
           className="pointer-events-none absolute flex items-center justify-center"
           style={{ left: stackLeftMV, top: ROW_TOP, width: ICON, height: pillHMV, opacity: stackOpacity, zIndex: 31 }}
         >
-          {/* white bordered pill — fades in with the stack, covering the
-              folder's gradient so the collapsed pill matches the tiles */}
+          {/* white pill — fades in with the stack, covering the folder's
+              gradient so the collapsed pill matches the tiles. Separation comes
+              from the folder panel's drop-shadow underneath (no grey hairline). */}
           <Squircle
             as="span"
             cornerRadius={tileRadius}
             cornerSmoothing={1}
             className="block"
-            style={{ position: 'absolute', inset: 0, background: '#FFFFFF', boxShadow: 'inset 0 0 0 1px #E5E7EB' }}
+            style={{ position: 'absolute', inset: 0, background: '#FFFFFF' }}
           />
           <AnimatePresence mode="popLayout" initial={false}>
           {stackItems.map((m, idx) => {
@@ -610,7 +708,11 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
                 style={{ width: CHIP, height: CHIP, marginLeft: idx === 0 ? 0 : -7, zIndex: stackItems.length - idx }}
               >
                 {/* miniature of the real tile — transform-scaled so the squircle
-                    ratio, border and mark match the full marketplace tiles */}
+                    ratio and mark match the full marketplace tiles. Nested
+                    squircles: an outer WHITE squircle is the separating border
+                    between overlapping chips (a rectangular inset box-shadow
+                    would trace rounded-rect corners inside the clip), an inner
+                    tinted squircle holds the mark — both stay true squircles. */}
                 <span
                   className="absolute left-0 top-0 block"
                   style={{
@@ -624,18 +726,24 @@ export default function MarketplaceSwitcherV3({ items, activeId, onChange, progr
                     as="span"
                     cornerRadius={fullRadius}
                     cornerSmoothing={1}
-                    className="flex items-center justify-center overflow-hidden"
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      // solid light tint of the marketplace colour (mixed into
-                      // white, no opacity) + a white border so the overlapping
-                      // stack chips read as separate cards
-                      background: m.accent ? `color-mix(in srgb, ${m.accent} 14%, #FFFFFF)` : '#F4F6FA',
-                      boxShadow: 'inset 0 0 0 3px #FFFFFF',
-                    }}
+                    className="block overflow-hidden"
+                    style={{ position: 'absolute', inset: 0, background: '#FFFFFF' }}
                   >
-                    <MarketplaceMark m={m} size={ICON} />
+                    <Squircle
+                      as="span"
+                      cornerRadius={fullRadius - 3}
+                      cornerSmoothing={1}
+                      className="flex items-center justify-center overflow-hidden"
+                      style={{
+                        position: 'absolute',
+                        inset: 3,
+                        // solid light tint of the marketplace colour (mixed into
+                        // white, no opacity)
+                        background: m.accent ? `color-mix(in srgb, ${m.accent} 14%, #FFFFFF)` : '#F4F6FA',
+                      }}
+                    >
+                      <MarketplaceMark m={m} size={ICON} />
+                    </Squircle>
                   </Squircle>
                 </span>
               </motion.span>

@@ -20,12 +20,13 @@ const NoSwitcher = () => null
 
 export const switcherVariants = [
   { value: 1, label: '1', Component: MarketplaceSwitcherV3 },
+  // the "selected + rail" family (2-4) kept together:
   { value: 2, label: '2', Component: MarketplaceSwitcherV2, ownsHeader: true },
-  { value: 3, label: '3', Component: MarketplaceSwitcherV7 },
-  { value: 4, label: '4', Component: MarketplaceSwitcherV8 },
-  { value: 5, label: '5', Component: NoSwitcher, floatingNav: true },
   // variation 2's layout + the scroll-hint shell inside the rail
-  { value: 6, label: '6', Component: MarketplaceSwitcherV6, ownsHeader: true },
-  // variation 6 layout, no scroll: 3 fixed tiles + a carousel 4th tile
-  { value: 7, label: '7', Component: MarketplaceSwitcherV9, ownsHeader: true },
+  { value: 3, label: '3', Component: MarketplaceSwitcherV6, ownsHeader: true },
+  // same layout, no scroll-hint: 3 fixed tiles + a sliding carousel 4th tile
+  { value: 4, label: '4', Component: MarketplaceSwitcherV9, ownsHeader: true },
+  { value: 5, label: '5', Component: NoSwitcher, floatingNav: true },
+  { value: 6, label: '6', Component: MarketplaceSwitcherV8 },
+  { value: 7, label: '7', Component: MarketplaceSwitcherV7 },
 ]

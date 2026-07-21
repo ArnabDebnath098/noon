@@ -40,11 +40,11 @@ const RAIL_PAD_MIN = 4
 
 // outer height shared by the rail container AND the selected tile
 const OUTER_MAX = 72
-const OUTER_MIN = 32
+const OUTER_MIN = 40 // collapsed rail/selected height
 const SEL_W = 72 // selected tile width (square at rest: 72×72)
 // rail tiles — square at rest (fill the rail minus its padding), width fixed
 const TILE_MAX = OUTER_MAX - RAIL_PAD_MAX * 2 // 56
-const TILE_MIN = OUTER_MIN - RAIL_PAD_MIN * 2 // 24
+const TILE_MIN = OUTER_MIN - RAIL_PAD_MIN * 2 // 32
 
 const RADIUS_RATIO = 0.28 // squircle radius as a fraction of height
 const LOC_H = 40
@@ -222,7 +222,7 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange, progr
           borderRadius: tileRadius + RAIL_PAD_MIN,
           perspective: 600,
         }}
-        className="scrollbar-hide flex items-center gap-2 overflow-x-auto"
+        className="scrollbar-hide flex items-center gap-1 overflow-x-auto"
       >
         <AnimatePresence initial={false} mode="popLayout">
           {rest.map((m) => (
@@ -251,7 +251,7 @@ export default function MarketplaceSwitcherV6({ items, activeId, onChange, progr
             bottomRightCornerRadius={0}
             data-id="mp-scroll-hint-shell"
             style={{
-              background: 'rgba(255, 255, 255, 0.55)',
+              background: 'rgba(228, 230, 235, 0.8)',
               backdropFilter: 'blur(12px)',
               WebkitBackdropFilter: 'blur(12px)',
               borderTopLeftRadius: tileRadius,

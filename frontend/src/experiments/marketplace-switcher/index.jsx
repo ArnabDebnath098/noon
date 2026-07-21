@@ -78,18 +78,39 @@ export default function MarketplaceExperiment() {
     setForceExpanded(true)
   }
 
+  // Each variation keeps its OWN scroll (and therefore collapse) state: scrolling
+  // one shouldn't collapse the others. We save each variant's scrollTop and
+  // restore it when switching back.
+  const mainRef = useRef(null)
+  const scrollByVariant = useRef({})
+
   const onScroll = (e) => {
     const top = e.currentTarget.scrollTop
     lastTop.current = top
+    scrollByVariant.current[variant] = top
     progress.set(Math.min(1, Math.max(0, top / COLLAPSE_RANGE)))
     setCollapsed((c) => (c ? top > 16 : top > 28)) // content-swap threshold (hysteresis)
     if (forceExpanded && Math.abs(top - expandedAt.current) > 24) setForceExpanded(false)
   }
+
+  // restore the newly-selected variant's own scroll position + collapse state
+  useEffect(() => {
+    const el = mainRef.current
+    if (!el) return
+    const saved = scrollByVariant.current[variant] ?? 0
+    el.scrollTop = saved
+    lastTop.current = saved
+    progress.set(Math.min(1, Math.max(0, saved / COLLAPSE_RANGE)))
+    setCollapsed(saved > 28)
+    setForceExpanded(false)
+  }, [variant, progress])
+
   const effectiveCollapsed = collapsed && !forceExpanded
 
   return (
     <AppShell>
       <main
+        ref={mainRef}
         data-id="marketplace-main"
         onScroll={onScroll}
         className="scrollbar-hide relative flex-1 overflow-y-auto bg-white"
