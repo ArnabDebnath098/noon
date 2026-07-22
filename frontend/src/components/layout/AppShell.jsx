@@ -102,6 +102,32 @@ function useStandalone() {
   return standalone
 }
 
+// The exact VISIBLE viewport height, straight from the browser. CSS units
+// (100vh/100dvh) mismeasure on mobile — Safari sizes them to the toolbar-hidden
+// viewport, so a bottom-pinned surface floats above the real bottom with a
+// white gap under it. visualViewport.height is always the currently-visible
+// area, so sizing the frame to it makes the bottom edge land exactly on-screen.
+function useViewportHeight() {
+  const read = () =>
+    (typeof window !== 'undefined' && window.visualViewport?.height) ||
+    (typeof window !== 'undefined' ? window.innerHeight : 0)
+  const [h, setH] = useState(read)
+  useEffect(() => {
+    const vv = window.visualViewport
+    const on = () => setH(read())
+    on()
+    vv?.addEventListener('resize', on)
+    window.addEventListener('resize', on)
+    window.addEventListener('orientationchange', on)
+    return () => {
+      vv?.removeEventListener('resize', on)
+      window.removeEventListener('resize', on)
+      window.removeEventListener('orientationchange', on)
+    }
+  }, [])
+  return h
+}
+
 /**
  * AppShell — the phone-width frame every page/experiment composes into.
  *
@@ -115,6 +141,7 @@ function useStandalone() {
 export default function AppShell({ children, className = '' }) {
   const framed = useFramed()
   const standalone = useStandalone()
+  const vh = useViewportHeight()
 
   // Native-like viewport lock (mobile only). The app is a fixed 100dvh frame
   // that scrolls internally, so the DOCUMENT must never pan — but iOS scrolls
@@ -186,18 +213,21 @@ export default function AppShell({ children, className = '' }) {
   return (
     <div
       data-id="app-frame"
-      className={`fixed inset-0 mx-auto flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
+      className={`fixed left-1/2 top-0 flex w-full max-w-md -translate-x-1/2 flex-col overflow-hidden bg-white ${className}`}
       style={{
-        // Fill the REAL viewport box via fixed inset:0 rather than 100dvh —
-        // iOS standalone apps miscompute dvh/vh (the frame ends up shorter
-        // than the screen, so a fixed bottom nav floats above the true bottom
-        // and the page white shows through). inset:0 derives height from the
-        // actual layout viewport, so the frame always reaches the screen edge.
-        //
+        // Height comes from the measured VISIBLE viewport (visualViewport),
+        // not 100vh/100dvh — those mismeasure on mobile and leave the frame
+        // shorter than the screen, so a bottom-pinned surface (nav, banner)
+        // floats above the real bottom with a white gap under it. Pinning the
+        // top and using the measured height makes the bottom edge land exactly
+        // on the visible screen bottom.
+        height: vh ? `${vh}px` : '100dvh',
+        // containing block for fixed children (bottom nav, banner) so they pin
+        // to this correctly-measured frame, not the mismeasured viewport
+        transform: 'translateZ(0)',
         // Top safe area: real env() inset in a standalone app so headers clear
         // the status bar. Bottom safe area is OFF (--sab: 0) — surfaces run all
         // the way to the screen edge with no home-bar inset padding.
-        transform: 'translateZ(0)',
         '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
         '--sab': '0px',
       }}
