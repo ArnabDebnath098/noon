@@ -79,6 +79,29 @@ function useFramed() {
   return framed
 }
 
+// True when running as an installed home-screen app. Only then is the webview
+// edge-to-edge (under the status bar / home indicator) with viewport-fit=cover,
+// so only then do the env() safe-area insets belong to us — a browser tab's
+// chrome already owns those regions (and iOS reports spurious bottom insets
+// there, which is why the insets must stay 0 in tabs).
+const isStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.navigator.standalone === true
+
+function useStandalone() {
+  const [standalone, setStandalone] = useState(
+    () => typeof window !== 'undefined' && isStandalone(),
+  )
+  useEffect(() => {
+    const mq = window.matchMedia('(display-mode: standalone)')
+    const on = () => setStandalone(isStandalone())
+    on()
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
+  return standalone
+}
+
 /**
  * AppShell — the phone-width frame every page/experiment composes into.
  *
@@ -91,6 +114,7 @@ function useFramed() {
  */
 export default function AppShell({ children, className = '' }) {
   const framed = useFramed()
+  const standalone = useStandalone()
 
   if (framed) {
     return (
@@ -137,10 +161,11 @@ export default function AppShell({ children, className = '' }) {
         data-id="app-frame"
         className={`relative flex h-[100dvh] max-h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
         style={{
-          // real device insets — 0 in a mobile browser tab (browser handles the
-          // status bar / home bar), non-zero only in a standalone/PWA context
-          '--sat': 'env(safe-area-inset-top, 0px)',
-          '--sab': 'env(safe-area-inset-bottom, 0px)',
+          // native-like safe areas: installed app → edge-to-edge webview, pad
+          // by the real env() insets; browser tab → the chrome owns the status
+          // bar / home bar, so the insets stay 0 (no gaps / pushed-up sheets)
+          '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
+          '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
         }}
       >
         {children}

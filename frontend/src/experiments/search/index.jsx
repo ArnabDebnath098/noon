@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence, useMotionValue } from 'framer-motion'
+import { Squircle } from 'corner-smoothing'
 import AppShell from '../../components/layout/AppShell'
 import BottomNav from '../../components/layout/BottomNav'
 // The minutes-marketplace home (marketplace-switcher variation 6 = V8) is the
@@ -16,14 +17,14 @@ import { marketplaces, address, categories, bestPicks, mobileDeals } from '../..
 import skyClouds from '../../assets/marketplace/sky-clouds.png'
 import FoodSearchResults, { FoodBottomNav } from './FoodSearch'
 import shawarmaImg from '../../assets/marketplace/shawarma.png'
+import magicListWordmark from '../../assets/icons/magic-list.svg'
+import magicListStar from '../../assets/icons/magic-list-star.svg'
 
 // Primary text / muted colours from the SLP design tokens.
 const INK = 'rgba(2, 6, 12, 0.92)'
 const MUTED = 'rgba(2, 6, 12, 0.45)'
 const HAIRLINE = 'rgba(2, 6, 12, 0.15)'
 const ELEVATION_200 = '0px 4px 8px rgba(2, 6, 12, 0.1)'
-const AI_GRADIENT =
-  'linear-gradient(90deg, #F91A47 -6.74%, #F73B86 56.21%, #034EFC 125.22%)'
 
 // A tiny catalogue that feeds the trending-search chips.
 const CATALOG = [
@@ -171,26 +172,46 @@ function FoodCrossSellBanner({ term, onShopNow }) {
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className="absolute inset-x-0 bottom-0 z-[60]"
     >
-      <div
-        className="flex items-center gap-3 rounded-t-[20px] px-4 pt-4"
+      {/* squircle clip on a static child — the slide animation stays on the
+          wrapper above (a motion Squircle would freeze its corner path) */}
+      <Squircle
+        as="div"
+        data-id="search-food-banner-sheet"
+        cornerRadius={20}
+        bottomLeftCornerRadius={0}
+        bottomRightCornerRadius={0}
+        cornerSmoothing={1}
+        className="flex items-center gap-3 px-4 pt-4"
         style={{ background: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)', paddingBottom: 'calc(16px + var(--sab, 0px))' }}
       >
-        {/* image box (Frame 2147241798) */}
-        <div
+        {/* image box (Frame 2147241798) — nested squircles: the white outer
+            shape reads as the 1px border, the inner one clips the photo */}
+        <Squircle
+          as="div"
           data-id="search-food-banner-image"
-          className="flex h-16 w-[53px] shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-white"
-          style={{ background: 'rgba(255, 255, 255, 0.8)' }}
+          cornerRadius={10}
+          cornerSmoothing={1}
+          className="h-16 w-[53px] shrink-0 bg-white p-[1px]"
         >
-          <img src={shawarmaImg} alt="" aria-hidden="true" className="h-full w-full object-cover" />
-        </div>
+          <Squircle
+            as="div"
+            data-id="search-food-banner-image-clip"
+            cornerRadius={9}
+            cornerSmoothing={1}
+            className="flex h-full w-full items-center justify-center overflow-hidden"
+            style={{ background: 'rgba(255, 255, 255, 0.8)' }}
+          >
+            <img src={shawarmaImg} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+          </Squircle>
+        </Squircle>
         {/* copy */}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <span data-id="search-food-banner-title" className="truncate font-noontree text-[20px] leading-6 tracking-[-0.2px] text-white">
+          <span data-id="search-food-banner-title" className="truncate font-noontree text-[18px] leading-6 tracking-[-0.2px] text-white">
             <span className="font-bold">{label}</span> in food
           </span>
           <span data-id="search-food-banner-sub" className="flex items-center gap-1.5 font-noontree text-[13px] leading-4 text-white/85">
             continue on
-            <NoonFoodMark className="h-[13px] w-auto" />
+            <NoonFoodMark className="h-[10px] w-auto" />
           </span>
         </div>
         {/* Shop now */}
@@ -202,43 +223,88 @@ function FoodCrossSellBanner({ term, onShopNow }) {
         >
           <span className="font-noontree text-[14px] font-semibold leading-5 tracking-[-0.1px]" style={{ color: '#E22560' }}>Shop now</span>
         </button>
-      </div>
+      </Squircle>
     </motion.div>
   )
 }
 
-/* ── "Shop with Magic List" AI button ───────────────────────────────────── */
+/* ── "Shop with Magic List" AI button (Figma "AI Assistance", 90×52) ──────
+ * Centered copy column (eyebrow + wordmark svg overflowing it by 5px each
+ * side); the sparkle floats absolutely at the button's top-left, per spec. */
 function MagicListButton() {
   return (
     <button
       type="button"
       data-id="search-magic-list"
-      className="relative flex h-[52px] w-[90px] shrink-0 flex-col items-center justify-center gap-[3px] rounded-[12px] border bg-white transition active:scale-[0.97]"
-      style={{ borderColor: HAIRLINE, boxShadow: ELEVATION_200 }}
+      className="relative h-[52px] w-[90px] shrink-0 rounded-[12px] border bg-white transition active:scale-[0.97]"
+      style={{ borderColor: HAIRLINE, boxShadow: '0px 0px 8px rgba(2, 6, 12, 0.1)' }}
     >
-      <span data-id="search-magic-list-eyebrow" className="font-noontree text-[10px] font-semibold leading-none" style={{ color: MUTED }}>
-        Shop with
-      </span>
-      <span data-id="search-magic-list-wordmark" className="flex items-center gap-[2px]">
-        <svg data-id="search-magic-list-spark" width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <path d="M6 0c.3 2.5 1.2 3.4 3.7 3.7C7.2 4 6.3 5 6 7.4 5.7 5 4.8 4 2.3 3.7 4.8 3.4 5.7 2.5 6 0Z" fill="url(#ml-spark)" />
-          <path d="M10 6.4c.15 1.2.6 1.7 1.8 1.85-1.2.15-1.65.6-1.8 1.85-.15-1.25-.6-1.7-1.8-1.85 1.2-.15 1.65-.65 1.8-1.85Z" fill="url(#ml-spark)" />
-          <defs>
-            <linearGradient id="ml-spark" x1="0" y1="0" x2="12" y2="12" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#F91A47" />
-              <stop offset="1" stopColor="#BF0333" />
-            </linearGradient>
-          </defs>
-        </svg>
-        <span
-          data-id="search-magic-list-label"
-          className="font-noontree text-[14px] font-bold leading-[1.2]"
-          style={{ background: AI_GRADIENT, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-        >
-          Magic List
+      <span
+        data-id="search-magic-list-copy"
+        className="absolute flex w-[62px] flex-col items-center gap-[2px]"
+        style={{ left: 'calc(50% - 31px)', top: 'calc(50% - 13.57px)', height: '29.14px' }}
+      >
+        <span data-id="search-magic-list-eyebrow" className="w-full text-center font-noontree text-[10px] font-semibold leading-3" style={{ color: MUTED }}>
+          Shop with
         </span>
+        <img
+          data-id="search-magic-list-wordmark"
+          src={magicListWordmark}
+          alt="Magic List"
+          className="absolute -left-[5px] top-[14px] h-[15.14px] w-[72px] max-w-none"
+        />
       </span>
+      <img
+        data-id="search-magic-list-spark"
+        src={magicListStar}
+        alt=""
+        aria-hidden="true"
+        className="absolute left-[3px] w-[6.75px] max-w-none"
+        style={{ top: '31.25%', height: '18.75%' }}
+      />
     </button>
+  )
+}
+
+/* ── Minutes address bar — replaces mp-location on the minutes home ───────
+ * Figma "Address Bar": pink-gradient home glyph + "10 min delivery" (H4/Bold)
+ * over "Home, <address> ⌄" (Label-2). */
+function MinutesLocationBar() {
+  return (
+    <div data-id="search-minutes-location" className="flex h-[62px] items-center gap-3 px-3">
+      <div data-id="search-minutes-location-info" className="flex min-w-0 flex-1 flex-col items-start justify-center gap-1 py-2">
+        <div data-id="search-minutes-location-title" className="flex h-6 items-center gap-1">
+          <svg data-id="search-minutes-location-home" width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+            <defs>
+              <linearGradient id="minutes-home-grad" x1="10" y1="2" x2="10" y2="18" gradientUnits="userSpaceOnUse">
+                <stop offset="0.19" stopColor="#FF3B63" />
+                <stop offset="1" stopColor="#EB0030" />
+              </linearGradient>
+            </defs>
+            <path
+              fillRule="evenodd"
+              clipRule="evenodd"
+              d="M9.1 2.3a1.5 1.5 0 0 1 1.8 0l6 4.6c.37.29.6.74.6 1.22v7.98c0 .94-.76 1.7-1.7 1.7H4.2a1.7 1.7 0 0 1-1.7-1.7V8.12c0-.48.23-.93.6-1.22l6-4.6Zm-.9 15v-2.9a1.8 1.8 0 0 1 3.6 0v2.9H8.2Z"
+              fill="url(#minutes-home-grad)"
+            />
+          </svg>
+          <span data-id="search-minutes-location-heading" className="font-noontree text-[19px] font-bold leading-6" style={{ color: INK, letterSpacing: '-0.2px' }}>
+            10 min delivery
+          </span>
+        </div>
+        <div data-id="search-minutes-location-line" className="flex h-[18px] w-full items-center gap-1">
+          <span data-id="search-minutes-location-label" className="shrink-0 font-noontree text-[15px] font-semibold leading-[18px]" style={{ color: INK, letterSpacing: '-0.26px' }}>
+            Home,
+          </span>
+          <span data-id="search-minutes-location-address" className="truncate font-noontree text-[15px] font-medium leading-[18px]" style={{ color: 'rgba(2, 6, 12, 0.6)', letterSpacing: '-0.26px' }}>
+            Gate B, arkan plaza, sheikh zayed
+          </span>
+          <svg data-id="search-minutes-location-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" className="shrink-0">
+            <path d="m4.2 6.4 3.8 3.6 3.8-3.6" stroke="rgba(2, 6, 12, 0.6)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -270,27 +336,23 @@ function MinutesSearchBar({ onClick }) {
         className="relative flex h-[52px] shrink-0 items-center justify-center rounded-[14px] border bg-white pl-[24px] pr-[14px] transition active:scale-[0.97]"
         style={{ borderColor: HAIRLINE, boxShadow: ELEVATION_200 }}
       >
-        <svg data-id="search-home-magic-spark" width="15" height="17" viewBox="0 0 15 17" fill="none" aria-hidden="true" className="absolute left-[7px] top-1/2 -translate-y-1/2">
-          <path d="M9 1c.32 2.7 1.3 3.68 4 4-2.7.32-3.68 1.3-4 4-.32-2.7-1.3-3.68-4-4 2.7-.32 3.68-1.3 4-4Z" fill="url(#home-ml-spark)" />
-          <path d="M3.4 9.8c.18 1.5.72 2.04 2.2 2.2-1.48.16-2.02.7-2.2 2.2-.18-1.5-.72-2.04-2.2-2.2 1.48-.16 2.02-.7 2.2-2.2Z" fill="url(#home-ml-spark)" />
-          <defs>
-            <linearGradient id="home-ml-spark" x1="1" y1="1" x2="14" y2="15" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#F91A47" />
-              <stop offset="1" stopColor="#F73B86" />
-            </linearGradient>
-          </defs>
-        </svg>
+        <img
+          data-id="search-home-magic-spark"
+          src={magicListStar}
+          alt=""
+          aria-hidden="true"
+          className="absolute left-[7px] top-1/2 w-[13px] max-w-none -translate-y-1/2"
+        />
         <span data-id="search-home-magic-text" className="flex flex-col items-center gap-[3px]">
           <span data-id="search-home-magic-eyebrow" className="font-noontree text-[10px] font-semibold leading-none" style={{ color: MUTED }}>
             Shop with
           </span>
-          <span
+          <img
             data-id="search-home-magic-label"
-            className="font-noontree text-[15px] font-bold leading-[1.2]"
-            style={{ background: AI_GRADIENT, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}
-          >
-            Magic List
-          </span>
+            src={magicListWordmark}
+            alt="Magic List"
+            className="h-[15px] w-auto"
+          />
         </span>
       </button>
     </div>
@@ -367,11 +429,16 @@ function MinutesHome({ activeId, onChange, onSearch, progress }) {
         }}
       >
         <MarketplaceSwitcherV8 items={marketplaces} activeId={activeId} onChange={onChange} progress={progress} showHint={false} />
-        <LocationBar label={address.label} line={address.line} />
         {activeId === 'minutes' ? (
-          <MinutesSearchBar onClick={onSearch} />
+          <>
+            <MinutesLocationBar />
+            <MinutesSearchBar onClick={onSearch} />
+          </>
         ) : (
-          <HomeSearchBar onClick={onSearch} />
+          <>
+            <LocationBar label={address.label} line={address.line} />
+            <HomeSearchBar onClick={onSearch} />
+          </>
         )}
       </div>
 
