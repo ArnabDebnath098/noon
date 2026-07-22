@@ -116,6 +116,37 @@ export default function AppShell({ children, className = '' }) {
   const framed = useFramed()
   const standalone = useStandalone()
 
+  // Native-like viewport lock (mobile only). The app is a fixed 100dvh frame
+  // that scrolls internally, so the DOCUMENT must never pan — but iOS scrolls
+  // it anyway when the keyboard opens over a focused input, and leaves it
+  // scrolled after dismiss: bottom-pinned surfaces (nav, banners) then float
+  // above a white band. Lock document overflow and snap any drift back to 0.
+  useEffect(() => {
+    if (framed) return undefined
+    const html = document.documentElement
+    const body = document.body
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      overscroll: html.style.overscrollBehavior,
+    }
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    html.style.overscrollBehavior = 'none'
+    const snap = () => {
+      if (window.scrollY || window.scrollX) window.scrollTo(0, 0)
+    }
+    window.addEventListener('scroll', snap, { passive: true })
+    window.visualViewport?.addEventListener('resize', snap)
+    return () => {
+      html.style.overflow = prev.htmlOverflow
+      body.style.overflow = prev.bodyOverflow
+      html.style.overscrollBehavior = prev.overscroll
+      window.removeEventListener('scroll', snap)
+      window.visualViewport?.removeEventListener('resize', snap)
+    }
+  }, [framed])
+
   if (framed) {
     return (
       <div
@@ -130,20 +161,31 @@ export default function AppShell({ children, className = '' }) {
             data-id="app-frame"
             cornerRadius={PHONE_RADIUS}
             cornerSmoothing={1}
-            className={`relative flex flex-col overflow-hidden bg-white ${className}`}
+            className="relative flex flex-col overflow-hidden bg-white"
             style={{
               width: PHONE_W,
               height: PHONE_H,
               maxHeight: 'calc(100dvh - 48px)',
-              transform: 'translateZ(0)', // containing block for fixed children
-              // faux safe-area insets so the app reserves room for the frame's
-              // status bar / home indicator (env() is 0 on desktop — its
-              // fallback never fires there, so we drive the insets ourselves)
-              '--sat': `${SAFE_TOP}px`,
-              '--sab': `${SAFE_BOTTOM}px`,
             }}
           >
-            {children}
+            {/* the app viewport ends ABOVE the bottom safe area — the frame's
+                white shows through the reserved home-bar gap natively, so no
+                surface ever draws under the indicator. The transform makes
+                this the containing block for fixed children (bottom navs pin
+                to its inset bottom edge). The top stays edge-to-edge; --sat
+                pads headers under the status bar. */}
+            <div
+              data-id="app-viewport"
+              className={`relative flex min-h-0 flex-1 flex-col overflow-hidden ${className}`}
+              style={{
+                transform: 'translateZ(0)',
+                '--sat': `${SAFE_TOP}px`,
+                '--sab': '0px',
+              }}
+            >
+              {children}
+            </div>
+            <div aria-hidden="true" className="shrink-0" style={{ height: SAFE_BOTTOM }} />
             <StatusBar />
             <HomeIndicator />
           </Squircle>
@@ -155,17 +197,24 @@ export default function AppShell({ children, className = '' }) {
   return (
     <div
       data-id="app-shell"
-      className="flex min-h-[100dvh] w-full justify-center bg-noon-dark/5"
+      className="flex min-h-[100dvh] w-full justify-center bg-white"
     >
       <div
         data-id="app-frame"
-        className={`relative flex h-[100dvh] max-h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
+        className={`relative flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
         style={{
-          // native-like safe areas: installed app → edge-to-edge webview, pad
-          // by the real env() insets; browser tab → the chrome owns the status
-          // bar / home bar, so the insets stay 0 (no gaps / pushed-up sheets)
+          // Native bottom safe area: in a standalone (installed) app the frame
+          // stops ABOVE the OS home-bar inset — the white document shows
+          // through the reserved gap and nothing draws under the indicator,
+          // so --sab is always 0 for content. The top stays edge-to-edge with
+          // --sat padding headers under the status bar. In a browser tab both
+          // insets are 0 (the chrome owns those regions). The transform makes
+          // the frame the containing block for fixed children, so bottom navs
+          // pin to its (inset) bottom edge, not the screen edge.
+          height: standalone ? 'calc(100dvh - env(safe-area-inset-bottom, 0px))' : '100dvh',
+          transform: 'translateZ(0)',
           '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
-          '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
+          '--sab': '0px',
         }}
       >
         {children}
