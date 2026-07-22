@@ -128,6 +128,34 @@ function useViewportHeight() {
   return h
 }
 
+// The full PHYSICAL screen height. In an installed (standalone) iOS app the
+// webview is truly full screen, but every relative height there computes short
+// of it — 100dvh, fixed inset:0 AND visualViewport.height all land above the
+// real bottom (visualViewport excludes the status-bar strip), leaving a band of
+// the page background below the frame. screen.height is the one value that
+// reports the true edge-to-edge height, so the standalone frame is sized to it
+// as explicit px — forcing its bottom onto the physical screen bottom. Read as
+// the larger of screen width/height so a landscape flip still gives the long
+// edge (screen.height doesn't reliably swap on orientation change).
+function useScreenHeight() {
+  const read = () =>
+    typeof window !== 'undefined' && window.screen
+      ? Math.max(window.screen.height || 0, window.screen.width || 0)
+      : 0
+  const [h, setH] = useState(read)
+  useEffect(() => {
+    const on = () => setH(read())
+    on()
+    window.addEventListener('resize', on)
+    window.addEventListener('orientationchange', on)
+    return () => {
+      window.removeEventListener('resize', on)
+      window.removeEventListener('orientationchange', on)
+    }
+  }, [])
+  return h
+}
+
 /**
  * AppShell — the phone-width frame every page/experiment composes into.
  *
@@ -142,6 +170,7 @@ export default function AppShell({ children, className = '' }) {
   const framed = useFramed()
   const standalone = useStandalone()
   const vh = useViewportHeight()
+  const screenH = useScreenHeight()
 
   // Native-like viewport lock (mobile only). The app is a fixed 100dvh frame
   // that scrolls internally, so the DOCUMENT must never pan — but iOS scrolls
@@ -211,16 +240,17 @@ export default function AppShell({ children, className = '' }) {
   }
 
   // Vertical fill strategy differs by context:
-  // - Standalone (installed to home screen): edge-to-edge, no browser chrome.
-  //   Pin the frame to the REAL screen edges (top:0 + bottom:0) instead of
-  //   sizing it to a measured height — bottom:0 always lands on the physical
-  //   screen bottom, so there's never a white band under the app. Any measured
-  //   height can come back short and expose the white body below.
+  // - Standalone (installed to home screen): edge-to-edge, no browser chrome,
+  //   but every relative height (100dvh / fixed inset:0 / visualViewport.height)
+  //   computes SHORT of the real screen and leaves a band of page background
+  //   below the frame. screen.height is the only value that reports the true
+  //   physical height, so pin top:0 and set that as an explicit px height —
+  //   forcing the frame bottom onto the physical screen bottom.
   // - Browser tab: the toolbar occupies part of the screen and 100vh/100dvh
   //   overshoot it, so size to the measured VISIBLE height (visualViewport) and
   //   pin only the top; the bottom then lands on the visible-area bottom.
   const fill = standalone
-    ? { top: 0, bottom: 0 }
+    ? { top: 0, height: screenH ? `${screenH}px` : '100dvh' }
     : { top: 0, height: vh ? `${vh}px` : '100dvh' }
 
   return (
