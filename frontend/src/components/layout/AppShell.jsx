@@ -210,20 +210,27 @@ export default function AppShell({ children, className = '' }) {
     )
   }
 
+  // Vertical fill strategy differs by context:
+  // - Standalone (installed to home screen): edge-to-edge, no browser chrome.
+  //   Pin the frame to the REAL screen edges (top:0 + bottom:0) instead of
+  //   sizing it to a measured height — bottom:0 always lands on the physical
+  //   screen bottom, so there's never a white band under the app. Any measured
+  //   height can come back short and expose the white body below.
+  // - Browser tab: the toolbar occupies part of the screen and 100vh/100dvh
+  //   overshoot it, so size to the measured VISIBLE height (visualViewport) and
+  //   pin only the top; the bottom then lands on the visible-area bottom.
+  const fill = standalone
+    ? { top: 0, bottom: 0 }
+    : { top: 0, height: vh ? `${vh}px` : '100dvh' }
+
   return (
     <div
       data-id="app-frame"
-      className={`fixed inset-x-0 top-0 mx-auto flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
+      className={`fixed inset-x-0 mx-auto flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
       style={{
-        // Height comes from the measured VISIBLE viewport (visualViewport),
-        // not 100vh/100dvh — those mismeasure on mobile and leave the frame
-        // shorter than the screen, so a bottom-pinned surface (nav, banner)
-        // floats above the real bottom with a white gap under it. Pinning the
-        // top and using the measured height makes the bottom edge land exactly
-        // on the visible screen bottom.
-        height: vh ? `${vh}px` : '100dvh',
+        ...fill,
         // containing block for fixed children (bottom nav, banner) so they pin
-        // to this correctly-measured frame, not the mismeasured viewport
+        // to this frame, not the viewport
         transform: 'translateZ(0)',
         // Safe areas: real env() insets in a standalone (installed) app so the
         // header clears the status bar (--sat) and bottom surfaces (nav, banner)
