@@ -46,12 +46,12 @@ function niceTicks(min, max) {
 
 // endpoint dot — only on the "Today" point (the series carries flat synthetic
 // extension points past it, so match on the point's x value, not the index)
-function EndDot({ cx, cy, payload, todayI }) {
+function EndDot({ cx, cy, payload, todayI, color = LINE }) {
   if (payload?.i !== todayI) return null
   return (
     <g>
-      <circle cx={cx} cy={cy} r={9} fill={LINE} opacity={0.12} />
-      <circle cx={cx} cy={cy} r={4.5} fill={LINE} stroke="#FFFFFF" strokeWidth={1.5} />
+      <circle cx={cx} cy={cy} r={9} fill={color} opacity={0.12} />
+      <circle cx={cx} cy={cy} r={4.5} fill={color} stroke="#FFFFFF" strokeWidth={1.5} />
     </g>
   )
 }
@@ -208,18 +208,14 @@ function PriceBars({ bars, yLo, yHi, selected, onSelect, dataId }) {
   )
 }
 
-// Trend colours by state — green = current price is a good deal, amber = higher.
+// Trend colours by state. `up` = price rose (orange, a warning), `down` = price
+// fell (green, a good deal), `stable` = flat (neutral grey). `color` tints the
+// banner text, `accent` the delta chip + arrow, `chart` the graph line/dot,
+// `bg` the banner fill.
 const TREND = {
-  lower: {
-    color: '#0B623F',
-    shell: 'linear-gradient(180deg, #F5F5F5 29.28%, #F6FEEC 67.02%, #DCFFCA 100%)',
-    bg: '#F1FBEC', // solid tint for the standalone trend box
-  },
-  higher: {
-    color: '#A36200',
-    shell: 'linear-gradient(180deg, #F5F5F5 29.28%, #FEF9EC 67.02%, #FFDAAA 100%)',
-    bg: '#FEF6EA',
-  },
+  up: { color: '#73260D', accent: '#E8590C', chart: '#FF7E0D', bg: '#FFFAF5' },
+  down: { color: '#0B623F', accent: '#0F8A4C', chart: '#0F7EFF', bg: '#EEFBF2' },
+  stable: { color: '#475067', accent: '#666D85', chart: '#0F7EFF', bg: '#F4F5F7' },
 }
 
 // Compact inline stat (Lowest / Highest / Today) sitting on top of the graph.
@@ -249,7 +245,7 @@ function StatChip({ statKey, label, value, selected, onClick, primary, did }) {
   )
 }
 
-export default function PriceHistorySheet({ open, onClose, onAdd, image, data, dataId = 'ph-sheet' }) {
+export default function PriceHistorySheet({ open, onClose, onAdd, image, data, dataId = 'ph-sheet', compact = false }) {
   const did = (s) => `${dataId}-${s}`
   const [range, setRange] = useState('1m')
   const active = data.ranges[range]
@@ -338,57 +334,91 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
     })
     return arr
   })()
-  // ---- hero insight: use-case driven messaging (not always avg comparison) --
-  // Classified from the selected period + variant state, in priority order:
-  //   better variant picked → lowest price → stable → price dropped →
-  //   priced above usual → below average (fallback)
-  const savingsVsBase = activeVariant && baseVariant ? Math.round((baseVariant.price - activeVariant.price) * 100) / 100 : 0
-  const variantCheaper = savingsVsBase > 0
   // similar-product mode (e.g. the phone) — the "better value" action shows
   // alternative products instead of this product's own variants
   const hasSimilar = (data.similar?.length ?? 0) > 0
   const cheapestSimilar = hasSimilar ? Math.min(...data.similar.map((s) => s.price)) : 0
-  const periodMin = Math.min(...prices)
-  const periodMax = Math.max(...prices)
-  const dropFromHigh = Math.round((periodMax - todayPrice) * 100) / 100
-  const fmtAmt = (x) => String(x >= 5 ? Math.round(x) : Math.round(x * 2) / 2)
-  const periodLabel = active.label.toLowerCase()
 
-  // Copy is kept short enough to stay on ONE line even on an iPhone SE
-  // (~42 chars max at 12px in the strip).
-  let insight
-  if (variantCheaper) {
-    // Better variant exists (and picked) → switch pays off
-    insight = { tone: 'lower', icon: 'down', bold: `AED${savingsVsBase} saved`, rest: `with ${activeVariant.label} — great pick` }
-  } else if (todayPrice <= periodMin) {
-    // Lowest price → best time to buy
-    insight = { tone: 'lower', icon: 'down', bold: 'Best time to buy', rest: `— ${periodLabel} low` }
-  } else if ((periodMax - periodMin) / avgPrice <= 0.05) {
-    // Stable → buy with confidence
-    insight = { tone: 'lower', icon: 'flat', bold: 'Price rarely changes', rest: '— buy with confidence' }
-  } else if (dropFromHigh / periodMax >= 0.12 && todayPrice <= avgPrice) {
-    // Price dropped → buy now
-    insight = { tone: 'lower', icon: 'down', bold: `Price dropped AED${fmtAmt(dropFromHigh)}`, rest: `from AED${periodMax} — buy now` }
-  } else if (todayPrice > avgPrice * 1.04 || todayPrice >= periodMax * 0.985) {
-    // Priced high — either meaningfully above the period average (>4%) OR
-    // sitting at/near the period HIGH (the chart ends at its top). Steer to the
-    // cheaper option below: similar products if any, else cheaper own variants.
-    const atHigh = todayPrice >= periodMax * 0.985
-    const bold = atHigh ? 'Near its highest price' : 'Priced above usual'
-    insight = hasSimilar
-      ? { tone: 'higher', icon: 'up', bold, rest: '— better value below' }
-      : { tone: 'higher', icon: 'up', bold, rest: `— cheaper ${noun}s below` }
-  } else if (Math.abs(todayPrice - avgPrice) / avgPrice <= 0.04) {
-    // Within ±4% of the period average — real daily ASP data hovers around its
-    // baseline, so this is "typical price", not above/below. Quote the average
-    // so the copy ties directly to the dashed guide line on the chart.
-    insight = { tone: 'lower', icon: 'flat', bold: 'Around its usual price', rest: `— avg AED${Math.round(avgPrice)}` }
-  } else {
-    // Meaningfully below average (but not the low) → still a good moment
-    insight = { tone: 'lower', icon: 'down', bold: `AED${fmtAmt(avgPrice - todayPrice)} lower`, rest: `than the ${periodLabel} average` }
+  // ---- price-position banner (deterministic, spec-driven) ------------------
+  // A HIGHLIGHT (bold superlative) + a SUMMARY line. Both are ABSOLUTE — they
+  // read the 30d / 90d / 365d windows and the 30-day delta, so the banner is
+  // the same regardless of which range tab is selected. Windows are scaled by
+  // the active variant so the message tracks the selected colour/size.
+  const scaleWin = (arr) => (arr ?? []).map((p) => Math.round(p * priceScale * 100) / 100)
+  const win30 = scaleWin(data.ranges['1m']?.points)
+  const win90 = scaleWin(data.ranges['3m']?.points)
+  const win365 = scaleWin(data.ranges['1y']?.points)
+  const current = todayPrice
+  const mrp = data.mrp != null ? Math.round(data.mrp * priceScale * 100) / 100 : null
+  const has12mo = win365.length > 0 && (data.ranges['1y']?.days ?? 0) >= 365
+  // 30-day drop math — price_30d_ago is the window's first point; null (→ no
+  // delta line) when the SKU has < 30 days of history
+  const price30dAgo = win30.length ? win30[0] : null
+  const delta30 = price30dAgo ? ((current - price30dAgo) / price30dAgo) * 100 : null
+  const lo30 = win30.length ? Math.min(...win30) : current
+  const hi30 = win30.length ? Math.max(...win30) : current
+  const stable30 = hi30 - lo30 < current * 0.01 // essentially flat across 30d
+  // 90-day interquartile band (linear-interpolated percentiles)
+  const percentile = (arr, q) => {
+    if (!arr.length) return current
+    const s = [...arr].sort((a, b) => a - b)
+    const idx = (s.length - 1) * q
+    const lo = Math.floor(idx)
+    const hi = Math.ceil(idx)
+    return s[lo] + (s[hi] - s[lo]) * (idx - lo)
   }
-  const isLower = insight.tone === 'lower'
+  const p25 = percentile(win90, 0.25)
+  const p75 = percentile(win90, 0.75)
+  // formatting + reusable clauses
+  const money = (x) => `AED${Math.round(x)}`
+  const belowMrp = mrp != null && mrp > current ? Math.round(((mrp - current) / mrp) * 100) : 0
+  const mrpClause = mrp != null && belowMrp > 0 ? ` This is ${belowMrp}% below the MRP of ${money(mrp)}.` : ''
+  const rangeOrStable = stable30
+    ? `In the last 30 days, price is stable at ${money(current)}.`
+    : `In the last 30 days, price has ranged from ${money(lo30)} to ${money(hi30)}.`
+  const dropPct = delta30 != null && delta30 < 0 ? Math.round(-delta30) : 0
+  const risePct = delta30 != null && delta30 > 0 ? Math.round(delta30) : 0
+  const rangedTail = `it ranged from ${money(lo30)} to ${money(hi30)}.`
+  // 30-day directional summary — "increased/dropped by X% and it ranged …";
+  // falls back to a plain range when the rounded move is 0, and to '' when the
+  // SKU has < 30 days of history (Line-1 window rule then stands alone)
+  const directionalSummary =
+    price30dAgo == null
+      ? ''
+      : risePct > 0
+        ? `In the last 30 days, price has increased by ${risePct}% and ${rangedTail}`
+        : dropPct > 0
+          ? `In the last 30 days, price has dropped by ${dropPct}% and ${rangedTail}`
+          : rangeOrStable
+  // "lowest" states always frame the move as a drop (current sits at the low)
+  const droppedSummary =
+    price30dAgo == null ? '' : dropPct > 0 ? directionalSummary : rangeOrStable
+
+  let insight
+  if (has12mo && current <= Math.min(...win365)) {
+    insight = { tone: 'down', icon: 'down', highlight: 'Lowest price in a year', summary: droppedSummary }
+  } else if (win90.length && current <= Math.min(...win90)) {
+    insight = { tone: 'down', icon: 'down', highlight: 'Lowest price in the last 90 days', summary: droppedSummary }
+  } else if (win30.length && current <= Math.min(...win30)) {
+    insight = { tone: 'down', icon: 'down', highlight: 'Lowest price in the last 30 days', summary: droppedSummary }
+  } else if (win90.length && current >= p25 && current <= p75 && delta30 != null && Math.abs(delta30) < 3) {
+    insight = { tone: 'stable', icon: 'flat', highlight: 'Around the typical price for this product', summary: `${rangeOrStable}${mrpClause}` }
+  } else if (risePct > 0) {
+    // price rose over the month → orange "increased" state
+    insight = { tone: 'up', icon: 'up', highlight: '', summary: directionalSummary }
+  } else if (dropPct > 0) {
+    // price fell (but not to a window low) → green "dropped" state
+    insight = { tone: 'down', icon: 'down', highlight: '', summary: directionalSummary }
+  } else {
+    // flat → neutral grey
+    insight = { tone: 'stable', icon: 'flat', highlight: '', summary: `${rangeOrStable}${mrpClause}` }
+  }
+  const priceHigh = insight.tone === 'up'
   const tone = TREND[insight.tone]
+  // 30-day delta chip beside the current price (sign + 2-decimal %)
+  const deltaText = delta30 == null ? null : `${delta30 >= 0 ? '+' : '-'}${Math.abs(delta30).toFixed(2)}%`
+  // chart line + endpoint dot follow the state (orange rising, blue otherwise)
+  const lineColor = tone.chart
   // shared y-scale: nice rounded ticks covering the range's span. The labels
   // are equal-height cells (each tick centres at (k+0.5)/n of the column), so
   // the chart domain widens by half a step per side to keep the curve aligned.
@@ -459,7 +489,8 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
   // export date, e.g. the real wearables series) or today, and spans `days`
   // back. Points must be UNIFORMLY spaced for these dates to line up.
   const scrubDate = (i) => {
-    const d = data.asOf ? new Date(data.asOf) : new Date()
+    const asOf = active.asOf ?? data.asOf // per-range export date wins (1Y real data)
+    const d = asOf ? new Date(asOf) : new Date()
     d.setDate(d.getDate() - Math.round(((points.length - 1 - i) * (active.days ?? 365)) / (points.length - 1)))
     return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
   }
@@ -478,12 +509,88 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
     setBarSel(null)
   }
   // deal section visibility — amber state, or any state once a size is picked
-  const showDeal = !isLower || !!activeVariant
+  const showDeal = priceHigh || !!activeVariant
   // pill flips right when there isn't ~120px of room on the left of the line
   const pillLeft = scrub ? scrub.x > 120 : true
   // header content follows the selected size
   const headerImage = activeVariant?.image ?? image
   const subtitleParts = [data.subtitle[0], data.subtitle[1], activeVariant?.label ?? data.subtitle[2]]
+  // compact skin (variation 2): header shows the PRODUCT as the title and
+  // "colour · spec" as the subtitle, instead of the generic "Price history".
+  const compactTitle = data.subtitle[1]
+  const compactSubParts = [activeVariant?.label ?? data.subtitle[2], data.specs?.[0]].filter(Boolean)
+
+  // Range switch — placed at the TOP by default, or at the BOTTOM (narrower,
+  // centred, bordered pill with a grey selected segment) in the compact skin.
+  const rangeSwitch = (
+    <div
+      data-id={did('switch')}
+      className={`flex h-10 items-center rounded-full p-1 ${
+        compact
+          ? 'mx-auto w-[220px] border border-[#EAECF0] bg-white'
+          : 'bg-[#F9F9FB] shadow-[inset_0px_1px_4px_rgba(36,36,36,0.04)]'
+      }`}
+    >
+      {Object.entries(data.ranges).map(([key, r]) => {
+        const isActive = key === range
+        return (
+          <button
+            key={key}
+            type="button"
+            data-id={did(`switch-${key}`)}
+            aria-pressed={isActive}
+            onClick={() => selectRange(key)}
+            className="relative flex h-8 flex-1 items-center justify-center rounded-full"
+          >
+            {isActive && (
+              <motion.span
+                layoutId={did('switch-pill')}
+                transition={sheetMotion.control}
+                className={`absolute inset-0 rounded-full ${
+                  compact
+                    ? 'bg-[#EAECF0]'
+                    : 'border border-white bg-white shadow-[0px_1px_6px_rgba(34,34,34,0.06)]'
+                }`}
+              />
+            )}
+            <span
+              className={`relative z-10 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] ${
+                isActive ? 'text-[#1D2539]' : 'text-[#666D85]'
+              }`}
+            >
+              {r.label}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  // Insight banner — reused above the graph (compact) or below it (default).
+  const bannerBlock = (
+    <div
+      data-id={did('trend')}
+      className="flex min-h-11 shrink-0 items-center gap-2.5 rounded-xl px-4 py-2.5"
+      style={{ background: tone.bg, color: tone.color }}
+    >
+      <RollSwap
+        id={`${insight.highlight}|${insight.summary}`}
+        transition={sheetMotion.rollText}
+        className="min-w-0 flex-1"
+      >
+        <span className="flex min-w-0 flex-col gap-0.5 font-noontree text-[12px] leading-4 tracking-[-0.1px]">
+          {insight.highlight && (
+            <span data-id={did('trend-highlight')} className="font-semibold">
+              {withDirham(insight.highlight)}
+            </span>
+          )}
+          <span data-id={did('trend-summary')} className="font-medium">
+            {withDirham(insight.summary)}
+          </span>
+        </span>
+      </RollSwap>
+    </div>
+  )
 
   return (
     // Always-mounted shell whose pointer-events follow `open` — the moment the
@@ -527,23 +634,25 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                 data-id={did('sheet')}
                 className="mx-3 mb-3 flex max-h-[min(85dvh,700px)] w-[calc(100%-24px)] flex-col overflow-hidden rounded-2xl bg-white shadow-[0px_-2px_16px_rgba(0,0,0,0.12)]"
               >
-                {/* Header — product tile + title + dotted subtitle */}
-                <div data-id={did('header')} className="flex shrink-0 items-center gap-3 border-b border-[#F9F9FB] p-4">
-                  <span data-id={did('header-image')} className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#EAECF0] bg-white">
-                    <RollSwap id={headerImage} className="h-12 w-12">
-                      <img src={headerImage} alt="" aria-hidden="true" className="h-12 w-12 object-contain" />
+                {/* Header — product tile + title + dotted subtitle. Compact
+                    (variation 2) shows the product name as the title and a
+                    dashed divider, per the M-SectionHeader spec. */}
+                <div data-id={did('header')} className={`flex shrink-0 items-center gap-3 p-4 ${compact ? 'border-b border-dashed border-[#F2F3F7]' : 'border-b border-[#F9F9FB]'}`}>
+                  <span data-id={did('header-image')} className={`flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#EAECF0] bg-white ${compact ? 'h-10 w-10' : 'h-14 w-14'}`}>
+                    <RollSwap id={headerImage} className={compact ? 'h-8 w-8' : 'h-12 w-12'}>
+                      <img src={headerImage} alt="" aria-hidden="true" className={`object-contain ${compact ? 'h-8 w-8' : 'h-12 w-12'}`} />
                     </RollSwap>
                   </span>
-                  <div data-id={did('header-copy')} className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span data-id={did('title')} className="font-noontree text-[16px] font-bold leading-5 tracking-[-0.15px] text-[#1D2539]">
-                      Price history
+                  <div data-id={did('header-copy')} className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span data-id={did('title')} className={`font-noontree tracking-[-0.15px] text-[#1D2539] ${compact ? 'text-[16px] font-semibold leading-[22px]' : 'text-[16px] font-bold leading-5'}`}>
+                      {compact ? compactTitle : 'Price history'}
                     </span>
                     <span data-id={did('subtitle')} className="flex min-w-0 items-center gap-2.5">
-                      {subtitleParts.map((part, i) => {
+                      {(compact ? compactSubParts : subtitleParts).map((part, i, arr) => {
                         // last part (the variant, e.g. "Midnight Black") flexes
                         // and truncates so a long value can't overflow the row;
                         // store + product keep their space
-                        const isLast = i === subtitleParts.length - 1
+                        const isLast = i === arr.length - 1
                         return (
                           <span key={i} className={`flex items-center gap-2.5 ${isLast ? 'min-w-0 flex-1' : 'shrink-0'}`}>
                             {i > 0 && <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-[#D9D9D9]" />}
@@ -564,48 +673,82 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                 <div ref={bodyRef} data-id={did('body')} className="scrollbar-hide flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-2">
                   {/* Section 1 — the analysis: range tabs + graph read as ONE unit */}
                   <div data-id={did('chart-group')} className="flex shrink-0 flex-col gap-3">
-                    {/* Range switch — sliding white pill */}
-                    <div data-id={did('switch')} className="flex h-10 items-center rounded-full bg-[#F9F9FB] p-1 shadow-[inset_0px_1px_4px_rgba(36,36,36,0.04)]">
-                      {Object.entries(data.ranges).map(([key, r]) => {
-                        const isActive = key === range
-                        return (
-                          <button
-                            key={key}
-                            type="button"
-                            data-id={did(`switch-${key}`)}
-                            aria-pressed={isActive}
-                            onClick={() => selectRange(key)}
-                            className="relative flex h-8 flex-1 items-center justify-center rounded-full"
-                          >
-                            {isActive && (
-                              <motion.span
-                                layoutId={did('switch-pill')}
-                                transition={sheetMotion.control}
-                                className="absolute inset-0 rounded-full border border-white bg-white shadow-[0px_1px_6px_rgba(34,34,34,0.06)]"
-                              />
-                            )}
-                            <span
-                              className={`relative z-10 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] ${
-                                isActive ? 'text-[#1D2539]' : 'text-[#666D85]'
-                              }`}
-                            >
-                              {r.label}
-                            </span>
-                          </button>
-                        )
-                      })}
-                    </div>
+                    {/* Range switch at the top (default layout only) */}
+                    {!compact && rangeSwitch}
 
-                    {/* Graph container — its own white card with a hairline
-                        border; the trend note is a SEPARATE box below. Stats sit
-                        on top INSIDE the card, then the plot. */}
+                    {/* Graph container. Default: bordered white card with the
+                        trend note below. Compact (variation 2): borderless, with
+                        the amount → banner → graph stacked, per the mock. */}
                     <div
                       data-id={did('chart-card')}
-                      className="flex flex-col gap-3 rounded-2xl border border-[#EAECF0] bg-white px-2 py-4"
+                      className={
+                        compact
+                          ? 'flex flex-col gap-2'
+                          : 'flex flex-col gap-3 rounded-2xl border border-[#EAECF0] bg-white px-2 py-4'
+                      }
                     >
+                    {/* Compact (variation 2) — the amount block and the insight
+                        banner are grouped as one unit, 12px apart. */}
+                    {compact && (
+                      <div data-id={did('stats-trend-group')} className="flex flex-col gap-3">
+                      <div data-id={did('stats')} className="flex flex-col gap-2 px-1 pt-1">
+                        <div className="flex items-end gap-1.5">
+                          <button
+                            type="button"
+                            data-id={did('stat-today')}
+                            aria-pressed={selectedStat === 'today'}
+                            onClick={() => onStatClick('today')}
+                            className="inline-flex items-center gap-px font-noontree text-[18px] font-semibold leading-6 tracking-[-0.15px] text-[#1D2539] outline-none"
+                          >
+                            <Dirham />
+                            {statValues.today}
+                          </button>
+                          {deltaText && (
+                            <span data-id={did('delta')} className="inline-flex items-center gap-1 pb-0.5">
+                              <span className="font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px]" style={{ color: tone.accent }}>
+                                {deltaText}
+                              </span>
+                              <TrendIcon dir={insight.icon} color={tone.accent} />
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            data-id={did('stat-highest')}
+                            aria-pressed={selectedStat === 'highest'}
+                            onClick={() => onStatClick('highest')}
+                            className="inline-flex items-center gap-1 font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.1px] text-[#666D85] outline-none"
+                          >
+                            Highest:
+                            <span className="inline-flex items-center gap-px font-semibold text-[#1D2539]">
+                              <Dirham />
+                              {statValues.highest}
+                            </span>
+                          </button>
+                          <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-[#D9D9D9]" />
+                          <button
+                            type="button"
+                            data-id={did('stat-lowest')}
+                            aria-pressed={selectedStat === 'lowest'}
+                            onClick={() => onStatClick('lowest')}
+                            className="inline-flex items-center gap-1 font-noontree text-[12px] font-normal leading-[18px] tracking-[-0.1px] text-[#666D85] outline-none"
+                          >
+                            Lowest:
+                            <span className="inline-flex items-center gap-px font-semibold text-[#1D2539]">
+                              <Dirham />
+                              {statValues.lowest}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                      {bannerBlock}
+                      </div>
+                    )}
                     {/* Stats — Current price leads (value in the trend colour +
                         matching arrow), then Highest (amber) and Lowest (teal).
                         Tapping a stat pins the marker. */}
+                    {!compact && (
                     <div data-id={did('stats')} className="flex items-center gap-3 p-2">
                       {/* Current price (today) */}
                       <button
@@ -674,7 +817,10 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                         </button>
                       </div>
                     </div>
+                    )}
 
+                        {/* Plot + x-axis labels grouped, 4px apart */}
+                        <div data-id={did('chart-plot-group')} className="flex flex-col gap-1">
                         {/* Section 1 — prices (left) | plot (right) */}
                         <div data-id={did('chart-plot-row')} className="flex h-[140px]">
                           {/* price labels — equal-height cells filling the column,
@@ -794,14 +940,14 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                 <AreaChart data={series} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
                                   <defs>
                                     <linearGradient id="ph-fill" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="0%" stopColor={LINE} stopOpacity={0.2} />
-                                      <stop offset="55%" stopColor={LINE} stopOpacity={0.06} />
-                                      <stop offset="100%" stopColor={LINE} stopOpacity={0} />
+                                      <stop offset="0%" stopColor={lineColor} stopOpacity={0.2} />
+                                      <stop offset="55%" stopColor={lineColor} stopOpacity={0.06} />
+                                      <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
                                     </linearGradient>
                                     {/* soft glow under the stroke so the line reads
                                         crisp over the gradient fill */}
                                     <filter id="ph-line-glow" x="-2%" y="-10%" width="104%" height="130%">
-                                      <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor={LINE} floodOpacity="0.18" />
+                                      <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor={lineColor} floodOpacity="0.18" />
                                     </filter>
                                   </defs>
                                   <XAxis dataKey="i" type="number" domain={[domainLo, domainHi]} hide />
@@ -809,7 +955,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                   <Area
                                     type={data.curve ?? 'stepAfter'}
                                     dataKey="price"
-                                    stroke={LINE}
+                                    stroke={lineColor}
                                     strokeWidth={2}
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -818,7 +964,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                                     isAnimationActive
                                     animationDuration={500}
                                     animationEasing="ease-out"
-                                    dot={<EndDot todayI={points.length - 1} />}
+                                    dot={<EndDot todayI={points.length - 1} color={lineColor} />}
                                     activeDot={false}
                                   />
                                 </AreaChart>
@@ -830,7 +976,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                         {/* Section 2 — spacer (left) | period labels (right), same
                             column widths as section 1. Equal-width cells; labels
                             adapt to the range (days for 1M, months for 3M/1Y). */}
-                        <div data-id={did('chart-label-row')} className="flex h-7">
+                        <div data-id={did('chart-label-row')} className={`flex ${compact ? 'h-5' : 'h-7'}`}>
                           <div className="shrink-0" style={{ width: axisWidth }} />
                           {isBars ? (
                             /* one cell per bar (matching gap) so labels sit under
@@ -851,7 +997,7 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                               ))}
                             </div>
                           ) : (
-                            <div data-id={did('x-axis')} className="flex min-w-0 flex-1 items-end">
+                            <div data-id={did('x-axis')} className={`flex min-w-0 flex-1 ${compact ? 'items-start' : 'items-end'}`}>
                               {active.labels.map((label, i) => (
                                 <span
                                   key={`${label}-${i}`}
@@ -866,28 +1012,12 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                             </div>
                           )}
                         </div>
+                        </div>
                       </div>
                     </div>
 
-                  {/* Trend note — a SEPARATE box below the graph, filled with the
-                      tone tint and a hairline border. Headline semibold, copy
-                      medium; text rolls like a carousel when the insight changes. */}
-                  <div
-                    data-id={did('trend')}
-                    className="flex min-h-11 shrink-0 items-center gap-2.5 rounded-xl px-4 py-2.5"
-                    style={{ background: tone.bg, color: tone.color }}
-                  >
-                    <RollSwap
-                      id={`${insight.bold}|${insight.rest}`}
-                      transition={sheetMotion.rollText}
-                      className="min-w-0 flex-1"
-                    >
-                      <span className="min-w-0 font-noontree text-[12px] font-medium leading-4 tracking-[-0.1px]">
-                        <span className="font-semibold">{withDirham(insight.bold)}</span>{' '}
-                        {withDirham(insight.rest)}
-                      </span>
-                    </RollSwap>
-                  </div>
+                  {/* Trend note below the graph (default layout only) */}
+                  {!compact && bannerBlock}
 
                   {/* Better deal row — shown when the price is higher now, to
                       steer the shopper to cheaper options (retention). Once a
@@ -1050,6 +1180,9 @@ export default function PriceHistorySheet({ open, onClose, onAdd, image, data, d
                               </motion.div>
                         </motion.div>
                   </motion.div>
+
+                  {/* Compact: range switch anchored at the BOTTOM, narrower */}
+                  {compact && <div className="pt-1">{rangeSwitch}</div>}
 
                 </div>
 

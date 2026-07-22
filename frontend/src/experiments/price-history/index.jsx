@@ -65,6 +65,8 @@ export default function PriceHistoryExperiment() {
             comboAnim="chiptop"
             idPrefix="ph"
             variant={1}
+            showBundle={false}
+            lowestPriceTrigger={variant === 1}
             product={active.product}
             combos={combos}
             similar={similar}
@@ -102,6 +104,7 @@ export default function PriceHistoryExperiment() {
         onClose={() => setHistoryOpen(false)}
         image={active.product.images[0]}
         data={active.priceHistory}
+        compact={variant === 2}
       />
     </>
   )

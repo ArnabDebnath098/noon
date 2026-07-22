@@ -63,6 +63,17 @@ import allIcon from '../../assets/icons/nav/all.svg?raw'
 const ACTIVE = '#0F61FF'
 const INACTIVE = '#5C667E'
 
+// Selected-tab accent. `grad` fills the marker bar + tints the icon/label (a
+// solid colour or a gradient); `from`/`to` are the SVG icon gradient stops;
+// `tint` is the translucent pill behind the floating active icon. Overridable
+// per experiment — defaults to noon blue.
+const DEFAULT_ACCENT = {
+  from: ACTIVE,
+  to: ACTIVE,
+  grad: ACTIVE,
+  tint: 'rgba(15, 97, 255, 0.12)',
+}
+
 const TABS = [
   { key: 'home', label: 'Home', raw: homeIcon },
   { key: 'categories', label: 'Categories', raw: categoryIcon },
@@ -71,17 +82,27 @@ const TABS = [
   { key: 'account', label: 'Account', raw: profileIcon },
 ]
 
-function NavIcon({ raw, active, dataId }) {
-  const html = raw
-    .replace(/fill="#[0-9a-f]{3,8}"/gi, 'fill="currentColor"')
-    .replace(/stroke="#[0-9a-f]{3,8}"/gi, 'stroke="currentColor"')
+const ICON_GRAD_ID = 'nav-active-grad' // only ever one active icon at a time
+function NavIcon({ raw, active, dataId, accent = DEFAULT_ACCENT }) {
+  // Active: paint the glyph with a vertical gradient (a solid accent renders as
+  // equal stops). Inactive: flat currentColor.
+  const html = active
+    ? raw
+        .replace(/fill="#[0-9a-f]{3,8}"/gi, `fill="url(#${ICON_GRAD_ID})"`)
+        .replace(/stroke="#[0-9a-f]{3,8}"/gi, `stroke="url(#${ICON_GRAD_ID})"`)
+        .replace(
+          /<svg([^>]*)>/i,
+          `<svg$1><defs><linearGradient id="${ICON_GRAD_ID}" x1="0" y1="0" x2="0" y2="1"><stop offset="0.19" stop-color="${accent.from}"/><stop offset="1" stop-color="${accent.to}"/></linearGradient></defs>`,
+        )
+    : raw
+        .replace(/fill="#[0-9a-f]{3,8}"/gi, 'fill="currentColor"')
+        .replace(/stroke="#[0-9a-f]{3,8}"/gi, 'stroke="currentColor"')
   return (
-    <motion.span
+    <span
       data-id={dataId}
       aria-hidden="true"
       className="block h-7 w-7 [&>svg]:h-full [&>svg]:w-full"
-      animate={{ color: active ? ACTIVE : INACTIVE }}
-      transition={{ duration: 0.25 }}
+      style={{ color: INACTIVE }}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )
@@ -89,6 +110,7 @@ function NavIcon({ raw, active, dataId }) {
 
 export default function BottomNav({
   dataId = 'bottom-nav',
+  accent = DEFAULT_ACCENT,
   onAll,
   floating = false,
   leading, // node rendered in the floating left circle (e.g. the marketplace)
@@ -182,12 +204,13 @@ export default function BottomNav({
               // flight is pure translation (the squircle clip never distorts).
               // centered via inset-0 + m-auto (NOT translate) so it doesn't
               // fight framer's layoutId transform.
-              className="absolute inset-0 m-auto aspect-square h-[calc(100%-8px)] bg-[#0F61FF]/[0.12]"
+              className="absolute inset-0 m-auto aspect-square h-[calc(100%-8px)]"
+              style={{ background: accent.tint }}
               transition={{ type: 'spring', stiffness: 500, damping: 38 }}
             />
           )}
           <span data-id={`${dataId}-${tab.key}-icon`} className="relative">
-            <NavIcon raw={tab.raw} active={isActive} dataId={`${dataId}-${tab.key}-glyph`} />
+            <NavIcon raw={tab.raw} active={isActive} accent={accent} dataId={`${dataId}-${tab.key}-glyph`} />
           </span>
         </button>
       )
@@ -526,18 +549,21 @@ export default function BottomNav({
               {isActive && (
                 <motion.span
                   layoutId={`${dataId}-marker`}
-                  className="absolute inset-x-0 top-0 mx-auto h-1 w-9 rounded-b-full bg-[#0F61FF]"
+                  className="absolute inset-x-0 top-0 mx-auto h-1 w-9 rounded-b-full"
+                  style={{ background: accent.grad }}
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
-              <NavIcon raw={tab.raw} active={isActive} />
+              <NavIcon raw={tab.raw} active={isActive} accent={accent} />
               <motion.span
                 className="text-xs leading-none"
-                animate={{
-                  color: isActive ? ACTIVE : INACTIVE,
-                  fontWeight: isActive ? 600 : 400,
-                }}
+                animate={{ fontWeight: isActive ? 600 : 400 }}
                 transition={{ duration: 0.25 }}
+                style={
+                  isActive
+                    ? { background: accent.grad, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                    : { color: INACTIVE }
+                }
               >
                 {tab.label}
               </motion.span>

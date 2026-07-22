@@ -7,6 +7,7 @@ import bundleShampooRicewater from '../assets/products/bundle-shampoo-ricewater.
 import comboThumbConditioner from '../assets/products/combo-thumb-conditioner.png'
 import comboThumbShampoo from '../assets/products/combo-thumb-shampoo.png'
 import redmiWatch5Active from '../assets/products/redmi-watch-5-active.png'
+import iphone17ProMaxOrange from '../assets/products/iphone-17-pro-max-orange.png'
 
 // Per-combo product thumbnails (for the variation-4 horizontal row card).
 const COMBO_THUMBS = [
@@ -112,7 +113,7 @@ export const priceHistory = {
     // The trend note (higher/lower vs the period average) is computed from the
     // points at render time, so it always matches the chart.
     '1m': {
-      label: '1 Month',
+      label: '1 M',
       days: 30, // span — scrub labels interpolate dates across it
       labels: ['Jun 15', 'Jun 22', 'Jun 29', 'Jul 6', 'Today'],
       // daily prices — real listings hold a price for days, then step on a
@@ -128,7 +129,7 @@ export const priceHistory = {
       ],
     },
     '3m': {
-      label: '3 Month',
+      label: '3 M',
       days: 90,
       labels: ['Apr', 'May', 'Jun', 'Today'],
       // ~5-day repricing cadence: high spring plateaus, a flash-sale dip to the
@@ -140,7 +141,7 @@ export const priceHistory = {
       ],
     },
     '1y': {
-      label: '1 Year',
+      label: '1 Y',
       days: 365,
       labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
       // ~10-day cadence over the year: launch-era pricing, a November sale, a
@@ -164,105 +165,126 @@ export const watchProduct = {
   images: [redmiWatch5Active],
   rating: '4.4',
   ratingCount: '6987',
-  price: '109.00',
+  price: '129.99',
   originalPrice: '149.00',
-  discountPercent: '26%',
+  discountPercent: '13%',
   vat: '(incl. of VAT)',
-  bestPriceWithOffers: '99',
+  bestPriceWithOffers: '124',
   lowestPrice: 'Lowest Price in 30 days',
   bestsellerRankTop: { rank: '#1', category: 'Smartwatches' },
   bestsellerRankBottom: { rank: '#1', category: 'Smartwatches' },
 }
 
-// ---- price-history variation 1: REAL wearables data ----------------------
-// Xiaomi Redmi Watch 5 Active (SKU N70103815V, Midnight Black — the top-selling
-// Wearables SKU, 30K units/yr), daily offer prices Jul 14 2025 → Jul 13 2026
-// from the nAT Analyst export. The story in the numbers:
-//   • ~110–120 AED baseline with daily ASP wobble
-//   • 11.11 sale slide (Nov 8–14, ~96–99) and the White Friday plateau at
-//     ~91–93 (Nov 25–30, volume ~3×)
-//   • a Dec 23 flash dip (93.16), then January highs (~118–122)
-//   • the Ramadan crash to the yearly low 82.59 (Feb 6 — also the peak volume
-//     day, 463 units), recovering through March
-//   • spring stability → yearly high 125.35 (Jun 19) → today back at 110.47
-// The Matte Silver colorway (N70103816V) tracks it closely — today 107.23 —
-// so it appears as the cheaper color variant.
+// ---- price-history variation 1: an UPWARD price story --------------------
+// Same underlying series as the iPhone (variation 2) but time-REVERSED — so a
+// year of decline reads as a year of climbing — then scaled into the watch's
+// realistic ~100–130 AED band. Net result: the price RISES across every window
+// (1M, 3M, 1Y), ending at today's 130 all-time high. The real daily ASP wobble
+// is preserved, so the curve still looks organic rather than hand-drawn.
 export const watchPriceHistory = {
   subtitle: ['XIAOMI', 'Redmi Watch 5 Active', 'Midnight Black'],
-  stats: { lowest: '82.59', highest: '125.35', today: '109' },
-  // the dataset's export date — scrub/pin marker dates count back from this
-  // (not from the live clock), so pins land on the real event dates
-  asOf: '2026-07-13',
+  stats: { lowest: '100', highest: '130', today: '130' },
+  mrp: 149, // list price (matches watchProduct.originalPrice) — for the banner
+  // smooth spline (dense daily series) + fixed export date for scrub markers
+  curve: 'natural',
+  asOf: '2026-07-20',
   variantNoun: 'color',
-  // the two real SKUs as colorways (no `ml` → the deal logic compares price);
-  // Black is the current PDP price (109), Silver runs a touch cheaper (105)
+  // colorways — Black is today's PDP price (130, the current peak), Silver a
+  // touch cheaper; selecting one rescales the whole series proportionally
   variants: [
-    { id: 'black', label: 'Midnight Black', price: 109, image: redmiWatch5Active, current: true },
-    { id: 'silver', label: 'Matte Silver', price: 105.85, image: redmiWatch5Active },
+    { id: 'black', label: 'Midnight Black', price: 130, image: redmiWatch5Active, current: true },
+    { id: 'silver', label: 'Matte Silver', price: 125.99, image: redmiWatch5Active },
   ],
   ranges: {
     '1m': {
-      label: '1 Month',
-      days: 30,
-      labels: ['Jun 14', 'Jun 21', 'Jun 28', 'Jul 6', 'Today'],
-      // the ACTUAL last 30 daily offer prices (Jun 14 → Jul 13) — real ASPs
-      // move a little every day, unlike hand-authored plateau data
+      label: '1 M',
+      days: 30, // 20 Jun → 20 Jul 2026
+      labels: ['Jun 20', 'Jun 28', 'Jul 5', 'Jul 13', 'Today'],
+      barCount: 31,
+      // the recent leg of the climb — rises from ~108 to today's 130 high
       points: [
-        118.42, 119.07, 114.8, 121.54, 121.37, 125.35, 112.44, 104.58,
-        115.74, 105.63, 117.16, 122.26, 110.19, 109.88, 112.09, 110.28,
-        110.81, 114.19, 113.28, 123.4, 123.46, 120.86, 121.69, 113.7,
-        114.95, 110.96, 112.33, 107.22, 109.13, 109,
+        108.22, 108.2, 107.78, 107.78, 108.98, 110, 121.11, 112, 121.11, 121.11,
+        119.91, 113.2, 111.02, 110.02, 113.64, 119.78, 120, 121.11, 122.13, 121.69,
+        122.04, 122.22, 120.36, 122.22, 123.11, 125.56, 127.78, 124.58, 127.71, 127.78,
+        130,
       ],
     },
     '3m': {
-      label: '3 Month',
-      days: 90,
+      label: '3 M',
+      days: 91, // 20 Apr → 20 Jul 2026
       labels: ['Apr', 'May', 'Jun', 'Today'],
-      // 5-day mean prices (Apr 14 → Jul 13): stable April, the late-May lift,
-      // the 125.35 June peak week, the Jun 21 dip (104.6) and the early-July
-      // spike (120.6) before settling back to ~110
+      barCount: 3,
+      // holds a ~103 floor through spring, then lifts steadily to 130 → net UP
       points: [
-        113.2, 113.3, 112.7, 112.5, 111.6, 114.1, 111.7, 113.3,
-        118.0, 116.2, 119.1, 118.1, 118.5, 115.9, 104.6, 112.5,
-        120.6, 109,
+        106.67, 106.67, 106.67, 103.33, 104.44, 103.33, 103.33, 103.33, 104.44, 103.33,
+        103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33,
+        103.33, 103.33, 103.33, 103.33, 103.33, 101.11, 101.11, 101.11, 101.11, 101.11,
+        101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11,
+        101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 102.29, 103.33, 103.33, 103.33,
+        103.33, 103.33, 105.56, 107.78, 107.78, 105.56, 105.56, 105.62, 107.78, 107.78,
+        106.73, 108.22, 108.2, 107.78, 107.78, 108.98, 110, 121.11, 112, 121.11,
+        121.11, 119.91, 113.2, 111.02, 110.02, 113.64, 119.78, 120, 121.11, 122.13,
+        121.69, 122.04, 122.22, 120.36, 122.22, 123.11, 125.56, 127.78, 124.58, 127.71,
+        127.78, 130,
       ],
     },
     '1y': {
-      label: '1 Year',
+      label: '1 Y',
       days: 365,
       labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
-      // UNIFORM ~9.9-day bucket means (38 points over 365 days) so the
-      // scrub/pin dates interpolate onto the REAL event dates: index 12 →
-      // Nov 8 (11.11 sale, 96.4), 14 → Nov 28 (White Friday, 92.0), 21 →
-      // Feb 5 (Ramadan low, exact 82.59), 34 → mid-June high (exact 125.35)
+      barCount: 12,
+      // full year — climbs off the ~100 low a year ago, through a long ~107
+      // mid-band, then accelerates over the final months to today's 130 high
       points: [
-        115.2, 110.9, 112.4, 112.9, 114.9, 104.9, 106.7, 112.3, 114.5,
-        114.9, 111.3, 109.5, 96.4, 101.5, 92.0, 115.8, 104.5, 113.1,
-        117.4, 104.7, 103.8, 82.59, 99.0, 107.8, 103.7, 105.5, 106.8,
-        111.5, 113.2, 112.4, 112.1, 112.5, 117.5, 118.6, 125.35, 114.4,
-        116.7, 109,
+        102.22, 102.22, 102.22, 102.22, 102.22, 104.44, 104.44, 104.44, 104.44, 104.44,
+        104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 100,
+        100, 100, 100, 100, 100, 100, 100, 100, 100, 104.44,
+        104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 100, 100, 100, 100,
+        104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 104.44, 107.78,
+        107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.87, 107.87, 107.78,
+        107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 108.22, 107.78, 108.67, 107.78,
+        107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78,
+        107.87, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78,
+        107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.69, 107.69, 107.84, 108.67,
+        108.89, 108.89, 108.89, 108.8, 108.89, 108.89, 108.8, 108.8, 108.89, 108.89,
+        108.67, 108.44, 108.89, 108.8, 108.89, 108.89, 108.8, 108.89, 111.11, 111.11,
+        111.24, 111.24, 111.24, 111.24, 113.38, 111.11, 111.11, 111.11, 111.11, 111.11,
+        110, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78, 107.78,
+        107.78, 107.78, 107.78, 106.67, 106.67, 106.67, 107.78, 107.78, 107.78, 106.67,
+        106.58, 107.78, 106.58, 106.58, 106.58, 106.58, 106.58, 106.58, 106.58, 106.58,
+        106.58, 107.78, 106.76, 106.58, 106.58, 106.58, 106.58, 106.58, 106.58, 106.58,
+        106.67, 106.67, 106.67, 106.67, 106.67, 106.67, 106.67, 106.67, 106.67, 106.67,
+        106.67, 106.67, 106.67, 106.67, 106.67, 106.67, 106.67, 103.33, 104.44, 103.33,
+        103.33, 103.33, 104.44, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33,
+        103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 103.33, 101.11,
+        101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11,
+        101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11, 101.11,
+        102.29, 103.33, 103.33, 103.33, 103.33, 103.33, 105.56, 107.78, 107.78, 105.56,
+        105.56, 105.62, 107.78, 107.78, 106.73, 108.22, 108.2, 107.78, 107.78, 108.98,
+        110, 121.11, 112, 121.11, 121.11, 119.91, 113.2, 111.02, 110.02, 113.64,
+        119.78, 120, 121.11, 122.13, 121.69, 122.04, 122.22, 120.36, 122.22, 123.11,
+        125.56, 127.78, 124.58, 127.71, 127.78, 130,
       ],
     },
   },
 }
 
-// ---- price-history variation 2: a phone PDP (Pura90s Pro 5) --------------
-const PHONE_IMAGE =
-  'https://f.nooncdn.com/p/pzsku/ZEF7AF76D2E9CBCBDCFD7Z/45/_/1784188631/6b269d53-5311-4217-918e-de3c3e7ced81.jpg?width=800'
+// ---- price-history variation 2: a phone PDP (iPhone 17 Pro Max) ----------
+const PHONE_IMAGE = iphone17ProMaxOrange
 
 export const phoneProduct = {
-  store: 'HUAWEI',
+  store: 'Apple',
   title:
-    'Pura90s Pro 5.5G AI Dual SIM Mulberry Black 12GB RAM 256GB with Google Playstore + Free Gift - Middle East Version',
+    'iPhone 17 Pro Max 256 GB (eSIM only) Cosmic Orange 5G With FaceTime - International Version',
   images: [PHONE_IMAGE],
-  rating: '4.3',
-  ratingCount: '1286',
-  price: '3199',
-  originalPrice: '3599',
-  discountPercent: '11%',
+  rating: '4.5',
+  ratingCount: '27948',
+  price: '4709',
+  originalPrice: '5099',
+  discountPercent: '7%',
   vat: '(incl. of VAT)',
-  bestPriceWithOffers: '3039',
-  lowestPrice: 'Lowest Price in 30 days',
+  bestPriceWithOffers: '4549',
+  lowestPrice: 'Lowest price in a year',
   bestsellerRankTop: { rank: '#2', category: 'Smartphones' },
   bestsellerRankBottom: { rank: '#2', category: 'Smartphones' },
 }
@@ -271,13 +293,14 @@ export const phoneProduct = {
 // sizes); prices in the thousands so the nice-tick y-axis and the whole sheet
 // exercise a very different scale from the shampoo.
 export const phonePriceHistory = {
-  subtitle: ['HUAWEI', 'Pura90s Pro', 'Black'],
-  stats: { lowest: '2999', highest: '3599', today: '3199' },
+  subtitle: ['Apple', 'iPhone 17 Pro Max', 'Cosmic Orange'],
+  mrp: 5099, // list price (matches phoneProduct.originalPrice) — for the banner
+  stats: { lowest: '4749', highest: '6099', today: '4849' }, // real offer-price series
   // the phone's data is a smooth climb-peak-decline trend, so the line renders
   // as a spline (default is the plateau-style stepAfter staircase)
   curve: 'natural',
   // key specs the "similar products" below are matched on
-  specs: ['12GB RAM', '256GB', '5G'],
+  specs: ['256GB', 'eSIM', '5G'],
   // Similar phones with the same headline features but a lower price — shown as
   // the "better value" action when this phone is priced above its usual level.
   similar: [
@@ -316,41 +339,80 @@ export const phonePriceHistory = {
     //           with a recovery in the final weeks.
     //   • 1M  — net INCREASE: the recent rebound, rising to today.
     '1m': {
-      label: '1 Month',
-      days: 30,
-      labels: ['Jun 15', 'Jun 22', 'Jun 29', 'Jul 6', 'Today'],
-      barCount: 30, // bar chart (v3): one bar per day
-      // climbs off the recent 2999 trough up to today → net INCREASE
+      label: '1 M',
+      days: 30, // 20 Jun → 20 Jul 2026
+      asOf: '2026-07-20',
+      labels: ['Jun 20', 'Jun 28', 'Jul 5', 'Jul 13', 'Today'],
+      barCount: 31, // bar chart (v3): one bar per day
+      // REAL offer prices, 20 Jun → 20 Jul 2026: dips to the 4,749 low mid-month,
+      // recovers to 4,949, then eases to 4,849 today → broadly flat, slight dip.
       points: [
-        2999, 2999, 3019, 3009, 3039, 3029, 3059, 3049, 3079, 3069,
-        3099, 3089, 3119, 3109, 3139, 3129, 3159, 3149, 3169, 3159,
-        3179, 3169, 3189, 3179, 3199, 3189, 3199, 3199, 3199, 3199,
+        4949, 4949, 4749, 4749, 4749, 4749, 4749, 4749, 4749, 4749,
+        4749, 4749, 4949, 4949, 4949, 4949, 4949, 4949, 4949, 4949,
+        4949, 4949, 4949, 4949, 4949, 4949, 4849, 4849, 4849, 4849,
+        4849,
       ],
     },
     '3m': {
-      label: '3 Month',
-      days: 90,
+      label: '3 M',
+      days: 91, // 20 Apr → 20 Jul 2026
+      asOf: '2026-07-20',
       labels: ['Apr', 'May', 'Jun', 'Today'],
       barCount: 3, // bar chart (v3): one bar per month
-      // falls from the post-peak high (~3399) to the 2999 trough ~3 weeks ago,
-      // then rebounds → net DROP over the quarter
+      // REAL offer prices, 20 Apr → 20 Jul 2026: holds the ~5,099 spring plateau,
+      // then eases through the June 4,749 dips down to 4,849 today → net DROP.
       points: [
-        3399, 3449, 3419, 3379, 3329, 3279, 3229, 3179, 3149,
-        3119, 3089, 3059, 3029, 2999, 3079, 3139, 3189, 3199,
+        5099, 5099, 5099, 5099, 5099, 5099, 5099, 5099, 5099, 5099,
+        5099, 5103, 5099, 5099, 5099, 5099, 5099, 5099, 5099, 5099,
+        5099, 5099, 5099, 5139, 5099, 5119, 5099, 5099, 5099, 5099,
+        5099, 5099, 5099, 5103, 5103, 5099, 5099, 5099, 5099, 5099,
+        5099, 5099, 5099, 4949, 4949, 4949, 4949, 4949, 4949, 4949,
+        4949, 4949, 4749, 4749, 4749, 4749, 4949, 4949, 4949, 4949,
+        4949, 4949, 4949, 4749, 4749, 4749, 4749, 4749, 4749, 4749,
+        4749, 4749, 4749, 4949, 4949, 4949, 4949, 4949, 4949, 4949,
+        4949, 4949, 4949, 4949, 4949, 4949, 4949, 4849, 4849, 4849,
+        4849, 4849,
       ],
     },
     '1y': {
-      label: '1 Year',
-      days: 365,
-      labels: ['Jul', 'Oct', 'Jan', 'Apr', 'Jul', 'Today'],
+      label: '1 Y',
+      days: 301, // 22 Sep 2025 → 20 Jul 2026 (the real export window)
+      asOf: '2026-07-20', // series ends on the dataset's last date, not "today"
+      labels: ['Sep', 'Nov', 'Jan', 'Mar', 'May', 'Today'],
       barCount: 12, // bar chart (v3): one bar per month
-      // launch low (2999) → steady climb to the 3599 festive peak (= Highest)
-      // ~4 months ago → post-peak decline to the 2999 trough → rebound to today
-      // → net UP over the year
+      // REAL daily offer prices (N70211464V-1, AE), 22 Sep 2025 → 20 Jul 2026:
+      // opens near the 6,099 high, slides through White Friday to the 4,799
+      // winter plateau, drifts back up to ~5,100 in spring, then eases to the
+      // 4,749 summer low and sits at 4,849 today → net DOWN over the year.
       points: [
-        2999, 3049, 3099, 3149, 3199, 3249, 3299, 3349, 3399, 3449,
-        3499, 3549, 3599, 3549, 3479, 3399, 3319, 3229, 3129, 3049,
-        2999, 3079, 3159, 3199,
+        6099, 5999, 5996, 5855, 5999, 5899, 5789, 5749, 5665, 5749,
+        5741, 5725, 5745, 5699, 5649, 5639, 5363, 5200, 5245, 5343,
+        5645, 5699, 5699, 5289, 5699, 5199, 5153, 5099, 5099, 5118,
+        5119, 5052, 5099, 5099, 5002, 4999, 4999, 5099, 5099, 4999,
+        4899, 4899, 4899, 4899, 4899, 4852, 4799, 4799, 4799, 4799,
+        4799, 4799, 4799, 4799, 4799, 4799, 4799, 4799, 4799, 4799,
+        4799, 4799, 4799, 4799, 4799, 4799, 4799, 4899, 4899, 4899,
+        4899, 4899, 4899, 4899, 4899, 4899, 4899, 4899, 4899, 4899,
+        4899, 4899, 4899, 4949, 4899, 4899, 4899, 4949, 4899, 5049,
+        5049, 5049, 5049, 5049, 5049, 5049, 5049, 5049, 5049, 5049,
+        5049, 5049, 5049, 5049, 5049, 5049, 5045, 5045, 5045, 5045,
+        5045, 5045, 5045, 5053, 5099, 5045, 5045, 5045, 5045, 5045,
+        5045, 5045, 5045, 5045, 5099, 5045, 5049, 5099, 5099, 5099,
+        5049, 5049, 5049, 5099, 5099, 5099, 5099, 5099, 5099, 5099,
+        5099, 5099, 5099, 5099, 5099, 5199, 5249, 5249, 5249, 5249,
+        5249, 5351, 5255, 5255, 5255, 5255, 5249, 5249, 5149, 5145,
+        5149, 5149, 5145, 5149, 5129, 5139, 5149, 5149, 5145, 5145,
+        5149, 5149, 5145, 5149, 5149, 5149, 5139, 5102, 5095, 5095,
+        5099, 5099, 5099, 5099, 5099, 5099, 5099, 5099, 5099, 5099,
+        5099, 5099, 5099, 5099, 5099, 5103, 5099, 5099, 5099, 5099,
+        5099, 5099, 5099, 5099, 5099, 5099, 5099, 5139, 5099, 5119,
+        5099, 5099, 5099, 5099, 5099, 5099, 5099, 5103, 5103, 5099,
+        5099, 5099, 5099, 5099, 5099, 5099, 5099, 4949, 4949, 4949,
+        4949, 4949, 4949, 4949, 4949, 4949, 4749, 4749, 4749, 4749,
+        4949, 4949, 4949, 4949, 4949, 4949, 4949, 4749, 4749, 4749,
+        4749, 4749, 4749, 4749, 4749, 4749, 4749, 4949, 4949, 4949,
+        4949, 4949, 4949, 4949, 4949, 4949, 4949, 4949, 4949, 4949,
+        4949, 4849, 4849, 4849, 4849, 4849,
       ],
     },
   },

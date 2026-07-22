@@ -185,7 +185,7 @@ function RailTile({ m, active, onChange, sp, radius }) {
   )
 }
 
-export default function MarketplaceSwitcherV8({ items, activeId, onChange, progress }) {
+export default function MarketplaceSwitcherV8({ items, activeId, onChange, progress, showHint = true }) {
   const railRef = useRef(null)
   // the hint hides once the rail is scrolled to its far end
   const [atEnd, setAtEnd] = useState(false)
@@ -272,38 +272,40 @@ export default function MarketplaceSwitcherV8({ items, activeId, onChange, progr
 
       {/* right container: sticky black hint block — tap to page forward;
           fades away at the rail's far end. Overlays the rail's right edge and
-          follows the tiles' collapse morph. */}
-      <motion.button
-        type="button"
-        data-id="mp-scroll-hint"
-        aria-label="Show more marketplaces"
-        aria-hidden={atEnd}
-        onClick={pageForward}
-        animate={{ opacity: atEnd ? 0 : 1 }}
-        transition={{ duration: 0.2 }}
-        style={{ pointerEvents: atEnd ? 'none' : 'auto', height: hintH }}
-        className="absolute right-0 z-10 flex w-[40px] items-center justify-center"
-      >
-        {/* squircle shell — smooth left corners, square right edge (flush to screen) */}
-        <Squircle
-          as="span"
-          cornerRadius={radius}
-          cornerSmoothing={1}
-          topRightCornerRadius={0}
-          bottomRightCornerRadius={0}
-          data-id="mp-scroll-hint-shell"
-          className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-md"
+          follows the tiles' collapse morph. Hidden when `showHint` is false. */}
+      {showHint && (
+        <motion.button
+          type="button"
+          data-id="mp-scroll-hint"
+          aria-label="Show more marketplaces"
+          aria-hidden={atEnd}
+          onClick={pageForward}
+          animate={{ opacity: atEnd ? 0 : 1 }}
+          transition={{ duration: 0.2 }}
+          style={{ pointerEvents: atEnd ? 'none' : 'auto', height: hintH }}
+          className="absolute right-0 z-10 flex w-[40px] items-center justify-center"
         >
-          <motion.span
-            data-id="mp-scroll-hint-motion"
-            className="flex items-center justify-center"
-            animate={{ x: [0, 3, 0] }}
-            transition={HINT_NUDGE}
+          {/* squircle shell — smooth left corners, square right edge (flush to screen) */}
+          <Squircle
+            as="span"
+            cornerRadius={radius}
+            cornerSmoothing={1}
+            topRightCornerRadius={0}
+            bottomRightCornerRadius={0}
+            data-id="mp-scroll-hint-shell"
+            className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-md"
           >
-            <Chevrons />
-          </motion.span>
-        </Squircle>
-      </motion.button>
+            <motion.span
+              data-id="mp-scroll-hint-motion"
+              className="flex items-center justify-center"
+              animate={{ x: [0, 3, 0] }}
+              transition={HINT_NUDGE}
+            >
+              <Chevrons />
+            </motion.span>
+          </Squircle>
+        </motion.button>
+      )}
     </div>
   )
 }

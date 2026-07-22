@@ -11,6 +11,7 @@ import { motion, useMotionValue, useTransform } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
 import { SectionCard, Accordion, ProductCard, ComboGif } from '../../components/common'
 import BundleSheet from './BundleSheet'
+import BundleSheet1 from './BundleSheet1'
 import BundleContainer from './BundleContainer'
 import BundleShowcase from './BundleShowcase'
 import BundleShowcase5 from './BundleShowcase5'
@@ -161,7 +162,7 @@ function Hero({ images = [], dataId, controlsOpacity }) {
 
 /* ------------------------------------------------------------- main info - */
 
-function MainInfo({ product, dataId, bundleBanner, onPriceHistory }) {
+function MainInfo({ product, dataId, bundleBanner, onPriceHistory, lowestPriceTrigger = false }) {
   const {
     store, title, rating, ratingCount, price, originalPrice, discountPercent, vat,
     bestPriceWithOffers, bestsellerRankTop,
@@ -244,8 +245,9 @@ function MainInfo({ product, dataId, bundleBanner, onPriceHistory }) {
           <span data-id={d('price-vat')} className="pb-0.5 font-noontree text-[14px] font-normal leading-[18px] text-[#666D85]">
             {vat}
           </span>
-          {/* tertiary "Price history" — text-only, primary colour, inline after the price group */}
-          {onPriceHistory && (
+          {/* tertiary "Price history" — text-only, primary colour, inline after
+              the price group. Hidden when the lowest-price row is the trigger. */}
+          {onPriceHistory && !lowestPriceTrigger && (
             <button
               type="button"
               data-id={d('price-history')}
@@ -263,7 +265,9 @@ function MainInfo({ product, dataId, bundleBanner, onPriceHistory }) {
             Mega Deal
           </Squircle>
           <Squircle
-            as="span"
+            as={lowestPriceTrigger ? 'button' : 'span'}
+            type={lowestPriceTrigger ? 'button' : undefined}
+            onClick={lowestPriceTrigger ? onPriceHistory : undefined}
             cornerRadius={4}
             cornerSmoothing={1}
             data-id={d('lowest-price')}
@@ -274,6 +278,10 @@ function MainInfo({ product, dataId, bundleBanner, onPriceHistory }) {
             <span data-id={d('lowest-price-label')} className="font-noontree text-[14px] font-medium leading-[18px] tracking-[-0.14px] text-[#475067]">
               Lowest Price in 30 days
             </span>
+            {/* right chevron — opens the price-history sheet (variation 1) */}
+            {lowestPriceTrigger && (
+              <ChevronRight dataId={d('lowest-price-chevron')} className="h-4 w-4 shrink-0" color="#475067" />
+            )}
           </Squircle>
         </div>
         </div>
@@ -486,6 +494,8 @@ export default function PDPBody({
   comboStagger = 800,
   idPrefix = 'combo',
   onPriceHistory,
+  showBundle = true, // price-history variation hides the bundle/combo tag
+  lowestPriceTrigger = false, // variation 1: open history from the lowest-price row
 }) {
   const id = (s) => (idPrefix ? `${idPrefix}-${s}` : s)
   const [bundleOpen, setBundleOpen] = useState(false)
@@ -548,10 +558,11 @@ export default function PDPBody({
         product={product}
         dataId={id('main-info')}
         onPriceHistory={onPriceHistory}
+        lowestPriceTrigger={lowestPriceTrigger}
         bundleBanner={
-          variant === 3 || variant === 5 ? (
-            /* Variation 3 — bundle banner below Best Price (same 36px height),
-               left→right gradient, single line + serrated ticket */
+          showBundle && (variant === 1 || variant === 3 || variant === 5) ? (
+            /* Variations 1/3/5 — bundle banner below Best Price (same 36px
+               height), left→right gradient, single line + serrated ticket */
             <Squircle
               as="button"
               type="button"
@@ -594,7 +605,7 @@ export default function PDPBody({
       />
 
       {/* Bundle up & save (combo entry) */}
-      {variant === 2 ? (
+      {!showBundle ? null : variant === 2 ? (
         /* Variation 2 — gradient "Bundle & save" card (Figma "Bestseller") */
         <button
           type="button"
@@ -633,8 +644,8 @@ export default function PDPBody({
           </span>
           <ChevronRight dataId={id('bundle-chevron')} className="h-5 w-5" color="#0A4F4A" />
         </button>
-      ) : variant === 3 || variant === 5 ? null : (
-        /* Variation 1 — Figma Frame 2147238531 */
+      ) : variant !== 4 ? null : (
+        /* Variation 4 — plain white row (Figma Frame 2147238531) */
         <button
           type="button"
           data-id={id('bundle')}
@@ -794,7 +805,7 @@ export default function PDPBody({
             benefits={bundle.benefits}
             onViewAll={() => setSearchOpen(true)}
           />
-        ) : variant === 5 ? (
+        ) : variant === 1 || variant === 5 ? (
           <BundleShowcase5
             dataId={id('section-bundle')}
             items={bundle.items}
@@ -895,21 +906,32 @@ export default function PDPBody({
       </div>
       </div>
 
-      {/* Buy together and save — bottom sheet */}
-      <BundleSheet
-        open={bundleOpen}
-        onClose={() => setBundleOpen(false)}
-        items={bundle?.items ?? []}
-        savings={bundle?.savings}
-        viewAll={bundle?.viewAll}
-        onViewAll={() => {
-          setBundleOpen(false)
-          setSearchOpen(true)
-        }}
-        showComboIcon={variant !== 2}
-        rowCards={variant === 4}
-        dataId={id('bundle-sheet')}
-      />
+      {/* Buy together and save — bottom sheet. Variation 1 gets the Figma
+          "Buy as combo" redesign (gradient sheet + stacked combo cards). */}
+      {variant === 1 ? (
+        <BundleSheet1
+          open={bundleOpen}
+          onClose={() => setBundleOpen(false)}
+          items={bundle?.items ?? []}
+          savings={bundle?.savings}
+          dataId={id('bundle-sheet')}
+        />
+      ) : (
+        <BundleSheet
+          open={bundleOpen}
+          onClose={() => setBundleOpen(false)}
+          items={bundle?.items ?? []}
+          savings={bundle?.savings}
+          viewAll={bundle?.viewAll}
+          onViewAll={() => {
+            setBundleOpen(false)
+            setSearchOpen(true)
+          }}
+          showComboIcon={variant !== 2}
+          rowCards={variant === 4}
+          dataId={id('bundle-sheet')}
+        />
+      )}
 
       {/* Search / PLP — slides in from the right */}
       {plp && (

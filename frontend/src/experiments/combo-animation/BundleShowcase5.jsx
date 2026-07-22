@@ -28,10 +28,13 @@ function TicketRight() {
 
 function ShowcaseCard({ item, onQtyChange, onWishlist, dataId }) {
   const did = (s) => `${dataId}-${s}`
+  // Coupon copy: "AED20 cheaper with combo" → "₯20 combo savings"
+  const savingsAmount = item.coupon?.match(/AED\s*([\d.]+)/)?.[1]
   return (
-    <div data-id={dataId} className="flex w-[180px] min-w-[180px] shrink-0 flex-col rounded-2xl bg-white">
+    // Card width derives from the media ratio: 3:4.09 at the fixed 190px height.
+    <div data-id={dataId} className="flex w-[calc(190px*3/4.09)] min-w-[calc(190px*3/4.09)] shrink-0 flex-col rounded-2xl bg-white">
       {/* Product image */}
-      <div data-id={did('media')} className="relative flex h-[190px] items-center justify-center overflow-hidden rounded-[14px] bg-[#F2F3F7]">
+      <div data-id={did('media')} className="relative flex h-[190px] w-full items-center justify-center overflow-hidden rounded-[14px] bg-[#F2F3F7]">
         <img data-id={did('image')} src={item.image} alt="" aria-hidden="true" loading="lazy" decoding="async" className="h-[157px] w-auto object-contain" />
 
         {/* corner "N Products" banner */}
@@ -52,11 +55,11 @@ function ShowcaseCard({ item, onQtyChange, onWishlist, dataId }) {
       </div>
 
       {/* Detail */}
-      <div data-id={did('detail')} className="flex flex-col gap-2 px-2 py-2.5">
+      <div data-id={did('detail')} className="flex flex-col gap-2 px-1 py-2.5">
         <h3 data-id={did('title')} className="line-clamp-2 min-h-9 font-noontree text-[13px] font-medium leading-[18px] tracking-[-0.1px] text-[#212121]">
           {item.title}
         </h3>
-        <div data-id={did('pricing')} className="flex flex-col gap-2">
+        <div data-id={did('pricing')} className="flex flex-col gap-1">
           <span data-id={did('price')} className="inline-flex w-fit items-center gap-px font-noontree text-[16px] font-bold leading-[22px] tracking-[-0.15px] text-[#1D2539]">
             <Dirham />
             {item.price}
@@ -67,7 +70,7 @@ function ShowcaseCard({ item, onQtyChange, onWishlist, dataId }) {
               className="flex h-5 w-fit items-center justify-center whitespace-nowrap rounded px-1 font-noontree text-[12px] font-semibold leading-[18px] tracking-[-0.1px] text-[#0B623F]"
               style={{ background: '#E3FCF2', border: '0.5px dashed #CBF6E5' }}
             >
-              {withDirham(item.coupon)}
+              {withDirham(savingsAmount ? `AED${savingsAmount} combo savings` : item.coupon)}
             </span>
           )}
         </div>
@@ -93,8 +96,12 @@ export default function BundleShowcase5({
   // scales out across roughly its own width of scroll.
   const rootRef = useRef(null)
   const progress = useMotionValue(0)
-  const infoOpacity = useTransform(progress, [0, 0.35], [1, 0])
+  // Full opacity at rest → 0 exactly when the first card reaches the left edge
+  // (progress hits 1 when scrollLeft crosses the panel's width).
+  const infoOpacity = useTransform(progress, [0, 1], [1, 0])
   const infoScale = useTransform(progress, [0, 1], [1, 0.85])
+  // Parallax exit: the pinned panel slides left as the cards scroll over it.
+  const infoX = useTransform(progress, [0, 1], [0, -80])
 
   useEffect(() => {
     const el = rootRef.current
@@ -117,14 +124,14 @@ export default function BundleShowcase5({
       {/* Info panel — soft ellipse wash; sticky-left, fades/scales on scroll */}
       <motion.div
         data-id={did('info')}
-        style={{ background: 'radial-gradient(130% 135% at 8% 58%, #F1F4FE 0%, #FFFFFF 62%)', opacity: infoOpacity, scale: infoScale, transformOrigin: 'left center' }}
+        style={{ opacity: infoOpacity, scale: infoScale, x: infoX, transformOrigin: 'left center' }}
         className="sticky left-0 z-0 flex w-[164px] min-w-[164px] shrink-0 flex-col gap-4 overflow-hidden py-8 pl-5 pr-5"
       >
         <div data-id={did('listings')} className="flex flex-1 flex-col gap-5">
           <ComboGif dataId={did('icon')} className="h-8 w-8" />
 
           <div data-id={did('copy')} className="flex flex-col gap-1">
-            <span data-id={did('title')} className="font-noontree text-[18px] font-bold leading-[24px] tracking-[-0.2px] text-[#082F8C]">
+            <span data-id={did('title')} className="font-noontree text-[18px] font-bold leading-[22px] tracking-[-0.2px] text-[#082F8C]">
               Get more<br />for less
             </span>
             <span data-id={did('subtitle')} className="font-noontree text-[12px] font-medium leading-[18px] tracking-[-0.1px] text-[#082F8C]">
