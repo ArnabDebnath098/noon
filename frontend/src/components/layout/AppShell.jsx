@@ -262,13 +262,14 @@ export default function AppShell({ children, className = '' }) {
         // containing block for fixed children (bottom nav, banner) so they pin
         // to this frame, not the viewport
         transform: 'translateZ(0)',
-        // Top safe area: real env() inset in a standalone (installed) app so the
-        // header clears the iOS status-bar clock; 0 in a plain browser tab (its
-        // chrome owns that region). Bottom safe area is intentionally OFF — the
-        // frame fills to the physical screen bottom (see `fill` above) and
-        // surfaces run edge-to-edge with no home-indicator inset.
+        // Safe-area insets (real env() only in a standalone install; 0 in a
+        // browser tab whose chrome owns those regions). The frame itself fills
+        // to the physical screen edges (see `fill`), so a surface's BACKGROUND
+        // bleeds under the status bar / home indicator (no white strip) while
+        // these insets pad its CONTENT inward so text/icons/tap targets stay
+        // clear of the status-bar clock (--sat) and home indicator (--sab).
         '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
-        '--sab': '0px',
+        '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
       }}
     >
       {children}
