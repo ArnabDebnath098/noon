@@ -102,60 +102,6 @@ function useStandalone() {
   return standalone
 }
 
-// The exact VISIBLE viewport height, straight from the browser. CSS units
-// (100vh/100dvh) mismeasure on mobile — Safari sizes them to the toolbar-hidden
-// viewport, so a bottom-pinned surface floats above the real bottom with a
-// white gap under it. visualViewport.height is always the currently-visible
-// area, so sizing the frame to it makes the bottom edge land exactly on-screen.
-function useViewportHeight() {
-  const read = () =>
-    (typeof window !== 'undefined' && window.visualViewport?.height) ||
-    (typeof window !== 'undefined' ? window.innerHeight : 0)
-  const [h, setH] = useState(read)
-  useEffect(() => {
-    const vv = window.visualViewport
-    const on = () => setH(read())
-    on()
-    vv?.addEventListener('resize', on)
-    window.addEventListener('resize', on)
-    window.addEventListener('orientationchange', on)
-    return () => {
-      vv?.removeEventListener('resize', on)
-      window.removeEventListener('resize', on)
-      window.removeEventListener('orientationchange', on)
-    }
-  }, [])
-  return h
-}
-
-// The full PHYSICAL screen height. In an installed (standalone) iOS app the
-// webview is truly full screen, but every relative height there computes short
-// of it — 100dvh, fixed inset:0 AND visualViewport.height all land above the
-// real bottom (visualViewport excludes the status-bar strip), leaving a band of
-// the page background below the frame. screen.height is the one value that
-// reports the true edge-to-edge height, so the standalone frame is sized to it
-// as explicit px — forcing its bottom onto the physical screen bottom. Read as
-// the larger of screen width/height so a landscape flip still gives the long
-// edge (screen.height doesn't reliably swap on orientation change).
-function useScreenHeight() {
-  const read = () =>
-    typeof window !== 'undefined' && window.screen
-      ? Math.max(window.screen.height || 0, window.screen.width || 0)
-      : 0
-  const [h, setH] = useState(read)
-  useEffect(() => {
-    const on = () => setH(read())
-    on()
-    window.addEventListener('resize', on)
-    window.addEventListener('orientationchange', on)
-    return () => {
-      window.removeEventListener('resize', on)
-      window.removeEventListener('orientationchange', on)
-    }
-  }, [])
-  return h
-}
-
 /**
  * AppShell — the phone-width frame every page/experiment composes into.
  *
@@ -169,8 +115,6 @@ function useScreenHeight() {
 export default function AppShell({ children, className = '' }) {
   const framed = useFramed()
   const standalone = useStandalone()
-  const vh = useViewportHeight()
-  const screenH = useScreenHeight()
 
   // Native-like viewport lock (mobile only). The app is a fixed 100dvh frame
   // that scrolls internally, so the DOCUMENT must never pan — but iOS scrolls
@@ -239,35 +183,23 @@ export default function AppShell({ children, className = '' }) {
     )
   }
 
-  // Vertical fill strategy differs by context:
-  // - Standalone (installed to home screen): edge-to-edge, no browser chrome,
-  //   but every relative height (100dvh / fixed inset:0 / visualViewport.height)
-  //   computes SHORT of the real screen and leaves a band of page background
-  //   below the frame. screen.height is the only value that reports the true
-  //   physical height, so pin top:0 and set that as an explicit px height —
-  //   forcing the frame bottom onto the physical screen bottom.
-  // - Browser tab: the toolbar occupies part of the screen and 100vh/100dvh
-  //   overshoot it, so size to the measured VISIBLE height (visualViewport) and
-  //   pin only the top; the bottom then lands on the visible-area bottom.
-  const fill = standalone
-    ? { top: 0, height: screenH ? `${screenH}px` : '100dvh' }
-    : { top: 0, height: vh ? `${vh}px` : '100dvh' }
-
+  // Mobile frame: a plain 100dvh box. Without viewport-fit=cover (see
+  // index.html) iOS keeps the whole webview INSIDE the safe area, so 100dvh is
+  // the real visible height on both a standalone install and a browser tab —
+  // the frame fills it exactly, with no under-home-indicator region to leave a
+  // white strip and no measured-height machinery needed.
   return (
     <div
       data-id="app-frame"
-      className={`fixed inset-x-0 mx-auto flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
+      className={`fixed inset-x-0 top-0 mx-auto flex h-[100dvh] w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
       style={{
-        ...fill,
         // containing block for fixed children (bottom nav, banner) so they pin
         // to this frame, not the viewport
         transform: 'translateZ(0)',
-        // Safe-area insets (real env() only in a standalone install; 0 in a
-        // browser tab whose chrome owns those regions). The frame itself fills
-        // to the physical screen edges (see `fill`), so a surface's BACKGROUND
-        // bleeds under the status bar / home indicator (no white strip) while
-        // these insets pad its CONTENT inward so text/icons/tap targets stay
-        // clear of the status-bar clock (--sat) and home indicator (--sab).
+        // Safe-area insets: with no viewport-fit=cover these env() values are 0
+        // (iOS already excludes the status bar / home indicator from the
+        // webview), so content simply fills the safe viewport. Kept wired to
+        // env() so an explicit cover setup would still pad content correctly.
         '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
         '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
       }}

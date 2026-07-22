@@ -3,14 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon-192.png?v=3" />
-    <!-- Mobile-first: lock viewport to device width. viewport-fit=cover lets an
-         INSTALLED (standalone) app run edge-to-edge like a native app — iOS
-         letterboxes the bottom safe-area otherwise, and env() insets only ever
-         report non-zero with it. In a regular browser tab iOS reports spurious
-         bottom insets with cover (pushed-up sheets / gaps), so AppShell zeroes
-         --sat/--sab there and only wires them to env() when standalone. The
-         desktop device frame supplies its own faux insets. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Mobile-first: lock viewport to device width. Intentionally NO
+         viewport-fit=cover — with cover, iOS extends the standalone webview
+         under the home indicator and any imperfect fill leaves a white strip
+         there. Without it, iOS keeps the whole app inside the safe area (no
+         manual insets, no strip, no cropping). The desktop device frame draws
+         its own faux status bar / home indicator. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <!-- tints the mobile browser status bar to the app's top gradient blue -->
     <meta name="theme-color" content="#D4EFF6" />
 
