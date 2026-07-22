@@ -170,7 +170,11 @@ function FoodCrossSellBanner({ term, onShopNow }) {
       animate={{ y: 0 }}
       exit={{ y: '120%' }}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-x-0 bottom-0 z-[60]"
+      className="absolute inset-x-0 bottom-0 z-[60] rounded-t-[20px]"
+      // same gradient behind the squircle so the sheet's bottom padding is
+      // always pink to the screen edge (the squircle clip can leave the pad
+      // region uncovered, which showed the SLP white through)
+      style={{ background: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)' }}
     >
       {/* squircle clip on a static child — the slide animation stays on the
           wrapper above (a motion Squircle would freeze its corner path) */}
@@ -182,7 +186,7 @@ function FoodCrossSellBanner({ term, onShopNow }) {
         bottomRightCornerRadius={0}
         cornerSmoothing={1}
         className="flex items-center gap-3 px-4 pt-4"
-        style={{ background: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)', paddingBottom: 'calc(16px + var(--sab, 0px))' }}
+        style={{ background: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)', paddingBottom: 'calc(24px + var(--sab, 0px))' }}
       >
         {/* image box (Frame 2147241798) — nested squircles: the white outer
             shape reads as the 1px border, the inner one clips the photo */}
@@ -506,6 +510,7 @@ export default function SearchExperiment() {
       />
       <BottomNav
         dataId="search-bottom-nav"
+        bottomPad={8}
         accent={{
           from: '#FF3B63',
           to: '#EB0030',

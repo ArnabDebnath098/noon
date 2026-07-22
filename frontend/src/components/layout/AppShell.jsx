@@ -194,15 +194,12 @@ export default function AppShell({ children, className = '' }) {
         // and the page white shows through). inset:0 derives height from the
         // actual layout viewport, so the frame always reaches the screen edge.
         //
-        // Native edge-to-edge safe areas: bottom surfaces blend their own
-        // background into the home-bar inset (pink banner, white nav), padding
-        // their CONTENT by --sab. Real env() insets only in a standalone
-        // (installed) app; in a browser tab both are 0 (the chrome owns those
-        // regions). transform makes the frame the containing block for its
-        // fixed children, so bottom navs pin to the frame's bottom edge.
+        // Top safe area: real env() inset in a standalone app so headers clear
+        // the status bar. Bottom safe area is OFF (--sab: 0) — surfaces run all
+        // the way to the screen edge with no home-bar inset padding.
         transform: 'translateZ(0)',
         '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
-        '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
+        '--sab': '0px',
       }}
     >
       {children}

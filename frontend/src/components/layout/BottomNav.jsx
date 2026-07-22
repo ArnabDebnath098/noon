@@ -120,6 +120,9 @@ export default function BottomNav({
   // in-place expansion: tapping the leading chip morphs it into a panel of all
   // items instead of calling onLeading. { items, activeId, onSelect, renderIcon }
   leadingExpand,
+  // extra bottom padding (px) added below the tab row, on top of the --sab
+  // safe-area inset — lets a variation sit the row slightly off the edge
+  bottomPad = 0,
 }) {
   const [active, setActive] = useState('home')
   const [navOpen, setNavOpen] = useState(false)
@@ -518,7 +521,7 @@ export default function BottomNav({
     <nav
       data-id={dataId}
       className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-md -translate-x-1/2 flex-col border-t border-[#F2F3F7] bg-white"
-      style={{ paddingBottom: 'var(--sab, 0px)' }}
+      style={{ paddingBottom: `calc(var(--sab, 0px) + ${bottomPad}px)` }}
     >
       <div className="relative flex h-[64px]">
         {/* optional "All" entry — opens the marketplaces sheet */}

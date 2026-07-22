@@ -318,7 +318,7 @@ export function FoodBottomNav() {
     <nav
       data-id="food-bottom-nav"
       className="flex w-full shrink-0 flex-col border-t bg-white"
-      style={{ borderColor: 'rgba(2, 6, 12, 0.08)', paddingBottom: 'var(--sab, 0px)' }}
+      style={{ borderColor: 'rgba(2, 6, 12, 0.08)', paddingBottom: 'calc(24px + var(--sab, 0px))' }}
     >
       <div className="flex pb-1 pt-2">
         {FOOD_TABS.map((t, i) => {
