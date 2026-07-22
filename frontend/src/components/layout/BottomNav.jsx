@@ -1,6 +1,7 @@
 // BottomNav — sticky primary tab bar with a sliding active marker (Framer
 // Motion layoutId). Self-contained (internal active state); safe-area aware —
-// the bottom strip is left empty for the device's own home indicator.
+// the white background extends into the home-bar inset (--sab padding) while
+// the 64px tab row sits above it, like a native tab bar.
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Squircle } from 'corner-smoothing'
@@ -516,10 +517,10 @@ export default function BottomNav({
   return (
     <nav
       data-id={dataId}
-      className="fixed bottom-0 left-1/2 z-30 flex h-[85px] w-full max-w-md -translate-x-1/2 flex-col border-t border-[#F2F3F7] bg-white"
+      className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-md -translate-x-1/2 flex-col border-t border-[#F2F3F7] bg-white"
       style={{ paddingBottom: 'var(--sab, 0px)' }}
     >
-      <div className="relative flex flex-1">
+      <div className="relative flex h-[64px]">
         {/* optional "All" entry — opens the marketplaces sheet */}
         {onAll && (
           <>
@@ -571,9 +572,6 @@ export default function BottomNav({
           )
         })}
       </div>
-
-      {/* bottom strip stays empty — the device draws its own home indicator */}
-      <div className="h-[21px]" />
     </nav>
   )
 }

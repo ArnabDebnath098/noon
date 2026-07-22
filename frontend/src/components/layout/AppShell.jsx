@@ -161,31 +161,20 @@ export default function AppShell({ children, className = '' }) {
             data-id="app-frame"
             cornerRadius={PHONE_RADIUS}
             cornerSmoothing={1}
-            className="relative flex flex-col overflow-hidden bg-white"
+            className={`relative flex flex-col overflow-hidden bg-white ${className}`}
             style={{
               width: PHONE_W,
               height: PHONE_H,
               maxHeight: 'calc(100dvh - 48px)',
+              transform: 'translateZ(0)', // containing block for fixed children
+              // faux safe-area insets — surfaces run edge-to-edge and blend
+              // their own background into the inset (pink banner, white nav),
+              // padding their CONTENT by --sat/--sab like native apps
+              '--sat': `${SAFE_TOP}px`,
+              '--sab': `${SAFE_BOTTOM}px`,
             }}
           >
-            {/* the app viewport ends ABOVE the bottom safe area — the frame's
-                white shows through the reserved home-bar gap natively, so no
-                surface ever draws under the indicator. The transform makes
-                this the containing block for fixed children (bottom navs pin
-                to its inset bottom edge). The top stays edge-to-edge; --sat
-                pads headers under the status bar. */}
-            <div
-              data-id="app-viewport"
-              className={`relative flex min-h-0 flex-1 flex-col overflow-hidden ${className}`}
-              style={{
-                transform: 'translateZ(0)',
-                '--sat': `${SAFE_TOP}px`,
-                '--sab': '0px',
-              }}
-            >
-              {children}
-            </div>
-            <div aria-hidden="true" className="shrink-0" style={{ height: SAFE_BOTTOM }} />
+            {children}
             <StatusBar />
             <HomeIndicator />
           </Squircle>
@@ -203,18 +192,16 @@ export default function AppShell({ children, className = '' }) {
         data-id="app-frame"
         className={`relative flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
         style={{
-          // Native bottom safe area: in a standalone (installed) app the frame
-          // stops ABOVE the OS home-bar inset — the white document shows
-          // through the reserved gap and nothing draws under the indicator,
-          // so --sab is always 0 for content. The top stays edge-to-edge with
-          // --sat padding headers under the status bar. In a browser tab both
-          // insets are 0 (the chrome owns those regions). The transform makes
-          // the frame the containing block for fixed children, so bottom navs
-          // pin to its (inset) bottom edge, not the screen edge.
-          height: standalone ? 'calc(100dvh - env(safe-area-inset-bottom, 0px))' : '100dvh',
+          // Native edge-to-edge safe areas: the frame fills the screen and
+          // bottom surfaces blend their own background into the home-bar
+          // inset (pink banner, white nav), padding their CONTENT by --sab.
+          // Real env() insets only in a standalone (installed) app; in a
+          // browser tab both are 0 (the chrome owns those regions). The
+          // transform makes the frame the containing block for fixed children.
+          height: '100dvh',
           transform: 'translateZ(0)',
           '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
-          '--sab': '0px',
+          '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
         }}
       >
         {children}
