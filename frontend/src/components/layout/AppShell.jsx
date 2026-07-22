@@ -185,27 +185,27 @@ export default function AppShell({ children, className = '' }) {
 
   return (
     <div
-      data-id="app-shell"
-      className="flex min-h-[100dvh] w-full justify-center bg-white"
+      data-id="app-frame"
+      className={`fixed inset-0 mx-auto flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
+      style={{
+        // Fill the REAL viewport box via fixed inset:0 rather than 100dvh —
+        // iOS standalone apps miscompute dvh/vh (the frame ends up shorter
+        // than the screen, so a fixed bottom nav floats above the true bottom
+        // and the page white shows through). inset:0 derives height from the
+        // actual layout viewport, so the frame always reaches the screen edge.
+        //
+        // Native edge-to-edge safe areas: bottom surfaces blend their own
+        // background into the home-bar inset (pink banner, white nav), padding
+        // their CONTENT by --sab. Real env() insets only in a standalone
+        // (installed) app; in a browser tab both are 0 (the chrome owns those
+        // regions). transform makes the frame the containing block for its
+        // fixed children, so bottom navs pin to the frame's bottom edge.
+        transform: 'translateZ(0)',
+        '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
+        '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
+      }}
     >
-      <div
-        data-id="app-frame"
-        className={`relative flex w-full max-w-md flex-col overflow-hidden bg-white ${className}`}
-        style={{
-          // Native edge-to-edge safe areas: the frame fills the screen and
-          // bottom surfaces blend their own background into the home-bar
-          // inset (pink banner, white nav), padding their CONTENT by --sab.
-          // Real env() insets only in a standalone (installed) app; in a
-          // browser tab both are 0 (the chrome owns those regions). The
-          // transform makes the frame the containing block for fixed children.
-          height: '100dvh',
-          transform: 'translateZ(0)',
-          '--sat': standalone ? 'env(safe-area-inset-top, 0px)' : '0px',
-          '--sab': standalone ? 'env(safe-area-inset-bottom, 0px)' : '0px',
-        }}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   )
 }
