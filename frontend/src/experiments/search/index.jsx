@@ -186,7 +186,7 @@ function FoodCrossSellBanner({ term, onShopNow }) {
         bottomRightCornerRadius={0}
         cornerSmoothing={1}
         className="flex items-center gap-3 px-4 pt-4"
-        style={{ background: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)', paddingBottom: 'calc(24px + var(--sab, 0px))' }}
+        style={{ background: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)', paddingBottom: 'calc(24px + 12px + var(--sab, 0px))' }}
       >
         {/* image box (Frame 2147241798) — nested squircles: the white outer
             shape reads as the 1px border, the inner one clips the photo */}

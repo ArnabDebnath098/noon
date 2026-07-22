@@ -314,7 +314,7 @@ export default function BottomNav({
         className={`fixed bottom-0 left-1/2 ${navOpen ? 'z-50' : 'z-30'} flex w-full max-w-md -translate-x-1/2 items-center gap-3 px-4`}
         // hug the bottom like a native tab bar: a small 10px gap on mobile,
         // and the frame's home-indicator inset (--sab) on web — whichever wins
-        style={{ paddingTop: 10, paddingBottom: 'max(10px, var(--sab, 0px))' }}
+        style={{ paddingTop: 10, paddingBottom: 'calc(max(10px, var(--sab, 0px)) + 12px)' }}
       >
         {/* white fade behind the floating bar — spans up past the top and down
             through the safe area (transparent at top → white by 80%) */}
@@ -521,7 +521,7 @@ export default function BottomNav({
     <nav
       data-id={dataId}
       className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-md -translate-x-1/2 flex-col border-t border-[#F2F3F7] bg-white"
-      style={{ paddingBottom: `calc(var(--sab, 0px) + ${bottomPad}px)` }}
+      style={{ paddingBottom: `calc(var(--sab, 0px) + 12px + ${bottomPad}px)` }}
     >
       <div className="relative flex h-[64px]">
         {/* optional "All" entry — opens the marketplaces sheet */}
