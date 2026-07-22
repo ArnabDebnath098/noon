@@ -128,62 +128,6 @@ function useViewportHeight() {
   return h
 }
 
-// TEMP DIAGNOSTIC — remove after debugging the standalone bottom gap.
-function DebugHUD() {
-  const [info, setInfo] = useState(null)
-  useEffect(() => {
-    const probe = document.createElement('div')
-    probe.style.cssText =
-      'position:fixed;bottom:0;left:0;height:env(safe-area-inset-bottom,0px);width:0;'
-    document.body.appendChild(probe)
-    const sat = document.createElement('div')
-    sat.style.cssText =
-      'position:fixed;top:0;left:0;height:env(safe-area-inset-top,0px);width:0;'
-    document.body.appendChild(sat)
-    const read = () =>
-      setInfo({
-        standalone:
-          window.matchMedia('(display-mode: standalone)').matches
-            ? 'dm'
-            : window.navigator.standalone === true
-              ? 'nav'
-              : 'NO',
-        inner: window.innerHeight,
-        vv: Math.round(window.visualViewport?.height || 0),
-        screen: window.screen.height,
-        sab: probe.offsetHeight,
-        sat: sat.offsetHeight,
-      })
-    read()
-    window.visualViewport?.addEventListener('resize', read)
-    return () => {
-      window.visualViewport?.removeEventListener('resize', read)
-      probe.remove()
-      sat.remove()
-    }
-  }, [])
-  if (!info) return null
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 4,
-        left: 4,
-        zIndex: 99999,
-        background: 'rgba(255,0,0,0.85)',
-        color: '#fff',
-        font: '11px/1.3 monospace',
-        padding: '4px 6px',
-        borderRadius: 4,
-        pointerEvents: 'none',
-        whiteSpace: 'pre',
-      }}
-    >
-      {`standalone:${info.standalone}\ninner:${info.inner} vv:${info.vv}\nscreen:${info.screen}\nsat:${info.sat} sab:${info.sab}`}
-    </div>
-  )
-}
-
 /**
  * AppShell — the phone-width frame every page/experiment composes into.
  *
@@ -298,7 +242,6 @@ export default function AppShell({ children, className = '' }) {
       }}
     >
       {children}
-      <DebugHUD />
     </div>
   )
 }
