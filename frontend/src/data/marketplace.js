@@ -21,7 +21,7 @@ import noonYellowLogo from '../assets/marketplace/noon-yellow.svg'
 import foodWhiteLogo from '../assets/marketplace/food-white.svg'
 import payLogo from '../assets/marketplace/pay.svg'
 
-const AIRPODS =
+export const AIRPODS =
   'https://f.nooncdn.com/p/pzsku/Z00A3C6B2FA70477424D8Z/45/_/1773140636/6ad93409-c794-4938-93a1-3f94284436a7.jpg'
 const TV =
   'https://f.nooncdn.com/p/pzsku/ZA5110FCBA70068D0481FZ/45/_/1771404113/b33985fd-ff43-4915-9da6-8246275b41db.jpg'
