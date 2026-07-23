@@ -13,13 +13,14 @@ import PromoBanner from '../marketplace-switcher/sections/PromoBanner'
 import CategoryGrid from '../marketplace-switcher/sections/CategoryGrid'
 import ProductRail from '../marketplace-switcher/sections/ProductRail'
 import CombosSection from '../marketplace-switcher/sections/CombosSection'
-import { marketplaces, address, categories, bestPicks, mobileDeals, AIRPODS } from '../../data/marketplace'
+import { marketplaces, address, categories, bestPicks, mobileDeals } from '../../data/marketplace'
 import skyClouds from '../../assets/marketplace/sky-clouds.png'
 import FoodSearchResults, { FoodBottomNav } from './FoodSearch'
 import shawarmaImg from '../../assets/marketplace/shawarma.png'
 import noonWordmark from '../../assets/marketplace/noon.svg'
 import foodWordmark from '../../assets/marketplace/food.svg'
-import xsUmbrella from '../../assets/marketplace/xs-umbrella.png'
+import xsUmbrella from '../../assets/marketplace/xs-umbrella-red.png'
+import xsUmbrellaAlt from '../../assets/marketplace/xs-umbrella.png'
 import xsAlbaik from '../../assets/marketplace/xs-albaik.png'
 import xsYusufBhai from '../../assets/marketplace/xs-yusuf-bhai.png'
 import xsShoes from '../../assets/marketplace/xs-shoes.png'
@@ -58,7 +59,7 @@ const MINUTES_TERMS = ['cut fruit', 'milk', 'bread', 'egg', 'banana', 'grocery',
 // for the banner tile. `fit` is 'contain' for logos (padded) and 'cover' for
 // product photos (fills the tile). Matched before the generic keyword lists.
 const CROSS_SELL_ITEMS = [
-  { keys: ['umbrella'], dest: 'noon', img: xsUmbrella, fit: 'cover' },
+  { keys: ['umbrella'], dest: 'noon', img: xsUmbrella, fit: 'contain' },
   { keys: ['office chair', 'guitar'], dest: 'noon', img: null, fit: 'cover' },
   { keys: ['shoes', 'shoe', 'shies', 'sneaker'], dest: 'noon', img: xsShoes, fit: 'cover' },
   { keys: ['creatine'], dest: 'minutes', img: xsCreatine, fit: 'cover' },
@@ -156,7 +157,22 @@ const AIRPODS_ITEM = {
   eta: '15 Mins',
   variants: 4,
 }
-const NOON_RESULTS = Array.from({ length: 6 }, () => AIRPODS_ITEM)
+// The noon results grid is umbrella stock — each card cycles the two umbrella
+// photos and carries its own product name (the rest of the demo fields stay).
+const UMBRELLA_IMAGES = [xsUmbrella, xsUmbrellaAlt]
+const UMBRELLA_NAMES = [
+  'Automatic Windproof Travel Umbrella',
+  'Large Golf Umbrella Double Canopy',
+  'Compact Folding Umbrella Rain & Sun',
+  'UV Protection Sun Parasol Umbrella',
+  'Reverse Inverted Umbrella C-Handle',
+  'Portable Mini Pocket Umbrella',
+]
+const NOON_RESULTS = UMBRELLA_NAMES.map((title, i) => ({
+  ...AIRPODS_ITEM,
+  title,
+  thumb: UMBRELLA_IMAGES[i % UMBRELLA_IMAGES.length],
+}))
 
 /* dirham glyph — the small "AED" prefix rendered in the design's tabular style */
 function Dirham({ className = '' }) {
@@ -386,14 +402,16 @@ function NoonFoodMark({ className = '', color = '#FFFFFF' }) {
  * subtitle, full-width primary button). */
 const CROSS_SELL_THEMES = {
   noon: {
-    banner: '#0F61FF',
+    banner: '#FFFFFF',
     tabInk: '#2122B8',
-    imageBg: '#EBF4FF',
+    tabBody: '#0F61FF',
+    tabText: '#FFFFFF',
+    imageBg: '#D6E9FF',
     glyph: '#0F61FF',
-    titleColor: '#FFFFFF',
-    subColor: 'rgba(255, 255, 255, 0.8)',
+    titleColor: INK,
+    subColor: MUTED,
     destName: 'noon',
-    button: { bg: '#FFFFFF', text: '#1D2539' },
+    button: { bg: '#0F61FF', text: '#FFFFFF' },
   },
   food: {
     banner: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)',
@@ -420,13 +438,13 @@ const CROSS_SELL_THEMES = {
 /* Quick-search tab that notches out of the banner's top edge (Figma svg).
  * The tab body stays a constant off-white; the flaps + label take the
  * destination-brand ink so the tab reads on any banner colour. */
-function QuickSearchTab({ color }) {
+function QuickSearchTab({ color, body = '#F2F3F7', text = color }) {
   return (
     <svg data-id="search-cross-tab" width="104" viewBox="0 0 83 19" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quick search">
       <path d="M82.8347 5.43321H78.4102L78.9432 3.73973L78.9719 3.64467C79.1488 3.13438 79.6149 2.77167 80.1647 2.77167C80.5543 2.77167 80.9033 2.95427 81.1352 3.24444C81.1447 3.25195 81.1519 3.26445 81.1567 3.27446L82.8347 5.43321Z" fill={color} />
       <path d="M0.166016 5.43321H4.59058L4.05753 3.73973L4.02884 3.64467C3.85195 3.13438 3.38583 2.77167 2.83605 2.77167C2.44642 2.77167 2.09743 2.95427 1.86556 3.24444C1.856 3.25195 1.84883 3.26445 1.84405 3.27446L0.166016 5.43321Z" fill={color} />
-      <path d="M81 3.23419C80.7689 2.94889 80.4211 2.76935 80.0328 2.76935C79.4848 2.76935 79.0203 3.12598 78.844 3.62771L78.8154 3.72117L78.2842 5.38625L75.7804 13.2542C74.8036 16.3236 72.0258 18.3994 68.8955 18.3994H14.1045C10.9742 18.3994 8.19638 16.3236 7.21964 13.2542L4.71583 5.38625L4.18458 3.72117L4.15599 3.62771C3.9797 3.12598 3.51515 2.76935 2.96722 2.76935C2.5789 2.76935 2.23108 2.94889 2 3.23419L2.57175 2.50864C3.12445 1.80769 3.95349 1.39941 4.83018 1.39941L78.1698 1.39941C79.0465 1.39941 79.8755 1.80769 80.4282 2.50864L81 3.23419Z" fill="#F2F3F7" />
-      <path d="M21.536 12.8997C19.84 12.8997 18.648 11.6997 18.648 10.0117C18.648 8.30771 19.832 7.10771 21.512 7.10771C23.2 7.10771 24.384 8.31571 24.384 10.0117C24.384 10.7557 24.16 11.3957 23.76 11.8917L24.32 12.4597L23.632 13.1397L23.024 12.5237C22.6 12.7637 22.096 12.8997 21.536 12.8997ZM19.768 10.0117C19.768 11.1157 20.496 11.8997 21.536 11.8997C21.8 11.8997 22.048 11.8437 22.264 11.7477L21.568 11.0437L22.272 10.3797L22.984 11.0997C23.16 10.7957 23.264 10.4277 23.264 10.0117C23.264 8.89971 22.544 8.10771 21.512 8.10771C20.488 8.10771 19.768 8.89971 19.768 10.0117ZM27.6265 12.8037L27.5785 12.2677C27.3145 12.6757 26.9065 12.8997 26.4025 12.8997C25.4505 12.8997 24.9065 12.3397 24.9145 11.0677V8.80371H25.9705V10.8517C25.9705 11.6597 26.2665 11.8997 26.7145 11.9077C27.2665 11.9157 27.5625 11.5637 27.5625 10.8997V8.80371H28.6185V12.8037H27.6265ZM29.4473 12.8037V8.80371H30.5033V12.8037H29.4473ZM29.3673 7.54771C29.3673 7.21971 29.6473 6.93971 29.9753 6.93971C30.3033 6.93971 30.5833 7.21971 30.5833 7.54771C30.5833 7.87571 30.3033 8.15571 29.9753 8.15571C29.6473 8.15571 29.3673 7.87571 29.3673 7.54771ZM33.2551 12.8997C31.9991 12.8997 31.1111 12.0277 31.1111 10.8037C31.1111 9.57971 31.9911 8.70771 33.2391 8.70771C34.0391 8.70771 34.7511 9.12371 35.0551 9.85971L34.0631 10.2117C33.9111 9.89971 33.5751 9.69971 33.1911 9.69971C32.5991 9.69971 32.1911 10.1557 32.1911 10.8037C32.1911 11.4517 32.6071 11.9077 33.2071 11.9077C33.5911 11.9077 33.9271 11.6917 34.0791 11.3557L35.0791 11.7077C34.7671 12.4677 34.0631 12.8997 33.2551 12.8997ZM35.5443 12.8037V7.20371H36.6003V10.3077L37.9683 8.80371H39.2243L37.7123 10.4917L39.3443 12.8037H38.1043L37.0403 11.2437L36.6003 11.7317V12.8037H35.5443ZM42.9512 12.8997C42.1752 12.8997 41.5272 12.5477 41.2392 11.9077L42.1432 11.4917C42.3032 11.7477 42.5832 11.9637 42.9512 11.9637C43.3032 11.9637 43.5032 11.8597 43.5032 11.6677C43.5032 11.4757 43.3352 11.4037 43.0712 11.3397L42.7032 11.2437C41.9352 11.0437 41.4632 10.5717 41.4632 9.99571C41.4632 9.17971 42.0152 8.70771 42.9832 8.70771C43.7272 8.70771 44.3832 9.07571 44.5592 9.59571L43.6872 9.99571C43.6152 9.77971 43.2712 9.63571 42.9832 9.63571C42.6952 9.63571 42.5352 9.77171 42.5352 9.97971C42.5352 10.1157 42.6872 10.2037 42.9672 10.2677L43.4872 10.3957C44.2632 10.5877 44.5672 11.1877 44.5672 11.6837C44.5672 12.4117 43.8792 12.8997 42.9512 12.8997ZM46.8398 12.8997C45.6558 12.8997 44.8158 12.0357 44.8158 10.8037C44.8158 9.57171 45.6798 8.70771 46.8958 8.70771C47.9438 8.70771 48.8478 9.56371 48.8478 11.0837H45.9198C45.9678 11.6277 46.4398 11.9557 46.9518 11.9557C47.3918 11.9557 47.6558 11.7477 47.8078 11.4517L48.7518 11.8197C48.4078 12.4997 47.7838 12.8997 46.8398 12.8997ZM45.9758 10.2997H47.7038C47.6558 9.79571 47.2078 9.60371 46.8638 9.60371C46.5198 9.60371 46.0318 9.79571 45.9758 10.2997ZM51.7275 12.8037L51.7115 12.3397C51.5035 12.6997 51.1435 12.8997 50.6075 12.8997C49.6475 12.8997 49.0955 12.4597 49.0955 11.6757C49.0955 10.8197 49.6955 10.3877 50.7275 10.3877H51.6715C51.5995 9.90771 51.3755 9.62771 50.9355 9.62771C50.5915 9.62771 50.3115 9.77171 50.1195 10.0837L49.1915 9.76371C49.4075 9.25171 49.9275 8.70771 50.9355 8.70771C52.1515 8.70771 52.7515 9.44371 52.7355 10.5877L52.7115 12.8037H51.7275ZM50.1755 11.6437C50.1755 11.8757 50.3995 12.0197 50.7835 12.0197C51.3035 12.0197 51.6955 11.5877 51.6955 11.1717H51.0955C50.3995 11.1717 50.1755 11.3477 50.1755 11.6437ZM53.4271 12.8037V8.80371H54.4831V9.53971C54.8111 9.03571 55.3551 8.78771 55.8991 8.78771V9.81171C55.1631 9.81171 54.4831 10.0757 54.4831 10.6997V12.8037H53.4271ZM58.2363 12.8997C56.9803 12.8997 56.0923 12.0277 56.0923 10.8037C56.0923 9.57971 56.9723 8.70771 58.2203 8.70771C59.0203 8.70771 59.7323 9.12371 60.0363 9.85971L59.0443 10.2117C58.8923 9.89971 58.5563 9.69971 58.1723 9.69971C57.5803 9.69971 57.1723 10.1557 57.1723 10.8037C57.1723 11.4517 57.5883 11.9077 58.1883 11.9077C58.5723 11.9077 58.9083 11.6917 59.0603 11.3557L60.0603 11.7077C59.7483 12.4677 59.0443 12.8997 58.2363 12.8997ZM60.5335 12.8037V7.20371H61.5895V9.31571C61.8535 8.92371 62.2535 8.70771 62.7495 8.70771C63.7015 8.70771 64.2455 9.26771 64.2375 10.5397V10.7557H64.2455V12.8037H63.1895V10.7557H63.1815C63.1815 9.94771 62.8855 9.70771 62.4375 9.69971C61.8855 9.69171 61.5895 10.0437 61.5895 10.7077V12.8037H60.5335Z" fill={color} />
+      <path d="M81 3.23419C80.7689 2.94889 80.4211 2.76935 80.0328 2.76935C79.4848 2.76935 79.0203 3.12598 78.844 3.62771L78.8154 3.72117L78.2842 5.38625L75.7804 13.2542C74.8036 16.3236 72.0258 18.3994 68.8955 18.3994H14.1045C10.9742 18.3994 8.19638 16.3236 7.21964 13.2542L4.71583 5.38625L4.18458 3.72117L4.15599 3.62771C3.9797 3.12598 3.51515 2.76935 2.96722 2.76935C2.5789 2.76935 2.23108 2.94889 2 3.23419L2.57175 2.50864C3.12445 1.80769 3.95349 1.39941 4.83018 1.39941L78.1698 1.39941C79.0465 1.39941 79.8755 1.80769 80.4282 2.50864L81 3.23419Z" fill={body} />
+      <path d="M21.536 12.8997C19.84 12.8997 18.648 11.6997 18.648 10.0117C18.648 8.30771 19.832 7.10771 21.512 7.10771C23.2 7.10771 24.384 8.31571 24.384 10.0117C24.384 10.7557 24.16 11.3957 23.76 11.8917L24.32 12.4597L23.632 13.1397L23.024 12.5237C22.6 12.7637 22.096 12.8997 21.536 12.8997ZM19.768 10.0117C19.768 11.1157 20.496 11.8997 21.536 11.8997C21.8 11.8997 22.048 11.8437 22.264 11.7477L21.568 11.0437L22.272 10.3797L22.984 11.0997C23.16 10.7957 23.264 10.4277 23.264 10.0117C23.264 8.89971 22.544 8.10771 21.512 8.10771C20.488 8.10771 19.768 8.89971 19.768 10.0117ZM27.6265 12.8037L27.5785 12.2677C27.3145 12.6757 26.9065 12.8997 26.4025 12.8997C25.4505 12.8997 24.9065 12.3397 24.9145 11.0677V8.80371H25.9705V10.8517C25.9705 11.6597 26.2665 11.8997 26.7145 11.9077C27.2665 11.9157 27.5625 11.5637 27.5625 10.8997V8.80371H28.6185V12.8037H27.6265ZM29.4473 12.8037V8.80371H30.5033V12.8037H29.4473ZM29.3673 7.54771C29.3673 7.21971 29.6473 6.93971 29.9753 6.93971C30.3033 6.93971 30.5833 7.21971 30.5833 7.54771C30.5833 7.87571 30.3033 8.15571 29.9753 8.15571C29.6473 8.15571 29.3673 7.87571 29.3673 7.54771ZM33.2551 12.8997C31.9991 12.8997 31.1111 12.0277 31.1111 10.8037C31.1111 9.57971 31.9911 8.70771 33.2391 8.70771C34.0391 8.70771 34.7511 9.12371 35.0551 9.85971L34.0631 10.2117C33.9111 9.89971 33.5751 9.69971 33.1911 9.69971C32.5991 9.69971 32.1911 10.1557 32.1911 10.8037C32.1911 11.4517 32.6071 11.9077 33.2071 11.9077C33.5911 11.9077 33.9271 11.6917 34.0791 11.3557L35.0791 11.7077C34.7671 12.4677 34.0631 12.8997 33.2551 12.8997ZM35.5443 12.8037V7.20371H36.6003V10.3077L37.9683 8.80371H39.2243L37.7123 10.4917L39.3443 12.8037H38.1043L37.0403 11.2437L36.6003 11.7317V12.8037H35.5443ZM42.9512 12.8997C42.1752 12.8997 41.5272 12.5477 41.2392 11.9077L42.1432 11.4917C42.3032 11.7477 42.5832 11.9637 42.9512 11.9637C43.3032 11.9637 43.5032 11.8597 43.5032 11.6677C43.5032 11.4757 43.3352 11.4037 43.0712 11.3397L42.7032 11.2437C41.9352 11.0437 41.4632 10.5717 41.4632 9.99571C41.4632 9.17971 42.0152 8.70771 42.9832 8.70771C43.7272 8.70771 44.3832 9.07571 44.5592 9.59571L43.6872 9.99571C43.6152 9.77971 43.2712 9.63571 42.9832 9.63571C42.6952 9.63571 42.5352 9.77171 42.5352 9.97971C42.5352 10.1157 42.6872 10.2037 42.9672 10.2677L43.4872 10.3957C44.2632 10.5877 44.5672 11.1877 44.5672 11.6837C44.5672 12.4117 43.8792 12.8997 42.9512 12.8997ZM46.8398 12.8997C45.6558 12.8997 44.8158 12.0357 44.8158 10.8037C44.8158 9.57171 45.6798 8.70771 46.8958 8.70771C47.9438 8.70771 48.8478 9.56371 48.8478 11.0837H45.9198C45.9678 11.6277 46.4398 11.9557 46.9518 11.9557C47.3918 11.9557 47.6558 11.7477 47.8078 11.4517L48.7518 11.8197C48.4078 12.4997 47.7838 12.8997 46.8398 12.8997ZM45.9758 10.2997H47.7038C47.6558 9.79571 47.2078 9.60371 46.8638 9.60371C46.5198 9.60371 46.0318 9.79571 45.9758 10.2997ZM51.7275 12.8037L51.7115 12.3397C51.5035 12.6997 51.1435 12.8997 50.6075 12.8997C49.6475 12.8997 49.0955 12.4597 49.0955 11.6757C49.0955 10.8197 49.6955 10.3877 50.7275 10.3877H51.6715C51.5995 9.90771 51.3755 9.62771 50.9355 9.62771C50.5915 9.62771 50.3115 9.77171 50.1195 10.0837L49.1915 9.76371C49.4075 9.25171 49.9275 8.70771 50.9355 8.70771C52.1515 8.70771 52.7515 9.44371 52.7355 10.5877L52.7115 12.8037H51.7275ZM50.1755 11.6437C50.1755 11.8757 50.3995 12.0197 50.7835 12.0197C51.3035 12.0197 51.6955 11.5877 51.6955 11.1717H51.0955C50.3995 11.1717 50.1755 11.3477 50.1755 11.6437ZM53.4271 12.8037V8.80371H54.4831V9.53971C54.8111 9.03571 55.3551 8.78771 55.8991 8.78771V9.81171C55.1631 9.81171 54.4831 10.0757 54.4831 10.6997V12.8037H53.4271ZM58.2363 12.8997C56.9803 12.8997 56.0923 12.0277 56.0923 10.8037C56.0923 9.57971 56.9723 8.70771 58.2203 8.70771C59.0203 8.70771 59.7323 9.12371 60.0363 9.85971L59.0443 10.2117C58.8923 9.89971 58.5563 9.69971 58.1723 9.69971C57.5803 9.69971 57.1723 10.1557 57.1723 10.8037C57.1723 11.4517 57.5883 11.9077 58.1883 11.9077C58.5723 11.9077 58.9083 11.6917 59.0603 11.3557L60.0603 11.7077C59.7483 12.4677 59.0443 12.8997 58.2363 12.8997ZM60.5335 12.8037V7.20371H61.5895V9.31571C61.8535 8.92371 62.2535 8.70771 62.7495 8.70771C63.7015 8.70771 64.2455 9.26771 64.2375 10.5397V10.7557H64.2455V12.8037H63.1895V10.7557H63.1815C63.1815 9.94771 62.8855 9.70771 62.4375 9.69971C61.8855 9.69171 61.5895 10.0437 61.5895 10.7077V12.8037H60.5335Z" fill={text} />
     </svg>
   )
 }
@@ -461,7 +479,8 @@ function CrossSellCta({ dest, color }) {
     return (
       <>
         <span className={labelCls} style={{ color }}>Switch to</span>
-        <img src={noonWordmark} alt="noon" className="h-[10px] w-auto" />
+        {/* wordmark inverted to white so it reads on the blue button */}
+        <img src={noonWordmark} alt="noon" className="h-[10px] w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
       </>
     )
   }
@@ -469,10 +488,7 @@ function CrossSellCta({ dest, color }) {
     return (
       <>
         <span className={labelCls} style={{ color }}>Switch to</span>
-        <span className="flex items-baseline gap-[3px]">
-          <img src={noonWordmark} alt="noon" className="h-[13px] w-auto" />
-          <img src={foodWordmark} alt="FOOD" className="h-[13px] w-auto" />
-        </span>
+        <img src={foodWordmark} alt="FOOD" className="h-[13px] w-auto" />
       </>
     )
   }
@@ -549,14 +565,21 @@ function CrossSellBanner({ dest, term, img = null, fit = 'cover', onSwitch }) {
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className="absolute inset-x-0 bottom-0 z-[60]"
     >
+      {/* shadow surface behind the banner — a secondary-surface rounded panel
+          that casts the upward shadow (the squircle sheet sits on top of it) */}
+      <div
+        data-id="search-cross-banner-shadow"
+        className="absolute inset-0 z-0 rounded-t-[12px]"
+        style={{ background: '#F9F9FB', boxShadow: '0 -4px 20px 0 rgba(0, 0, 0, 0.20)' }}
+      />
       {/* quick-search tab notching out of the top edge */}
-      <div data-id="search-cross-banner-tab-wrap" className="pointer-events-none absolute left-1/2 z-[2] -translate-x-1/2" style={{ top: -8 }}>
-        <QuickSearchTab color={theme.tabInk} />
+      <div data-id="search-cross-banner-tab-wrap" className="pointer-events-none absolute left-1/2 z-[2] -translate-x-1/2" style={{ top: -6 }}>
+        <QuickSearchTab color={theme.tabInk} body={theme.tabBody} text={theme.tabText} />
       </div>
-      {/* squircle sheet — the smooth-cornered shape itself carries the fill +
-          shadow (the codebase idiom); top corners rounded, bottom squared so it
-          sits flush to the screen edge. The slide stays on the motion wrapper
-          above so the static Squircle's corner path never gets frozen. */}
+      {/* squircle sheet — the smooth-cornered shape carries the fill; top
+          corners rounded, bottom squared so it sits flush to the screen edge.
+          The slide stays on the motion wrapper above so the static Squircle's
+          corner path never gets frozen. */}
       <Squircle
         as="div"
         data-id="search-cross-banner-sheet"
@@ -564,21 +587,21 @@ function CrossSellBanner({ dest, term, img = null, fit = 'cover', onSwitch }) {
         bottomLeftCornerRadius={0}
         bottomRightCornerRadius={0}
         cornerSmoothing={1}
-        className="flex flex-col gap-3 px-[18px] pt-4"
-        style={{ background: theme.banner, boxShadow: '0px -4px 20px rgba(0, 0, 0, 0.2)', paddingBottom: 'calc(24px + var(--sbp, 0px) + var(--sab, 0px))' }}
+        className="relative z-[1] flex flex-col gap-3 px-[18px] pt-4"
+        style={{ background: theme.banner, paddingBottom: 'calc(24px + var(--sbp, 0px) + var(--sab, 0px))' }}
       >
         {/* image + copy row */}
         <div data-id="search-cross-banner-row" className="flex items-center gap-3">
           {/* image box — rounded hexagon: the white outer shape reads as the
               1px border, the inner one clips the photo/glyph */}
-          <HexTile innerBg={img ? '#FFFFFF' : theme.imageBg}>
-            {img ? (
-              <img data-id="search-cross-banner-image-media" src={img} alt="" aria-hidden="true" className={fit === 'contain' ? 'h-full w-full object-contain p-[3px]' : 'h-full w-full object-cover'} />
-            ) : dest === 'food' ? (
-              <img data-id="search-cross-banner-image-media" src={shawarmaImg} alt="" aria-hidden="true" className="h-full w-full object-cover" />
-            ) : (
-              <ProductGlyph dest={dest} color={theme.glyph} />
-            )}
+          <HexTile innerBg={theme.imageBg}>
+              {img ? (
+                <img data-id="search-cross-banner-image-media" src={img} alt="" aria-hidden="true" className={fit === 'contain' ? 'h-full w-full object-contain p-[3px]' : 'h-full w-full object-cover'} />
+              ) : dest === 'food' ? (
+                <img data-id="search-cross-banner-image-media" src={shawarmaImg} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+              ) : (
+                <ProductGlyph dest={dest} color={theme.glyph} />
+              )}
           </HexTile>
           {/* copy */}
           <div data-id="search-cross-banner-copy" className="flex min-w-0 flex-1 flex-col gap-1">
@@ -884,6 +907,36 @@ export default function SearchExperiment() {
     setSubmitted(true)
   }
 
+  // Search-bar row lives INSIDE each vertical's page so the whole page (bar +
+  // results) slides together on a vertical switch. `showMagic` differs per
+  // vertical — minutes keeps the Magic List pill, noon/food drop it.
+  const renderSearchBar = (showMagic) => (
+    <div data-id="search-bar-wrap" className="flex w-full shrink-0 items-center gap-2 px-3 py-4">
+      <SearchRow
+        idPrefix="search"
+        query={query}
+        onChange={(v) => { setQuery(v); setSubmitted(false) }}
+        onClear={() => { setQuery(''); setSubmitted(false); inputRef.current?.focus() }}
+        onEnter={() => { if (hasQuery) { setSubmitted(true); inputRef.current?.blur() } }}
+        inputRef={inputRef}
+        showMagic={showMagic}
+        leading={
+          <button
+            type="button"
+            data-id="search-slp-back"
+            onClick={closeSearch}
+            aria-label="Back to home"
+            className="-ml-1 flex h-8 w-8 shrink-0 items-center justify-center"
+          >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M12.5 5 7.5 10l5 5" stroke={INK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        }
+      />
+    </div>
+  )
+
   return (
     <AppShell>
       {/* Base screen — the noon minutes home */}
@@ -939,36 +992,10 @@ export default function SearchExperiment() {
           >
             <div className="w-full shrink-0" style={{ height: 'var(--sat, 0px)' }} />
 
-            {/* Search bar row — the back chevron is the field's leading icon */}
-            <div data-id="search-bar-wrap" className="flex w-full shrink-0 items-center gap-2 px-3 py-4">
-              <SearchRow
-                idPrefix="search"
-                query={query}
-                onChange={(v) => { setQuery(v); setSubmitted(false) }}
-                onClear={() => { setQuery(''); setSubmitted(false); inputRef.current?.focus() }}
-                onEnter={() => { if (hasQuery) { setSubmitted(true); inputRef.current?.blur() } }}
-                inputRef={inputRef}
-                showMagic={!isFood}
-                leading={
-                  <button
-                    type="button"
-                    data-id="search-slp-back"
-                    onClick={closeSearch}
-                    aria-label="Back to home"
-                    className="-ml-1 flex h-8 w-8 shrink-0 items-center justify-center"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-                      <path d="M12.5 5 7.5 10l5 5" stroke={INK} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                }
-              />
-            </div>
-
-            {/* Body — results after Enter, else suggestions while typing, else trending.
-                On noon FOOD the submitted view is the restaurants/dishes page
-                (its own header + scroll area + food tab bar). Switching between
-                the generic and food pages slides left→right like a nav push. */}
+            {/* Body — each vertical's page carries its OWN search bar at the top
+                so the whole page (bar + results) slides together on a switch.
+                Results after Enter, else suggestions while typing, else trending.
+                noon FOOD is the restaurants/dishes page with the food tab bar. */}
             <div data-id="search-body" className="relative min-h-0 flex-1 overflow-hidden">
             <AnimatePresence initial={false}>
             {submitted && isFood ? (
@@ -981,19 +1008,27 @@ export default function SearchExperiment() {
                 exit={{ x: '-100%' }}
                 transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
               >
+                {renderSearchBar(false)}
                 <FoodSearchResults />
                 <FoodBottomNav />
               </motion.div>
             ) : (
             <motion.div
-              key="search-generic-page"
+              // key by vertical so switching (e.g. minutes → noon via the
+              // cross-sell) remounts the page and slides the destination's
+              // results in, the same nav-push feel as the food page
+              key={`search-generic-page-${activeId}`}
               data-id="search-generic-page"
               className="absolute inset-0 flex flex-col bg-white"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              // destination (e.g. noon) slides in on top; the outgoing page
+              // (e.g. minutes) stays put and fades out underneath it
+              initial={{ x: '100%', zIndex: 2 }}
+              animate={{ x: 0, zIndex: 2 }}
+              exit={{ x: 0, opacity: 0, zIndex: 1 }}
               transition={{ duration: 0.38, ease: [0.32, 0.72, 0, 1] }}
             >
+            {/* noon drops the Magic List pill; minutes/other verticals keep it */}
+            {renderSearchBar(activeId !== 'noon')}
             <main data-id="search-main" className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: submitted ? 0 : 'calc(24px + var(--sab, 0px))' }}>
               {submitted ? (
                 activeId === 'noon' ? (
@@ -1035,7 +1070,7 @@ export default function SearchExperiment() {
 
                   <div data-id="search-results-grid" className="grid grid-cols-2 gap-3 px-3 pb-[120px] pt-1">
                     {NOON_RESULTS.map((it, i) => (
-                      <NoonResultCard key={i} item={it} thumb={AIRPODS} />
+                      <NoonResultCard key={i} item={it} thumb={it.thumb} />
                     ))}
                   </div>
                 </div>
