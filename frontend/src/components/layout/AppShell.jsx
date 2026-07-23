@@ -172,6 +172,9 @@ export default function AppShell({ children, className = '' }) {
               // padding their CONTENT by --sat/--sab like native apps
               '--sat': `${SAFE_TOP}px`,
               '--sab': `${SAFE_BOTTOM}px`,
+              // extra gap below bottom surfaces — 0 here since the faux home
+              // indicator inset (--sab) already lifts them off the edge
+              '--sbp': '0px',
             }}
           >
             {children}
@@ -200,6 +203,9 @@ export default function AppShell({ children, className = '' }) {
         // so content fills the safe viewport edge-to-edge.
         '--sat': '0px',
         '--sab': '0px',
+        // small gap below bottom surfaces (nav, banner) so they don't hug the
+        // very edge; only on real mobile (the web frame uses its --sab inset)
+        '--sbp': '12px',
       }}
     >
       {children}
