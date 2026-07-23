@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/icon-192.png?v=3" />
-    <!-- Mobile-first: lock viewport to device width. viewport-fit=cover so the
-         standalone webview runs edge-to-edge and env() insets report real
-         values — needed to keep the TOP safe area (status-bar clearance via
-         --sat) while flushing the BOTTOM (--sab forced to 0). The frame is
-         sized to screen.height so it reaches the physical bottom and cover
-         doesn't leave a white strip. The desktop device frame draws its own
-         faux status bar / home indicator. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <!-- Mobile-first: lock viewport to device width. Intentionally NO
+         viewport-fit=cover — cover extends the standalone webview under the
+         home indicator and any imperfect fill leaves a white strip there. The
+         TOP safe area instead comes from an OPAQUE status bar (see
+         apple-mobile-web-app-status-bar-style below): iOS reserves the
+         status-bar space and starts the webview beneath it, so no cover / env()
+         insets are needed and the bottom stays strip-free. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <!-- tints the mobile browser status bar to the app's top gradient blue -->
     <meta name="theme-color" content="#D4EFF6" />
 
@@ -18,7 +18,10 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- opaque status bar: iOS reserves the status-bar space at the top and
+         starts the webview below it, giving a native TOP safe area without
+         viewport-fit=cover (black-translucent would put content UNDER the bar) -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="noon" />
     <link rel="manifest" href="/manifest.webmanifest" />
 
