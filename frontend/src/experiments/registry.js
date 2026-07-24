@@ -39,4 +39,13 @@ export const experiments = [
     iconColor: '#F91A47',
     iconBg: '#FDE7EC',
   },
+  {
+    id: 'cart',
+    title: 'Cart',
+    description: 'Cart with free gifts, coupons, recommendations and a savings block.',
+    path: '/cart',
+    icon: 'cart',
+    iconColor: '#0F61FF',
+    iconBg: '#E4EEFF',
+  },
 ]
