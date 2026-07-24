@@ -123,8 +123,22 @@ export default function BottomNav({
   // extra bottom padding (px) added below the tab row, on top of the --sab
   // safe-area inset — lets a variation sit the row slightly off the edge
   bottomPad = 0,
+  // which tab starts selected (defaults to Home)
+  initialActive = 'home',
+  // reorder the tabs — array of tab keys; missing keys are dropped, unknown keys
+  // ignored. Defaults to the canonical order.
+  order,
+  // small count pills keyed by tab key, e.g. { cart: '2' }
+  badges,
+  // when true, the (non-floating) bar slides down off-screen — used to hide the
+  // nav on scroll
+  hidden = false,
 }) {
-  const [active, setActive] = useState('home')
+  // reorder / filter the canonical tab list when an `order` is supplied
+  const tabs = order
+    ? order.map((k) => TABS.find((t) => t.key === k)).filter(Boolean)
+    : TABS
+  const [active, setActive] = useState(initialActive)
   const [navOpen, setNavOpen] = useState(false)
   // Measure the nav's ACTUAL width — inside the web device frame it's the frame
   // width (390), not the viewport, so the expansion panel (navW − 32) must be
@@ -180,8 +194,8 @@ export default function BottomNav({
   // slot is given the left circle shows it (the selected marketplace) and ALL
   // tabs move into the pill; otherwise the first tab occupies the circle.
   if (floating) {
-    const [first, ...rest] = TABS
-    const pillTabs = leading ? TABS : rest
+    const [first, ...rest] = tabs
+    const pillTabs = leading ? tabs : rest
     // plain render helper (not a component) so the tabs never remount and the
     // framer layout marker animates across renders
     const navCircle = (tab, className) => {
@@ -520,8 +534,15 @@ export default function BottomNav({
   return (
     <nav
       data-id={dataId}
-      className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-md -translate-x-1/2 flex-col border-t border-[#F2F3F7] bg-white"
-      style={{ paddingBottom: `calc(var(--sab, 0px) + var(--sbp, 0px) + ${bottomPad}px)` }}
+      className="fixed bottom-0 left-1/2 z-30 flex w-full max-w-md flex-col border-t border-[#F2F3F7] bg-white"
+      style={{
+        paddingBottom: `calc(var(--sab, 0px) + var(--sbp, 0px) + ${bottomPad}px)`,
+        // combine the centering translate with the hide-on-scroll slide so both
+        // axes live in one transform (a tailwind -translate-x-1/2 would be
+        // clobbered by this inline transform)
+        transform: `translateX(-50%) translateY(${hidden ? '110%' : '0'})`,
+        transition: 'transform 300ms cubic-bezier(0.4, 0, 1, 1)',
+      }}
     >
       <div className="relative flex h-[64px]">
         {/* optional "All" entry — opens the marketplaces sheet */}
@@ -539,8 +560,9 @@ export default function BottomNav({
             <span aria-hidden="true" className="h-4 w-px self-center bg-[#E2E5EC]" />
           </>
         )}
-        {TABS.map((tab) => {
+        {tabs.map((tab) => {
           const isActive = tab.key === active
+          const badge = badges?.[tab.key]
           return (
             <button
               key={tab.key}
@@ -558,7 +580,18 @@ export default function BottomNav({
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
-              <NavIcon raw={tab.raw} active={isActive} accent={accent} />
+              <span className="relative">
+                <NavIcon raw={tab.raw} active={isActive} accent={accent} />
+                {badge != null && (
+                  <span
+                    data-id={`${dataId}-${tab.key}-badge`}
+                    className="absolute -right-2 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 font-noontree text-[11px] font-bold leading-none text-white"
+                    style={{ background: accent.grad }}
+                  >
+                    {badge}
+                  </span>
+                )}
+              </span>
               <motion.span
                 className="text-xs leading-none"
                 animate={{ fontWeight: isActive ? 600 : 400 }}
