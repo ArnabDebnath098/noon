@@ -83,17 +83,19 @@ const TABS = [
   { key: 'account', label: 'Account', raw: profileIcon },
 ]
 
-const ICON_GRAD_ID = 'nav-active-grad' // only ever one active icon at a time
-function NavIcon({ raw, active, dataId, accent = DEFAULT_ACCENT }) {
+// gradient id must be UNIQUE per nav instance — multiple BottomNavs can live in
+// the DOM at once (e.g. the home nav behind a search overlay), and a shared id
+// makes every active icon pick up the first-defined nav's gradient stops.
+function NavIcon({ raw, active, dataId, accent = DEFAULT_ACCENT, gradId = 'nav-active-grad' }) {
   // Active: paint the glyph with a vertical gradient (a solid accent renders as
   // equal stops). Inactive: flat currentColor.
   const html = active
     ? raw
-        .replace(/fill="#[0-9a-f]{3,8}"/gi, `fill="url(#${ICON_GRAD_ID})"`)
-        .replace(/stroke="#[0-9a-f]{3,8}"/gi, `stroke="url(#${ICON_GRAD_ID})"`)
+        .replace(/fill="#[0-9a-f]{3,8}"/gi, `fill="url(#${gradId})"`)
+        .replace(/stroke="#[0-9a-f]{3,8}"/gi, `stroke="url(#${gradId})"`)
         .replace(
           /<svg([^>]*)>/i,
-          `<svg$1><defs><linearGradient id="${ICON_GRAD_ID}" x1="0" y1="0" x2="0" y2="1"><stop offset="0.19" stop-color="${accent.from}"/><stop offset="1" stop-color="${accent.to}"/></linearGradient></defs>`,
+          `<svg$1><defs><linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0.19" stop-color="${accent.from}"/><stop offset="1" stop-color="${accent.to}"/></linearGradient></defs>`,
         )
     : raw
         .replace(/fill="#[0-9a-f]{3,8}"/gi, 'fill="currentColor"')
@@ -214,7 +216,7 @@ export default function BottomNav({
             />
           )}
           <span data-id={`${dataId}-${tab.key}-icon`} className="relative">
-            <NavIcon raw={tab.raw} active={isActive} accent={accent} dataId={`${dataId}-${tab.key}-glyph`} />
+            <NavIcon raw={tab.raw} active={isActive} accent={accent} gradId={`${dataId}-active-grad`} dataId={`${dataId}-${tab.key}-glyph`} />
           </span>
         </button>
       )
@@ -558,14 +560,17 @@ export default function BottomNav({
                   transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                 />
               )}
-              <NavIcon raw={tab.raw} active={isActive} accent={accent} />
+              <NavIcon raw={tab.raw} active={isActive} accent={accent} gradId={`${dataId}-active-grad`} />
               <motion.span
                 className="text-xs leading-none"
                 animate={{ fontWeight: isActive ? 600 : 400 }}
                 transition={{ duration: 0.25 }}
                 style={
                   isActive
-                    ? { background: accent.grad, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                    ? // backgroundImage (NOT the `background` shorthand, which
+                      // resets background-clip to border-box) so the gradient
+                      // clips to the glyphs
+                      { backgroundImage: accent.grad, WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent', color: 'transparent' }
                     : { color: INACTIVE }
                 }
               >

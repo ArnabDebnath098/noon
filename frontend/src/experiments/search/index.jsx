@@ -16,9 +16,9 @@ import CombosSection from '../marketplace-switcher/sections/CombosSection'
 import { marketplaces, address, categories, bestPicks, mobileDeals } from '../../data/marketplace'
 import skyClouds from '../../assets/marketplace/sky-clouds.png'
 import FoodSearchResults, { FoodBottomNav } from './FoodSearch'
+import MinutesHomeBody, { MinutesViewCart } from './MinutesHomeBody'
+import FoodHomeBody, { FoodLocationBar, FoodSearchBar } from './FoodHomeBody'
 import shawarmaImg from '../../assets/marketplace/shawarma.png'
-import noonWordmark from '../../assets/marketplace/noon.svg'
-import foodWordmark from '../../assets/marketplace/food.svg'
 import xsUmbrella from '../../assets/marketplace/xs-umbrella-red.png'
 import xsUmbrellaAlt from '../../assets/marketplace/xs-umbrella.png'
 import xsAlbaik from '../../assets/marketplace/xs-albaik.png'
@@ -34,6 +34,23 @@ const INK = 'rgba(2, 6, 12, 0.92)'
 const MUTED = 'rgba(2, 6, 12, 0.45)'
 const HAIRLINE = 'rgba(2, 6, 12, 0.15)'
 const ELEVATION_200 = '0px 4px 8px rgba(2, 6, 12, 0.1)'
+
+// Bottom-nav accents per destination — noon is blue, minutes/other are red.
+const NAV_ACCENT_MINUTES = {
+  from: '#FF3B63',
+  to: '#EB0030',
+  grad: 'linear-gradient(180deg, #FF3B63 18.95%, #EB0030 122.21%)',
+  tint: 'rgba(235, 0, 48, 0.12)',
+}
+const NAV_ACCENT_NOON = {
+  from: '#0F61FF',
+  to: '#0F61FF',
+  // a gradient with TWO DISTINCT stops so the label's background-clip:text
+  // clips to the glyphs — a flat colour (or a same-stop gradient the browser
+  // collapses to one) fills the whole box in some engines
+  grad: 'linear-gradient(180deg, #3D8BFF 0%, #0F61FF 100%)',
+  tint: 'rgba(15, 97, 255, 0.12)',
+}
 
 // A tiny catalogue that feeds the trending-search chips.
 const CATALOG = [
@@ -412,41 +429,35 @@ const CROSS_SELL_THEMES = {
     subColor: MUTED,
     destName: 'noon',
     button: { bg: '#0F61FF', text: '#FFFFFF' },
+    floatBg: 'var(--colour-surface-action-bold, #0F7EFF)',
+    floatInk: '#0F7EFF',
   },
   food: {
     banner: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)',
     tabInk: '#B3093D',
-    imageBg: 'rgba(255, 255, 255, 0.8)',
+    imageBg: '#FCDFE8',
     glyph: '#E5004E',
     titleColor: '#FFFFFF',
     subColor: 'rgba(255, 255, 255, 0.85)',
     destName: 'food',
     button: { bg: '#FFFFFF', text: '#1D2539' },
+    floatBg: 'linear-gradient(180deg, #F7306F 0%, #B3093D 100%)',
+    floatInk: '#B3093D',
   },
   minutes: {
     banner: '#FFFFFF',
-    tabInk: '#EB0030',
+    tabInk: '#A81F1D',
+    tabBody: '#D12B28',
+    tabText: '#FFFFFF',
     imageBg: '#FFF1F2',
-    glyph: '#EB0030',
+    glyph: '#D12B28',
     titleColor: INK,
     subColor: MUTED,
     destName: 'minutes',
-    button: { bg: 'linear-gradient(180deg, #FF3B63 18.95%, #EB0030 122.21%)', text: '#FFFFFF' },
+    button: { bg: '#D12B28', text: '#FFFFFF' },
+    floatBg: '#D12B28',
+    floatInk: '#D12B28',
   },
-}
-
-/* Quick-search tab that notches out of the banner's top edge (Figma svg).
- * The tab body stays a constant off-white; the flaps + label take the
- * destination-brand ink so the tab reads on any banner colour. */
-function QuickSearchTab({ color, body = '#F2F3F7', text = color }) {
-  return (
-    <svg data-id="search-cross-tab" width="104" viewBox="0 0 83 19" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quick search">
-      <path d="M82.8347 5.43321H78.4102L78.9432 3.73973L78.9719 3.64467C79.1488 3.13438 79.6149 2.77167 80.1647 2.77167C80.5543 2.77167 80.9033 2.95427 81.1352 3.24444C81.1447 3.25195 81.1519 3.26445 81.1567 3.27446L82.8347 5.43321Z" fill={color} />
-      <path d="M0.166016 5.43321H4.59058L4.05753 3.73973L4.02884 3.64467C3.85195 3.13438 3.38583 2.77167 2.83605 2.77167C2.44642 2.77167 2.09743 2.95427 1.86556 3.24444C1.856 3.25195 1.84883 3.26445 1.84405 3.27446L0.166016 5.43321Z" fill={color} />
-      <path d="M81 3.23419C80.7689 2.94889 80.4211 2.76935 80.0328 2.76935C79.4848 2.76935 79.0203 3.12598 78.844 3.62771L78.8154 3.72117L78.2842 5.38625L75.7804 13.2542C74.8036 16.3236 72.0258 18.3994 68.8955 18.3994H14.1045C10.9742 18.3994 8.19638 16.3236 7.21964 13.2542L4.71583 5.38625L4.18458 3.72117L4.15599 3.62771C3.9797 3.12598 3.51515 2.76935 2.96722 2.76935C2.5789 2.76935 2.23108 2.94889 2 3.23419L2.57175 2.50864C3.12445 1.80769 3.95349 1.39941 4.83018 1.39941L78.1698 1.39941C79.0465 1.39941 79.8755 1.80769 80.4282 2.50864L81 3.23419Z" fill={body} />
-      <path d="M21.536 12.8997C19.84 12.8997 18.648 11.6997 18.648 10.0117C18.648 8.30771 19.832 7.10771 21.512 7.10771C23.2 7.10771 24.384 8.31571 24.384 10.0117C24.384 10.7557 24.16 11.3957 23.76 11.8917L24.32 12.4597L23.632 13.1397L23.024 12.5237C22.6 12.7637 22.096 12.8997 21.536 12.8997ZM19.768 10.0117C19.768 11.1157 20.496 11.8997 21.536 11.8997C21.8 11.8997 22.048 11.8437 22.264 11.7477L21.568 11.0437L22.272 10.3797L22.984 11.0997C23.16 10.7957 23.264 10.4277 23.264 10.0117C23.264 8.89971 22.544 8.10771 21.512 8.10771C20.488 8.10771 19.768 8.89971 19.768 10.0117ZM27.6265 12.8037L27.5785 12.2677C27.3145 12.6757 26.9065 12.8997 26.4025 12.8997C25.4505 12.8997 24.9065 12.3397 24.9145 11.0677V8.80371H25.9705V10.8517C25.9705 11.6597 26.2665 11.8997 26.7145 11.9077C27.2665 11.9157 27.5625 11.5637 27.5625 10.8997V8.80371H28.6185V12.8037H27.6265ZM29.4473 12.8037V8.80371H30.5033V12.8037H29.4473ZM29.3673 7.54771C29.3673 7.21971 29.6473 6.93971 29.9753 6.93971C30.3033 6.93971 30.5833 7.21971 30.5833 7.54771C30.5833 7.87571 30.3033 8.15571 29.9753 8.15571C29.6473 8.15571 29.3673 7.87571 29.3673 7.54771ZM33.2551 12.8997C31.9991 12.8997 31.1111 12.0277 31.1111 10.8037C31.1111 9.57971 31.9911 8.70771 33.2391 8.70771C34.0391 8.70771 34.7511 9.12371 35.0551 9.85971L34.0631 10.2117C33.9111 9.89971 33.5751 9.69971 33.1911 9.69971C32.5991 9.69971 32.1911 10.1557 32.1911 10.8037C32.1911 11.4517 32.6071 11.9077 33.2071 11.9077C33.5911 11.9077 33.9271 11.6917 34.0791 11.3557L35.0791 11.7077C34.7671 12.4677 34.0631 12.8997 33.2551 12.8997ZM35.5443 12.8037V7.20371H36.6003V10.3077L37.9683 8.80371H39.2243L37.7123 10.4917L39.3443 12.8037H38.1043L37.0403 11.2437L36.6003 11.7317V12.8037H35.5443ZM42.9512 12.8997C42.1752 12.8997 41.5272 12.5477 41.2392 11.9077L42.1432 11.4917C42.3032 11.7477 42.5832 11.9637 42.9512 11.9637C43.3032 11.9637 43.5032 11.8597 43.5032 11.6677C43.5032 11.4757 43.3352 11.4037 43.0712 11.3397L42.7032 11.2437C41.9352 11.0437 41.4632 10.5717 41.4632 9.99571C41.4632 9.17971 42.0152 8.70771 42.9832 8.70771C43.7272 8.70771 44.3832 9.07571 44.5592 9.59571L43.6872 9.99571C43.6152 9.77971 43.2712 9.63571 42.9832 9.63571C42.6952 9.63571 42.5352 9.77171 42.5352 9.97971C42.5352 10.1157 42.6872 10.2037 42.9672 10.2677L43.4872 10.3957C44.2632 10.5877 44.5672 11.1877 44.5672 11.6837C44.5672 12.4117 43.8792 12.8997 42.9512 12.8997ZM46.8398 12.8997C45.6558 12.8997 44.8158 12.0357 44.8158 10.8037C44.8158 9.57171 45.6798 8.70771 46.8958 8.70771C47.9438 8.70771 48.8478 9.56371 48.8478 11.0837H45.9198C45.9678 11.6277 46.4398 11.9557 46.9518 11.9557C47.3918 11.9557 47.6558 11.7477 47.8078 11.4517L48.7518 11.8197C48.4078 12.4997 47.7838 12.8997 46.8398 12.8997ZM45.9758 10.2997H47.7038C47.6558 9.79571 47.2078 9.60371 46.8638 9.60371C46.5198 9.60371 46.0318 9.79571 45.9758 10.2997ZM51.7275 12.8037L51.7115 12.3397C51.5035 12.6997 51.1435 12.8997 50.6075 12.8997C49.6475 12.8997 49.0955 12.4597 49.0955 11.6757C49.0955 10.8197 49.6955 10.3877 50.7275 10.3877H51.6715C51.5995 9.90771 51.3755 9.62771 50.9355 9.62771C50.5915 9.62771 50.3115 9.77171 50.1195 10.0837L49.1915 9.76371C49.4075 9.25171 49.9275 8.70771 50.9355 8.70771C52.1515 8.70771 52.7515 9.44371 52.7355 10.5877L52.7115 12.8037H51.7275ZM50.1755 11.6437C50.1755 11.8757 50.3995 12.0197 50.7835 12.0197C51.3035 12.0197 51.6955 11.5877 51.6955 11.1717H51.0955C50.3995 11.1717 50.1755 11.3477 50.1755 11.6437ZM53.4271 12.8037V8.80371H54.4831V9.53971C54.8111 9.03571 55.3551 8.78771 55.8991 8.78771V9.81171C55.1631 9.81171 54.4831 10.0757 54.4831 10.6997V12.8037H53.4271ZM58.2363 12.8997C56.9803 12.8997 56.0923 12.0277 56.0923 10.8037C56.0923 9.57971 56.9723 8.70771 58.2203 8.70771C59.0203 8.70771 59.7323 9.12371 60.0363 9.85971L59.0443 10.2117C58.8923 9.89971 58.5563 9.69971 58.1723 9.69971C57.5803 9.69971 57.1723 10.1557 57.1723 10.8037C57.1723 11.4517 57.5883 11.9077 58.1883 11.9077C58.5723 11.9077 58.9083 11.6917 59.0603 11.3557L60.0603 11.7077C59.7483 12.4677 59.0443 12.8997 58.2363 12.8997ZM60.5335 12.8037V7.20371H61.5895V9.31571C61.8535 8.92371 62.2535 8.70771 62.7495 8.70771C63.7015 8.70771 64.2455 9.26771 64.2375 10.5397V10.7557H64.2455V12.8037H63.1895V10.7557H63.1815C63.1815 9.94771 62.8855 9.70771 62.4375 9.69971C61.8855 9.69171 61.5895 10.0437 61.5895 10.7077V12.8037H60.5335Z" fill={text} />
-    </svg>
-  )
 }
 
 /* Term glyphs for the image tile — a lightweight stand-in for the product
@@ -471,84 +482,6 @@ function ProductGlyph({ dest, color }) {
   )
 }
 
-/* CTA content per destination — the primary button reads "Switch to <brand>",
- * with the brand rendered as its wordmark where we have one. */
-function CrossSellCta({ dest, color }) {
-  const labelCls = 'font-noontree text-[16px] font-bold leading-6'
-  if (dest === 'noon') {
-    return (
-      <>
-        <span className={labelCls} style={{ color }}>Switch to</span>
-        {/* wordmark inverted to white so it reads on the blue button */}
-        <img src={noonWordmark} alt="noon" className="h-[10px] w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
-      </>
-    )
-  }
-  if (dest === 'food') {
-    return (
-      <>
-        <span className={labelCls} style={{ color }}>Switch to</span>
-        <img src={foodWordmark} alt="FOOD" className="h-[13px] w-auto" />
-      </>
-    )
-  }
-  // minutes — no clean single-colour wordmark, so plain text on the red button
-  return <span className={labelCls} style={{ color }}>Switch to minutes</span>
-}
-
-/* ── Rounded-hexagon clip ─────────────────────────────────────────────────
- * Squircle can't cut a hexagon, so we build a pointy-top hexagon path (flat
- * left/right, points top/bottom) with rounded vertices for a `clip-path`.
- * Corners are rounded by trimming each edge back by `r` and joining across the
- * vertex with a quadratic curve. */
-function hexPath(w, h, r) {
-  const pts = [
-    [w / 2, 0],        // top
-    [w, h * 0.25],     // upper-right
-    [w, h * 0.75],     // lower-right
-    [w / 2, h],        // bottom
-    [0, h * 0.75],     // lower-left
-    [0, h * 0.25],     // upper-left
-  ]
-  const n = pts.length
-  const trim = (from, to) => {
-    const dx = to[0] - from[0]
-    const dy = to[1] - from[1]
-    const len = Math.hypot(dx, dy)
-    const t = Math.min(r / len, 0.5)
-    return [from[0] + dx * t, from[1] + dy * t]
-  }
-  let d = ''
-  for (let i = 0; i < n; i++) {
-    const curr = pts[i]
-    const prev = pts[(i - 1 + n) % n]
-    const next = pts[(i + 1) % n]
-    const entry = trim(curr, prev)
-    const exit = trim(curr, next)
-    d += i === 0 ? `M ${entry[0]} ${entry[1]}` : ` L ${entry[0]} ${entry[1]}`
-    d += ` Q ${curr[0]} ${curr[1]} ${exit[0]} ${exit[1]}`
-  }
-  return d + ' Z'
-}
-
-/* 52×56 hexagon tile — white outer hexagon reads as the 1px border, the inner
- * (inset 1px) hexagon clips the photo/glyph, which is padded in so it sits
- * smaller than the tile. */
-function HexTile({ children, innerBg }) {
-  return (
-    <div data-id="search-cross-banner-image" className="relative shrink-0" style={{ width: 52, height: 56 }}>
-      <div data-id="search-cross-banner-image-border" className="absolute inset-0 bg-white" style={{ clipPath: `path('${hexPath(52, 56, 11)}')` }} />
-      <div
-        data-id="search-cross-banner-image-clip"
-        className="absolute inset-[1px] flex items-center justify-center overflow-hidden p-[6px]"
-        style={{ background: innerBg, clipPath: `path('${hexPath(50, 54, 10)}')` }}
-      >
-        {children}
-      </div>
-    </div>
-  )
-}
-
 /* ── Quick-search cross-sell banner — slides up from the bottom (Image #13) ──
  * Reused for every destination; `theme` drives colour + copy so the three
  * variants stay a single component (parameterised, not forked). */
@@ -556,77 +489,68 @@ function CrossSellBanner({ dest, term, img = null, fit = 'cover', onSwitch }) {
   const theme = CROSS_SELL_THEMES[dest]
   const t = term.trim()
   const label = t ? t[0].toUpperCase() + t.slice(1) : ''
+  // stock count — deterministic from the term so it's stable per search
+  const seed = t.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  const count = 100 + (seed % 400)
   return (
     <motion.div
-      data-id="search-cross-banner"
-      initial={{ y: '120%' }}
-      animate={{ y: 0 }}
-      exit={{ y: '120%' }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-x-0 bottom-0 z-[60]"
+      data-id="search-cross-float"
+      initial={{ x: '130%', opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: '130%', opacity: 0 }}
+      transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+      className="absolute z-[60] w-[142px]"
+      style={{ right: 12, bottom: 'calc(78px + var(--sab, 0px))' }}
     >
-      {/* shadow surface behind the banner — a secondary-surface rounded panel
-          that casts the upward shadow (the squircle sheet sits on top of it) */}
-      <div
-        data-id="search-cross-banner-shadow"
-        className="absolute inset-0 z-0 rounded-t-[12px]"
-        style={{ background: '#F9F9FB', boxShadow: '0 -4px 20px 0 rgba(0, 0, 0, 0.20)' }}
-      />
-      {/* quick-search tab notching out of the top edge */}
-      <div data-id="search-cross-banner-tab-wrap" className="pointer-events-none absolute left-1/2 z-[2] -translate-x-1/2" style={{ top: -6 }}>
-        <QuickSearchTab color={theme.tabInk} body={theme.tabBody} text={theme.tabText} />
-      </div>
-      {/* squircle sheet — the smooth-cornered shape carries the fill; top
-          corners rounded, bottom squared so it sits flush to the screen edge.
-          The slide stays on the motion wrapper above so the static Squircle's
-          corner path never gets frozen. */}
-      <Squircle
-        as="div"
-        data-id="search-cross-banner-sheet"
-        cornerRadius={16}
-        bottomLeftCornerRadius={0}
-        bottomRightCornerRadius={0}
-        cornerSmoothing={1}
-        className="relative z-[1] flex flex-col gap-3 px-[18px] pt-4"
-        style={{ background: theme.banner, paddingBottom: 'calc(24px + var(--sbp, 0px) + var(--sab, 0px))' }}
-      >
-        {/* image + copy row */}
-        <div data-id="search-cross-banner-row" className="flex items-center gap-3">
-          {/* image box — rounded hexagon: the white outer shape reads as the
-              1px border, the inner one clips the photo/glyph */}
-          <HexTile innerBg={theme.imageBg}>
-              {img ? (
-                <img data-id="search-cross-banner-image-media" src={img} alt="" aria-hidden="true" className={fit === 'contain' ? 'h-full w-full object-contain p-[3px]' : 'h-full w-full object-cover'} />
-              ) : dest === 'food' ? (
-                <img data-id="search-cross-banner-image-media" src={shawarmaImg} alt="" aria-hidden="true" className="h-full w-full object-cover" />
-              ) : (
-                <ProductGlyph dest={dest} color={theme.glyph} />
-              )}
-          </HexTile>
-          {/* copy */}
-          <div data-id="search-cross-banner-copy" className="flex min-w-0 flex-1 flex-col gap-1">
-            <span data-id="search-cross-banner-title" className="truncate font-noontree text-[18px] font-bold leading-6 tracking-[-0.2px]" style={{ color: theme.titleColor }}>
-              Find &ldquo;{label}&rdquo; on {theme.destName}
-            </span>
-            <span data-id="search-cross-banner-sub" className="font-noontree text-[13px] font-medium leading-5" style={{ color: theme.subColor }}>
-              Switch and continue your search
-            </span>
+      {/* pt leaves room for the hexagon that overhangs the card's top edge */}
+      <div className="relative pt-[42px]">
+        {/* card — brand-filled squircle, white copy + Switch pill */}
+        <Squircle
+          as="div"
+          data-id="search-cross-float-card"
+          cornerRadius={24}
+          bottomLeftCornerRadius={12}
+          bottomRightCornerRadius={12}
+          cornerSmoothing={1}
+          className="flex w-[142px] flex-col items-center justify-end gap-[18px] px-3 pb-4"
+          style={{ height: 158, background: theme.floatBg, boxShadow: '0 -4px 20px 0 rgba(0, 0, 0, 0.20)' }}
+        >
+          <div data-id="search-cross-float-title" className="text-center font-noontree text-[16px] font-bold leading-[20px] text-white">
+            {count}+ {label}<br />on {theme.destName}
+          </div>
+          <button
+            type="button"
+            data-id="search-cross-float-cta"
+            onClick={onSwitch}
+            className="flex h-9 w-20 items-center justify-center rounded-full bg-white font-noontree text-[14px] font-bold transition active:scale-95"
+            style={{ color: theme.floatInk }}
+          >
+            Switch
+          </button>
+        </Squircle>
+
+        {/* hexagon image — overhangs the top edge; the svg is the shape, the
+            product image sits centered on top of it */}
+        <div
+          data-id="search-cross-float-hex"
+          className="absolute left-1/2 top-[6px] z-[2] -translate-x-1/2"
+          style={{ width: 64, height: 68 }}
+        >
+          <svg data-id="search-cross-float-hex-shape" className="absolute inset-0 h-full w-full" width="67" height="70" viewBox="0 0 67 70" fill="none" aria-hidden="true">
+            <path d="M26.0449 2.57349C30.5596 0.141654 35.9951 0.141654 40.5098 2.57349L49.5605 7.44946L58.084 12.4377C62.672 15.1228 65.5308 20.0036 65.6289 25.3186L65.8037 34.8264L65.6289 44.3342C65.5308 49.6493 62.672 54.5301 58.084 57.2151L49.5605 62.2034L40.5098 67.0793C35.9951 69.5112 30.5596 69.5112 26.0449 67.0793L16.9941 62.2034L8.4707 57.2151C3.88267 54.5301 1.02384 49.6493 0.925781 44.3342L0.75 34.8264L0.925781 25.3186C1.02384 20.0036 3.88267 15.1228 8.4707 12.4377L16.9941 7.44946L26.0449 2.57349Z" fill={theme.imageBg} stroke="white" strokeWidth="1.5" />
+          </svg>
+          {/* product image on top of the hexagon shape */}
+          <div className="absolute inset-0 flex items-center justify-center p-[10px]">
+            {img ? (
+              <img data-id="search-cross-float-image-media" src={img} alt="" aria-hidden="true" className="max-h-full max-w-full object-contain" />
+            ) : dest === 'food' ? (
+              <img data-id="search-cross-float-image-media" src={shawarmaImg} alt="" aria-hidden="true" className="max-h-full max-w-full object-contain" />
+            ) : (
+              <ProductGlyph dest={dest} color={theme.glyph} />
+            )}
           </div>
         </div>
-        {/* full-width primary button — squircle-cornered like the sheet */}
-        <Squircle
-          as="button"
-          type="button"
-          data-id="search-cross-banner-cta"
-          cornerRadius={16}
-          cornerSmoothing={1}
-          onClick={onSwitch}
-          className="flex h-14 w-full items-center justify-center gap-1 transition active:scale-[0.98]"
-          style={{ background: theme.button.bg }}
-        >
-          <CrossSellCta dest={dest} color={theme.button.text} />
-        </Squircle>
-      </Squircle>
+      </div>
     </motion.div>
   )
 }
@@ -817,18 +741,27 @@ function MinutesHome({ activeId, onChange, onSearch, progress }) {
     <main
       data-id="search-home-main"
       onScroll={onScroll}
-      className="scrollbar-hide relative flex-1 overflow-y-auto bg-white"
-      style={{ paddingBottom: 'calc(85px + var(--sab, 0px))' }}
+      className="scrollbar-hide relative flex-1 overflow-y-auto"
+      style={{
+        paddingBottom: 'calc(85px + var(--sab, 0px))',
+        // minutes: sky-gradient backdrop continuing the header, fading to white
+        // toward the content; noon/food/others keep the plain white home
+        background:
+          activeId === 'minutes'
+            ? 'linear-gradient(180deg, #CBF1FE 0%, #E4F6FF 14%, #F4FBFF 30%, #FFFFFF 48%)'
+            : '#FFFFFF',
+      }}
     >
       <div
         data-id="search-home-header"
         className="sticky top-0 z-[45] rounded-b-[12px]"
         style={{
           paddingTop: 'var(--sat, 0px)',
-          background: HOME_HEADER_BG,
+          // food gets a plain light header; minutes/noon keep the sky gradient
+          background: activeId === 'food' ? '#EEF0F5' : HOME_HEADER_BG,
           // opaque white beneath the translucent gradient so the scrolling
           // body never shows through the sticky header
-          backgroundColor: '#FFFFFF',
+          backgroundColor: activeId === 'food' ? '#EEF0F5' : '#FFFFFF',
         }}
       >
         <MarketplaceSwitcherV8 items={marketplaces} activeId={activeId} onChange={onChange} progress={progress} showHint={false} />
@@ -836,6 +769,11 @@ function MinutesHome({ activeId, onChange, onSearch, progress }) {
           <>
             <MinutesLocationBar />
             <MinutesSearchBar onClick={onSearch} />
+          </>
+        ) : activeId === 'food' ? (
+          <>
+            <FoodLocationBar />
+            <FoodSearchBar onClick={onSearch} />
           </>
         ) : (
           <>
@@ -846,16 +784,27 @@ function MinutesHome({ activeId, onChange, onSearch, progress }) {
       </div>
 
       <div data-id="search-home-content" className="relative z-10">
-        <PromoBanner />
-        <CategoryGrid categories={categories} />
-        <ProductRail dataId="search-best-picks" title="Best picks for you" products={bestPicks} />
-        <ProductRail
-          dataId="search-mobile-deals"
-          title="Extra 10% off mobiles | Use code: SAVEBIG"
-          viewAll
-          products={mobileDeals}
-        />
-        <CombosSection />
+        {activeId === 'minutes' ? (
+          // minutes marketplace — the 12-Minutes grocery home
+          <MinutesHomeBody />
+        ) : activeId === 'food' ? (
+          // noon FOOD marketplace — the restaurants home
+          <FoodHomeBody />
+        ) : (
+          // noon (and other verticals) — the original noon home
+          <>
+            <PromoBanner />
+            <CategoryGrid categories={categories} />
+            <ProductRail dataId="search-best-picks" title="Best picks for you" products={bestPicks} />
+            <ProductRail
+              dataId="search-mobile-deals"
+              title="Extra 10% off mobiles | Use code: SAVEBIG"
+              viewAll
+              products={mobileDeals}
+            />
+            <CombosSection />
+          </>
+        )}
       </div>
     </main>
   )
@@ -946,16 +895,22 @@ export default function SearchExperiment() {
         onSearch={() => setSearchActive(true)}
         progress={progress}
       />
-      <BottomNav
-        dataId="search-bottom-nav"
-        bottomPad={8}
-        accent={{
-          from: '#FF3B63',
-          to: '#EB0030',
-          grad: 'linear-gradient(180deg, #FF3B63 18.95%, #EB0030 122.21%)',
-          tint: 'rgba(235, 0, 48, 0.12)',
-        }}
-      />
+      {activeId === 'food' ? (
+        // noon FOOD home uses the food-specific tab bar (Home / Meal Plans /
+        // Đ10 Deals / Favourites / Account), fixed to the bottom like the nav
+        <div className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2">
+          <FoodBottomNav />
+        </div>
+      ) : (
+        <BottomNav
+          dataId="search-bottom-nav"
+          bottomPad={8}
+          accent={activeId === 'noon' ? NAV_ACCENT_NOON : NAV_ACCENT_MINUTES}
+        />
+      )}
+
+      {/* Floating "View cart" pill (home only) — centered above the bottom nav */}
+      {!searchActive && activeId === 'minutes' && <MinutesViewCart />}
 
       {/* Back to experiments (only on the home) — floating black pill on the
           right, above the bottom nav, matching the marketplace switcher */}
@@ -1029,7 +984,7 @@ export default function SearchExperiment() {
             >
             {/* noon drops the Magic List pill; minutes/other verticals keep it */}
             {renderSearchBar(activeId !== 'noon')}
-            <main data-id="search-main" className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: submitted ? 0 : 'calc(24px + var(--sab, 0px))' }}>
+            <main data-id="search-main" className="flex-1 overflow-y-auto overscroll-contain" style={{ paddingBottom: submitted ? 0 : 'calc(85px + var(--sab, 0px))' }}>
               {submitted ? (
                 activeId === 'noon' ? (
                 /* ── noon marketplace PLP — the full airpods results page ── */
@@ -1126,6 +1081,13 @@ export default function SearchExperiment() {
                 </div>
               )}
             </main>
+            {/* bottom navbar on the search page — noon results use the noon
+                (blue) nav, minutes/other verticals stay red */}
+            <BottomNav
+              dataId="search-slp-bottom-nav"
+              bottomPad={8}
+              accent={activeId === 'noon' ? NAV_ACCENT_NOON : NAV_ACCENT_MINUTES}
+            />
             </motion.div>
             )}
             </AnimatePresence>
