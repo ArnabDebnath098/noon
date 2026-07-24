@@ -250,6 +250,15 @@ const RAIL_DISSOLVE_CARD = {
   exit: { opacity: 1, transition: { duration: 0 } },
 }
 
+// Slide + fade (variation 1) — the whole set slides in from the right / out to
+// the left with a fade, no stagger, no flip. Applied to the container so the
+// cards move together. mode="wait" sequences exit → enter.
+const RAIL_SLIDE_CONTAINER = {
+  initial: { x: 40, opacity: 0 },
+  enter: { x: 0, opacity: 1, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } },
+  exit: { x: -40, opacity: 0, transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] } },
+}
+
 /* express "Today" badge — the combined yellow/black pill (Figma svg, 97×16). */
 function ExpressToday() {
   return (
@@ -362,20 +371,38 @@ function RecCard({ item }) {
   )
 }
 
+// Shimmer block — a grey placeholder with a light highlight sweeping across it
+// (background-position animation), giving a proper shimmer loader look.
+const SHIMMER_BG = 'linear-gradient(90deg, #E4E7EE 25%, #F2F4F8 50%, #E4E7EE 75%)'
+function Shimmer({ className = '', style }) {
+  return (
+    <motion.span
+      className={`block ${className}`}
+      style={{ ...style, backgroundImage: SHIMMER_BG, backgroundSize: '200% 100%' }}
+      animate={{ backgroundPosition: ['150% 0', '-150% 0'] }}
+      transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+    />
+  )
+}
+
 /* Skeleton placeholder for a rec card — shown while variation 4 "loads" the
  * new tab's items. Mirrors the 134-wide card: image tile + two text lines +
- * a price bar, all pulsing grey. */
+ * a price bar, each a sweeping shimmer. */
 function RecCardSkeleton() {
-  const bar = '#E4E7EE'
+  // Mirrors RecCard's exact box model (image 174 + 36px name block + price /
+  // express rows) so the rail's height stays constant while loading.
   return (
-    <div className="flex shrink-0 animate-pulse flex-col gap-1" style={{ width: 134 }}>
-      <div className="rounded-[10px]" style={{ width: 134, height: 174, background: bar, border: '1px solid #F2F3F7' }} />
+    <div className="flex shrink-0 flex-col gap-1" style={{ width: 134 }}>
+      <Shimmer className="rounded-[10px]" style={{ width: 134, height: 174, border: '1px solid #F2F3F7' }} />
       <div className="flex flex-col" style={{ padding: 4, gap: 8 }}>
-        <div className="flex flex-col gap-1.5">
-          <span className="rounded" style={{ height: 12, width: '100%', background: bar }} />
-          <span className="rounded" style={{ height: 12, width: '68%', background: bar }} />
+        <div className="flex flex-col gap-1.5" style={{ height: 36 }}>
+          <Shimmer className="rounded" style={{ height: 12, width: '100%' }} />
+          <Shimmer className="rounded" style={{ height: 12, width: '68%' }} />
         </div>
-        <span className="rounded" style={{ height: 16, width: '55%', background: bar }} />
+        <div className="flex flex-col" style={{ gap: 2 }}>
+          <Shimmer className="rounded" style={{ height: 20, width: '70%' }} />
+          <Shimmer className="rounded" style={{ height: 16, width: 97 }} />
+        </div>
       </div>
     </div>
   )
@@ -384,7 +411,7 @@ function RecCardSkeleton() {
 /* Variation-3 tab icons (currentColor so they follow the active/inactive tint). */
 function WishHeartIcon() {
   return (
-    <svg width="15" height="13" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width="12" height="12" viewBox="0 0 9 8" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M5.66128 0.106945C6.38247 -0.120662 7.20616 0.00297103 7.89135 0.607292C9.03786 1.61867 8.84535 3.31396 8.05386 4.61402C7.29202 5.86463 6.40243 6.70247 5.70079 7.22837C5.35005 7.49124 5.0455 7.67647 4.82704 7.79688C4.71791 7.85702 4.62993 7.90128 4.56822 7.93073C4.53749 7.94539 4.51278 7.95668 4.49561 7.96432C4.48726 7.96803 4.48025 7.97111 4.47536 7.97321C4.47308 7.97419 4.47091 7.97506 4.46944 7.97568L4.46746 7.97667H4.46647C4.39215 8.00749 4.30819 8.0079 4.23383 7.97716L4.23284 7.97667L4.23087 7.97568C4.22941 7.97506 4.22727 7.9742 4.22494 7.97321C4.22003 7.9711 4.21272 7.9681 4.2042 7.96432C4.18705 7.9567 4.16279 7.94536 4.13208 7.93073C4.07036 7.90131 3.98202 7.85752 3.87277 7.79737C3.65424 7.67704 3.34986 7.4917 2.99902 7.22886C2.2972 6.70305 1.40748 5.86525 0.645955 4.61402C-0.146614 3.31369 -0.338082 1.61863 0.808457 0.607292C1.49404 0.00315155 2.31832 -0.12122 3.03952 0.106451C3.56468 0.272316 4.02982 0.623289 4.34991 1.09776C4.67013 0.623419 5.13603 0.272816 5.66128 0.106945Z" fill="currentColor" />
     </svg>
   )
@@ -406,9 +433,9 @@ function DealIcon() {
 
 /* Variation-3 active-tab background — a raised curved plateau that dips into the
  * card at both ends (Figma "Union"). Gradient + unique ids are parameterised. */
-function RecTabShape({ id, from, to, width = 207, className = '', style }) {
+function RecTabShape({ id, from, to, width = 207, height = 44, className = '', style }) {
   return (
-    <svg width={width} height="36" viewBox="0 0 207 36" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style} aria-hidden="true">
+    <svg width={width} height={height} viewBox="0 0 207 36" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} style={style} aria-hidden="true">
       <g filter={`url(#${id}-shadow)`}>
         <path d="M147.806 0C153.853 0 156.877 0.000213265 159.534 1.02246C161.295 1.70036 162.924 2.69811 164.339 3.96875C166.473 5.88486 167.9 8.61506 170.754 14.0742C174.899 22.0028 176.972 25.9673 180.056 28.792C182.103 30.666 184.455 32.1566 187.005 33.1973C190.848 34.7658 197.683 35.7381 206.461 36.0054H-1.53929C7.23915 35.7381 12.0055 34.7659 15.8491 33.1973C18.3991 32.1566 20.7512 30.666 22.7972 28.792C25.8812 25.9673 27.9535 22.0026 32.0989 14.0742C34.9532 8.61506 36.3807 5.88486 38.5149 3.96875C39.9301 2.69816 41.5583 1.70034 43.3202 1.02246C45.977 0.000295639 49.0003 5.41098e-10 55.0469 0H147.806Z" fill={`url(#${id}-grad)`} />
       </g>
@@ -437,18 +464,18 @@ function RecTabShape({ id, from, to, width = 207, className = '', style }) {
  * sections (heading / tabs / product rail) carries its own padding per spec. */
 function Recommendation({ variant = 1 }) {
   const [tab, setTab] = useState('wishlist')
-  // variation 4: on a tab switch, show a skeleton loader for 1s instead of
-  // flipping the cards, then reveal the new tab's items
+  // variations 1 & 4: on a tab switch, show a skeleton loader instead of
+  // animating the cards, then reveal the new tab's items (1 = 400ms, 4 = 1s)
   const [loading, setLoading] = useState(false)
   const loadTimer = useRef(null)
   useEffect(() => () => clearTimeout(loadTimer.current), [])
   const selectTab = (id) => {
     if (id === tab) return
     setTab(id)
-    if (variant === 4) {
+    if (variant === 1 || variant === 4) {
       setLoading(true)
       clearTimeout(loadTimer.current)
-      loadTimer.current = setTimeout(() => setLoading(false), 1000)
+      loadTimer.current = setTimeout(() => setLoading(false), variant === 1 ? 400 : 1000)
     }
   }
   const TABS = [
@@ -470,7 +497,7 @@ function Recommendation({ variant = 1 }) {
       {/* 2 — tabs. 4 = raised curved-plateau tabs (icon + sliding shape);
           3 = iOS segmented pill control; 2 = underline; 1 (default) = pills. */}
       {variant === 4 ? (
-        <div data-id="cart-rec-tabs" className="relative flex flex-row items-end" style={{ height: 44 }}>
+        <div data-id="cart-rec-tabs" className="relative flex flex-row items-end" style={{ height: 52 }}>
           {TABS.map((t) => {
             const active = t.id === tab
             return (
@@ -481,17 +508,17 @@ function Recommendation({ variant = 1 }) {
                 className="relative flex flex-1 items-center justify-center gap-1.5"
                 // paddingTop nudges the icon+label down so they sit lower on the
                 // plateau shape (which starts at top:8)
-                style={{ height: 44, paddingTop: 10, color: active ? t.accent : '#666D85', transition: 'color 200ms' }}
+                style={{ height: 52, paddingTop: 6, paddingRight: 6, color: active ? t.accent : '#666D85', transition: 'color 200ms' }}
               >
                 {/* active-tab background shape — slides between tabs via layoutId */}
                 {active && (
                   <motion.div
                     layoutId="cart-rec-tab-shape"
                     className="pointer-events-none absolute"
-                    // shape is wider than the tab, so centre it on the tab's
-                    // midpoint (left:50% − half width); left:0/right:0+auto can't
-                    // centre an over-wide box and pins it left, off-centre
-                    style={{ top: 8, left: '50%', width: t.id === 'wishlist' ? 208 : 200, marginLeft: t.id === 'wishlist' ? -104 : -100 }}
+                    // centre the shape on the tab's TEXT: left:50% is the button
+                    // centre; marginLeft −(width/2) centres the over-wide shape,
+                    // and −3 more offsets the text left-shift from the 6px right pad
+                    style={{ top: 8, left: '50%', width: t.id === 'wishlist' ? 208 : 200, marginLeft: (t.id === 'wishlist' ? -104 : -100) - 3 }}
                     transition={{ type: 'spring', stiffness: 480, damping: 42 }}
                   >
                     {t.id === 'wishlist' ? (
@@ -582,7 +609,7 @@ function Recommendation({ variant = 1 }) {
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => selectTab(t.id)}
                 className="flex items-center justify-center font-noontree font-semibold transition"
                 style={{
                   boxSizing: 'border-box',
@@ -611,7 +638,7 @@ function Recommendation({ variant = 1 }) {
         data-id="cart-rec-rail"
         className="scrollbar-hide overflow-x-auto"
         style={{
-          padding: '20px 12px 12px',
+          padding: `${variant === 3 ? 12 : variant === 1 ? 16 : variant === 4 ? 14 : 20}px 12px 12px`,
           perspective: variant === 2 ? undefined : 1200,
           // marginTop:-1 tucks the rail under the plateau's bottom edge so no
           // hairline of the white card shows in the seam
@@ -622,34 +649,32 @@ function Recommendation({ variant = 1 }) {
             : {}),
         }}
       >
-        {variant === 4 ? (
-          // no flip — show a skeleton loader for 1s on switch, then the cards
+        {variant === 1 || variant === 4 ? (
+          // no flip — skeleton loader on switch (400ms for v1, 1s for v4), then
+          // the new tab's cards
           <div className="flex flex-row" style={{ gap: 12 }}>
             {loading
               ? [0, 1, 2].map((i) => <RecCardSkeleton key={i} />)
               : (tab === 'wishlist' ? RECS : RECS_STEAL).map((item, i) => <RecCard key={i} item={item} />)}
-          </div>
-        ) : variant === 3 ? (
-          // instant swap — no flip/dissolve, the products just change
-          <div className="flex flex-row" style={{ gap: 12 }}>
-            {(tab === 'wishlist' ? RECS : RECS_STEAL).map((item, i) => <RecCard key={i} item={item} />)}
           </div>
         ) : (
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={tab}
               className="flex flex-row"
-              style={{ gap: 12, transformStyle: variant === 2 ? undefined : 'preserve-3d' }}
+              style={{ gap: 12, transformStyle: variant === 2 || variant === 1 ? undefined : 'preserve-3d' }}
               // flip direction follows the tab move: → steal flips L→R, →
               // wishlist flips R→L (staggerDirection +1 / -1)
               variants={
                 variant === 2
                   ? RAIL_DISSOLVE_CONTAINER
-                  : {
-                      initial: {},
-                      enter: { transition: { staggerChildren: 0.07, delayChildren: 0.04, staggerDirection: tab === 'steal' ? 1 : -1 } },
-                      exit: { transition: { staggerChildren: 0.05, staggerDirection: tab === 'steal' ? 1 : -1 } },
-                    }
+                  : variant === 1
+                    ? RAIL_SLIDE_CONTAINER
+                    : {
+                        initial: {},
+                        enter: { transition: { staggerChildren: 0.07, delayChildren: 0.04, staggerDirection: tab === 'steal' ? 1 : -1 } },
+                        exit: { transition: { staggerChildren: 0.05, staggerDirection: tab === 'steal' ? 1 : -1 } },
+                      }
               }
               initial="initial"
               animate="enter"
@@ -661,15 +686,16 @@ function Recommendation({ variant = 1 }) {
                   // rotateY sign mirrors with the move direction so → steal and
                   // → wishlist spin opposite ways (not just reverse order)
                   variants={
-                    variant === 2
+                    variant === 2 || variant === 1
                       ? RAIL_DISSOLVE_CARD
                       : {
+                          // variation 3 flips faster (350ms, expo-out); others 250ms
                           initial: { rotateY: 90 * (tab === 'steal' ? 1 : -1), opacity: 0 },
-                          enter: { rotateY: 0, opacity: 1, transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] } },
-                          exit: { rotateY: -90 * (tab === 'steal' ? 1 : -1), opacity: 0, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } },
+                          enter: { rotateY: 0, opacity: 1, transition: { duration: variant === 3 ? 0.35 : 0.25, ease: variant === 3 ? [0.16, 1, 0.3, 1] : [0.22, 1, 0.36, 1] } },
+                          exit: { rotateY: -90 * (tab === 'steal' ? 1 : -1), opacity: 0, transition: { duration: variant === 3 ? 0.35 : 0.25, ease: variant === 3 ? [0.16, 1, 0.3, 1] : [0.22, 1, 0.36, 1] } },
                         }
                   }
-                  style={variant === 2 ? undefined : { transformStyle: 'preserve-3d', transformOrigin: 'center' }}
+                  style={variant === 2 || variant === 1 ? undefined : { transformStyle: 'preserve-3d', transformOrigin: 'center' }}
                 >
                   <RecCard item={item} />
                 </motion.div>
