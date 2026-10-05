@@ -482,30 +482,42 @@ diffuseColor.rgb = bc;`);
     screenTex.needsUpdate = true;
   }
 
-  // ── shadows (Figma): head #05001a 40% y +44 blur 60; ears #1a004d 35% y +10 blur 15 ──
-  function headOutline(ctx, k) {
-    const w = 2 * HEAD.hw * k, h = 2 * HEAD.hh * k;
+  // ── shadows: a tight, grounded drop under the head (the Figma y+44 blur 60
+  // read as a muddy halo once the bot floats over busy artwork) + soft ear shadows ──
+  function headOutline(ctx, k, sx = 1, sy = 1) {
+    const w = 2 * HEAD.hw * k * sx, h = 2 * HEAD.hh * k * sy;
     ctx.beginPath();
-    ctx.roundRect(-w / 2, -h / 2, w, h, [HEAD.rTop * k, HEAD.rTop * k, HEAD.rBot * k, HEAD.rBot * k]);
+    ctx.roundRect(-w / 2, -h / 2, w, h, [HEAD.rTop * k * sx, HEAD.rTop * k * sx, HEAD.rBot * k * sy, HEAD.rBot * k * sy]);
   }
   const shadows = [
     {
-      dy: 44 * PX,
+      // ambient: purple-tinted, narrower than the head so it only shows below it
+      dy: 16 * PX,
       draw(ctx, k) {
-        ctx.filter = `blur(${30 * PX * k}px)`;
-        ctx.fillStyle = 'rgba(5,0,26,0.4)';
-        headOutline(ctx, k);
+        ctx.filter = `blur(${11 * PX * k}px)`;
+        ctx.fillStyle = 'rgba(38,8,110,0.36)';
+        headOutline(ctx, k, 0.84, 0.8);
         ctx.fill();
       },
     },
     {
-      dy: 10 * PX,
+      // contact: small and darker, right under the chin
+      dy: 6 * PX,
       draw(ctx, k) {
-        ctx.filter = `blur(${7.5 * PX * k}px)`;
-        ctx.fillStyle = 'rgba(26,0,77,0.35)';
+        ctx.filter = `blur(${5 * PX * k}px)`;
+        ctx.fillStyle = 'rgba(20,0,60,0.26)';
+        headOutline(ctx, k, 0.72, 0.86);
+        ctx.fill();
+      },
+    },
+    {
+      dy: 6 * PX,
+      draw(ctx, k) {
+        ctx.filter = `blur(${5 * PX * k}px)`;
+        ctx.fillStyle = 'rgba(26,0,77,0.22)';
         for (const side of [-1, 1]) {
           ctx.beginPath();
-          ctx.roundRect(side * EAR.x * k - EAR.r * k, -EAR.y * k - 40 * PX * k, 2 * EAR.r * k, 80 * PX * k, EAR.r * k);
+          ctx.roundRect(side * EAR.x * k - EAR.r * k, -EAR.y * k - 30 * PX * k, 2 * EAR.r * k, 60 * PX * k, EAR.r * k);
           ctx.fill();
         }
       },

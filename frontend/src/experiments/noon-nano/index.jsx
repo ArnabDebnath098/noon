@@ -3,6 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from '../../components/layout/AppShell'
 import useElementWidth from '../../hooks/useElementWidth'
+import { marketplaces } from '../../data/marketplace'
+import MarketplaceSwitcherV8 from '../marketplace-switcher/sections/MarketplaceSwitcherV8'
+import nanoMark from '../../assets/nano/home/sw-nano-mark.svg'
 import NanoBot from './NanoBot'
 import NanoBottomNav, { NAV_SAFE_BOTTOM } from './NanoBottomNav'
 import NanoHomeArt, { NANO_HOME_ART } from './NanoHomeArt'
@@ -56,14 +59,28 @@ function useScrollCompact() {
   return { compact, onScroll, reset }
 }
 
+// the search experiment's marketplace switcher, with noon nano first. The nano
+// tile keeps its Figma purple with the pre-coloured mark (selected or not), so
+// the white invert never applies to it.
+const NANO_MARKETPLACE = { id: 'nano', label: 'noon\nnano', logo: nanoMark, logoW: 58, fg: '#7924FF', bg: '#7924FF', accent: '#7924FF', lightAccent: true }
+const SWITCHER_ITEMS = [NANO_MARKETPLACE, ...marketplaces]
+
 /** home: the 375px Figma artwork, scaled to the screen width */
 function HomeScreen() {
+  // tiles only highlight for now; the home stays the nano home
+  const [marketplace, setMarketplace] = useState('nano')
   const [ref, width] = useElementWidth(NANO_HOME_ART.width)
   const scale = width / NANO_HOME_ART.width
   return (
     <div ref={ref} data-id="nano-home" className="relative w-full overflow-hidden" style={{ height: NANO_HOME_ART.height * scale }}>
       <div className="absolute left-0 top-0 origin-top-left" style={{ transform: `scale(${scale})` }}>
-        <NanoHomeArt />
+        <NanoHomeArt
+          switcher={
+            <div data-id="nano-marketplace-switcher" className="w-full">
+              <MarketplaceSwitcherV8 items={SWITCHER_ITEMS} activeId={marketplace} onChange={setMarketplace} showHint={false} />
+            </div>
+          }
+        />
       </div>
     </div>
   )

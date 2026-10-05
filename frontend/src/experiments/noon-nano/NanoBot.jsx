@@ -7,7 +7,10 @@ import { createNoonBot } from './bot/noonBot'
  *
  * Starts at the bottom right, just above the bottom nav. Press and drag to move it anywhere between the status bar
  * and the nav; it leans into the drag and rocks upright when let go. A tap is
- * a little hop. Arrow keys nudge it when focused, Enter / Space taps it.
+ * a reaction: each tap hops and plays the next mood (face + pose), then it
+ * settles back to idle; three quick taps make it dizzy,
+ * and asleep it waits for a tap to wake. Arrow keys nudge it when focused,
+ * Enter / Space taps it.
  *
  * The position is kept as fractions of the free area so it survives screen
  * size changes, and remembered per browser (a convenience only).
@@ -24,6 +27,18 @@ const TAP_PX = 6
 const TAP_MS = 300
 const KEY_STEP = 16
 const STORE_KEY = 'nano.bot.pos'
+// tap reactions, played in turn; `hold` stays until the next tap
+const REACTIONS = [
+  { state: 'greeting', say: 'Hi there!' },
+  { state: 'working', say: 'Hmm, thinking…' },
+  { state: 'angry', say: 'Hey, no poking!' },
+  { state: 'error', say: 'Oops!' },
+  { state: 'sleepy', say: 'Zzz… tap to wake me', hold: true },
+]
+const DIZZY = { state: 'dizzy', say: 'Whoa, so dizzy!' }
+const REACT_MS = 2200
+const QUICK_TAPS = 3 // this many taps within QUICK_MS → dizzy
+const QUICK_MS = 900
 
 const clamp01 = (v) => Math.min(1, Math.max(0, v))
 
@@ -55,6 +70,8 @@ export default function NanoBot({ top, bottom }) {
   const [pos, setPos] = useState(readStored)
   const [dragging, setDragging] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [spoken, setSpoken] = useState(null) // what the screen reader announces: { key, say }
+  const reaction = useRef({ next: 0, taps: [], timer: 0 })
 
   useLayoutEffect(() => {
     const el = areaRef.current
@@ -77,7 +94,9 @@ export default function NanoBot({ top, bottom }) {
       return undefined
     }
     engineRef.current = engine
+    const r = reaction.current
     return () => {
+      window.clearTimeout(r.timer)
       engine.dispose()
       engineRef.current = null
     }
@@ -100,6 +119,43 @@ export default function NanoBot({ top, bottom }) {
     },
     [fx, fy, spanX, spanY],
   )
+
+  const say = (text, ms) => {
+    const r = reaction.current
+    window.clearTimeout(r.timer)
+    setSpoken({ key: performance.now(), say: text })
+    if (ms) r.timer = window.setTimeout(() => setSpoken(null), ms)
+  }
+  // a tap: hop + the next reaction, or wake up if asleep
+  const react = () => {
+    const engine = engineRef.current
+    if (!engine) return
+    const r = reaction.current
+    if (engine.state === 'sleepy') {
+      engine.tap() // wakes with a big hop
+      say("I'm up!", 1400)
+      return
+    }
+    const now = performance.now()
+    r.taps = [...r.taps.filter((t) => now - t < QUICK_MS), now]
+    let next
+    if (r.taps.length >= QUICK_TAPS) {
+      r.taps = []
+      next = DIZZY
+    } else {
+      next = REACTIONS[r.next]
+      r.next = (r.next + 1) % REACTIONS.length
+    }
+    engine.tap()
+    engine.setState(next.state)
+    say(next.say, next.hold ? 0 : REACT_MS)
+    if (!next.hold) {
+      r.timer = window.setTimeout(() => {
+        if (engineRef.current?.state === next.state) engineRef.current.setState('idle')
+        setSpoken(null)
+      }, REACT_MS)
+    }
+  }
 
   const onPointerDown = (e) => {
     if (e.button !== 0) return
@@ -131,7 +187,7 @@ export default function NanoBot({ top, bottom }) {
     if (!g) return
     gesture.current = null
     engineRef.current?.setLean(0)
-    if (g.moved < TAP_PX && performance.now() - g.t < TAP_MS) engineRef.current?.tap()
+    if (g.moved < TAP_PX && performance.now() - g.t < TAP_MS) react()
     else if (pos) writeStored(pos)
     setDragging(false)
   }
@@ -143,7 +199,7 @@ export default function NanoBot({ top, bottom }) {
       moveBy(...step)
     } else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      engineRef.current?.tap()
+      react()
     }
   }
   // remember keyboard moves too
@@ -163,7 +219,7 @@ export default function NanoBot({ top, bottom }) {
       <div
         role="button"
         tabIndex={0}
-        aria-label="noon bot. Drag to move, tap to say hi"
+        aria-label="noon bot. Drag to move, tap to play"
         data-id="nano-bot"
         data-dragging={dragging || undefined}
         onPointerDown={onPointerDown}
@@ -194,6 +250,11 @@ export default function NanoBot({ top, bottom }) {
           }}
         />
       </div>
+
+      {/* no visible text: the reaction is announced to screen readers only */}
+      <span className="sr-only" aria-live="polite">
+        {spoken?.say}
+      </span>
     </div>
   )
 }

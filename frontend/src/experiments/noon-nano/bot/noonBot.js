@@ -5,7 +5,7 @@
 // in-canvas drag-to-spin are dropped. The look (robo.js) is copied as is.
 // What's kept is the shared engine: hover bob, hops with rebounds and a
 // nod / rock wobble, morphing screen faces + blinks, the grow-in intro with
-// a greeting, idle glances, per-state poses, dizzy beads, Zz, Figma shadows.
+// a greeting, idle glances, per-state poses, dizzy beads, Zz, grounded drop shadows.
 //
 // No React and no DOM besides the canvas: the host moves the canvas around
 // (drag to reposition) and calls tap() / setLean() / setState().
@@ -195,13 +195,16 @@ export function createNoonBot({ canvas, reduceMotion = false }) {
     const dBody = camera.position.distanceTo(body.position);
     qRoll.setFromAxisAngle(zAxis, viewRoll);
     const lift = Math.max(0, body.position.y - HOVER_Y);
+    // the shadow stays at hover height while the bot hops, shrinking and fading as it rises
+    const away = THREE.MathUtils.clamp(lift / 1.4, 0, 1);
     for (const [sp, dy] of DROP) {
       sp.position.copy(body.position).addScaledVector(toCam, -1.6);
+      sp.position.y -= lift;
       const sc = camera.position.distanceTo(sp.position) / dBody;
-      sp.scale.setScalar(sc * intro.scale);
+      sp.scale.setScalar(sc * intro.scale * (1 - 0.25 * away));
       sp.position.addScaledVector(camUp, -dy * sc * intro.scale);
       sp.quaternion.copy(camera.quaternion).multiply(qRoll);
-      sp.material.opacity = THREE.MathUtils.clamp((2.8 - lift) / 1.3, 0, 1);
+      sp.material.opacity = 1 - 0.75 * away;
     }
   }
 

@@ -57,14 +57,6 @@ import aPLine from '../../assets/nano/home/p-line.svg'
 import aPSparkle from '../../assets/nano/home/p-sparkle.png'
 import aPUnion from '../../assets/nano/home/p-union.svg'
 import aRectFade from '../../assets/nano/home/rect-fade.svg'
-import aSwFood from '../../assets/nano/home/sw-food.svg'
-import aSwMins from '../../assets/nano/home/sw-mins.png'
-import aSwNanoBottom from '../../assets/nano/home/sw-nano-bottom.svg'
-import aSwNanoTop from '../../assets/nano/home/sw-nano-top.svg'
-import aSwNoonMask from '../../assets/nano/home/sw-noon-mask.svg'
-import aSwNoonWord from '../../assets/nano/home/sw-noon-word.svg'
-import aSwSupermall1 from '../../assets/nano/home/sw-supermall-1.svg'
-import aSwSupermall2 from '../../assets/nano/home/sw-supermall-2.svg'
 import aWBg from '../../assets/nano/home/w-bg.png'
 import aWCactus from '../../assets/nano/home/w-cactus.png'
 import aWCard from '../../assets/nano/home/w-card.png'
@@ -95,7 +87,8 @@ import aWShadowR from '../../assets/nano/home/w-shadow-r.svg'
 /** artwork size in Figma px */
 export const NANO_HOME_ART = { width: 375, height: 2409 }
 
-export default function NanoHomeArt() {
+/** `switcher` fills the Figma switcher slot (492:26835, 375 × 92 at y 45) */
+export default function NanoHomeArt({ switcher = null }) {
   return (
     <div data-id="nano-home-art" className="relative h-[2409px] w-[375px] overflow-x-clip bg-white">
       {/* ── Footer 492:26325 ── */}
@@ -381,47 +374,9 @@ export default function NanoHomeArt() {
         </div>
       </div>
 
-      {/* ── switcher 492:26835 ── */}
-      <div data-id="nano-home-switcher" className="absolute" style={{ left: '0', top: '45px', width: '375px', height: '92px' }}>
-        <div className="content-stretch flex gap-[6px] items-center px-[12px] py-[8px] relative size-full" data-node-id="492:26835" data-name="switcher">
-          <div className="bg-[#7924ff] h-[76px] overflow-clip relative rounded-[15px] shrink-0 w-[73px]" data-id="nano-home-switcher-nano" data-node-id="492:26836">
-            <div className="absolute contents inset-[28.25%_9.98%]" data-node-id="492:26838">
-              <div className="absolute inset-[28.25%_26.09%_59.36%_26.09%]" data-node-id="492:26839"><img alt="" className="absolute block inset-0 max-w-none size-full" src={aSwNanoTop} /></div>
-              <div className="absolute inset-[43.63%_9.98%_28.25%_9.98%]" data-node-id="492:26844"><img alt="" className="absolute block inset-0 max-w-none size-full" src={aSwNanoBottom} /></div>
-            </div>
-          </div>
-          <div className="h-[76px] relative shrink-0 w-[73px]" data-id="nano-home-switcher-noon" data-node-id="492:26860">
-            <div className="absolute contents left-0 top-0" data-node-id="492:26861">
-              <div className="absolute bg-[white] inset-0 rounded-[15px]" data-node-id="492:26862"></div>
-              <div className="absolute h-[29.5px] left-[19px] top-[17px] w-[39.5px]" data-node-id="492:26863"><img alt="" className="absolute block inset-0 max-w-none size-full" src={aSwNoonMask} /></div>
-            </div>
-            <div className="absolute inset-[40.79%_16.26%_42.09%_15.07%]" data-node-id="492:26865"><img alt="" className="absolute block inset-0 max-w-none size-full" src={aSwNoonWord} /></div>
-          </div>
-          <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" data-id="nano-home-switcher-supermall" data-node-id="492:26870">
-            <div className="col-start-1 grid-cols-[max-content] grid-rows-[max-content] inline-grid ml-0 mt-0 place-items-start relative row-start-1" data-node-id="492:26873">
-              <div className="bg-white col-start-1 h-[76px] ml-0 mt-0 opacity-95 relative rounded-[15px] row-start-1 w-[73px]" data-node-id="492:26874"></div>
-            </div>
-            <div className="col-start-1 grid-cols-[max-content] grid-rows-[max-content] inline-grid ml-[12.44px] mt-[22px] place-items-start relative row-start-1" data-node-id="492:26875">
-              <div className="col-start-1 grid-cols-[max-content] grid-rows-[max-content] inline-grid ml-0 mt-0 place-items-start relative row-start-1" data-node-id="492:26876">
-                <div className="col-start-1 h-[15.58px] ml-0 mt-0 relative row-start-1 w-[49.115px]" data-node-id="492:26877"><img alt="" className="absolute block inset-0 max-w-none size-full" src={aSwSupermall1} /></div>
-                <div className="col-start-1 h-[15.559px] ml-0 mt-[15.93px] relative row-start-1 w-[34.806px]" data-node-id="492:26884"><img alt="" className="absolute block inset-0 max-w-none size-full" src={aSwSupermall2} /></div>
-              </div>
-            </div>
-          </div>
-          <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0" data-id="nano-home-switcher-food" data-node-id="492:26890">
-            <div className="col-start-1 grid-cols-[max-content] grid-rows-[max-content] inline-grid ml-0 mt-0 place-items-start relative row-start-1" data-node-id="492:26893">
-              <div className="bg-white col-start-1 h-[76px] ml-0 mt-0 opacity-95 relative rounded-[15px] row-start-1 w-[73px]" data-node-id="492:26894"></div>
-              <div className="col-start-1 h-[28.968px] ml-[10.68px] mt-[23.28px] relative row-start-1 w-[51.315px]" data-node-id="492:26895"><img alt="" className="absolute block inset-0 max-w-none size-full" src={aSwFood} /></div>
-            </div>
-          </div>
-          <div className="h-[76px] relative shrink-0 w-[73px]" data-id="nano-home-switcher-minutes" data-node-id="492:26898">
-            <div className="absolute contents inset-0" data-node-id="492:26899">
-              <div className="absolute bg-white inset-0 opacity-95 rounded-[15px]" data-node-id="492:26900"></div>
-            </div>
-            <div className="absolute left-[8px] size-[57px] top-[10px]" data-node-id="492:26901"><img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={aSwMins} /></div>
-          </div>
-          <div className="absolute bottom-full contents left-0 right-full top-0" data-node-id="492:26902"></div>
-        </div>
+      {/* ── switcher 492:26835 — a live marketplace switcher (slot, see index.jsx) ── */}
+      <div data-id="nano-home-switcher" className="absolute flex items-center" style={{ left: '0', top: '45px', width: '375px', height: '92px' }}>
+        {switcher}
       </div>
 
       {/* ── Marketplaces 492:26905 ── */}
