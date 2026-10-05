@@ -24,7 +24,7 @@ const FOV = 13.5;
 const CAM_TARGET = new THREE.Vector3(0, -0.22, 0);
 
 // studio environment: a dim gradient dome plus one large softbox and two fills
-function studioEnvironment() {
+export function studioEnvironment() {
   const env = new THREE.Scene();
   env.add(new THREE.Mesh(
     new THREE.SphereGeometry(20, 48, 24),
@@ -123,11 +123,12 @@ function statePose(st, t, stT) {
 
 /**
  * Mount the bot on `canvas` (transparent; sized by CSS, followed with a
- * ResizeObserver). Returns { tap, setLean, setState, dispose }.
+ * ResizeObserver). Returns { tap, setLean, setState, enter, exit, celebrate,
+ * look, dispose }. `hidden` starts it away (no intro) until enter().
  */
-export function createNoonBot({ canvas, reduceMotion = false }) {
+export function createNoonBot({ canvas, reduceMotion = false, hidden = false }) {
   // ─── renderer / scene ───────────────────────────────────────────────────
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.0;
@@ -256,6 +257,8 @@ export function createNoonBot({ canvas, reduceMotion = false }) {
       // the yaw spring keeps it face-on (soft overshoot)
       m.spinV += (45 * (m.home - m.spin) - 9.5 * m.spinV) * h;
       m.spin += m.spinV * h;
+      // a celebratory turn homes on ±2π; once it lands, fold back to 0
+      if (m.home && Math.abs(m.home - m.spin) < 0.01 && Math.abs(m.spinV) < 0.05) { m.spin -= m.home; m.home = 0; }
     }
     if (m.airborne) {
       m.vy -= GRAVITY * h;
@@ -377,8 +380,33 @@ export function createNoonBot({ canvas, reduceMotion = false }) {
   }
 
   // ─── intro ──────────────────────────────────────────────────────────────
-  const intro = { active: !reduceMotion, t: 0, scale: reduceMotion ? 1 : 0, greeted: reduceMotion };
+  const intro = { active: !reduceMotion && !hidden, t: 0, scale: hidden ? 0 : reduceMotion ? 1 : 0, greeted: reduceMotion || hidden };
+  // leaving: shrink with a quarter turn and a little rise, then stay away
+  const outro = { active: false, t: 0, done: null };
+  let away = hidden;
+  const OUTRO_S = 0.34;
+  function updateOutro(dt) {
+    if (!outro.active) return;
+    outro.t += dt;
+    const p = Math.min(1, outro.t / OUTRO_S);
+    intro.scale = 1 - easeInQuad(p);
+    m.spin = -Math.PI * 0.5 * easeInQuad(p);
+    if (p >= 1) {
+      outro.active = false;
+      intro.scale = 0;
+      m.spin = 0; m.spinV = 0; m.home = 0;
+      away = true;
+      const done = outro.done; outro.done = null;
+      done?.();
+    }
+  }
+  // a timed look (e.g. at the bubble), over any state's pose
+  const lookAt = { yaw: 0, pitch: 0, until: 0 };
+  /** public calls cut the first-run intro short, but not a comeback grow-in (enter) */
+  const skipIntro = () => { if (intro.active && !comeback) endIntro(); };
+  let comeback = false;
   function endIntro() {
+    comeback = false;
     if (!intro.active) return;
     intro.active = false;
     intro.greeted = true;
@@ -405,7 +433,9 @@ export function createNoonBot({ canvas, reduceMotion = false }) {
   // ─── idle glances ───────────────────────────────────────────────────────
   const gaze = { yaw: 0, pitch: 0, vy: 0, vp: 0, ty: 0, tp: 0, i: -1, hold: 1.4 };
   function updateGaze(dt) {
-    if (state === 'idle' && !intro.active && !reduceMotion) {
+    if (lookAt.until > simT && !reduceMotion) {
+      gaze.ty = lookAt.yaw; gaze.tp = lookAt.pitch; gaze.hold = 0.6;
+    } else if (state === 'idle' && !intro.active && !reduceMotion) {
       gaze.hold -= dt;
       if (gaze.hold <= 0) {
         gaze.i = (gaze.i + 1) % GLANCES.length;
@@ -443,6 +473,7 @@ export function createNoonBot({ canvas, reduceMotion = false }) {
     m.hoverY = state === 'sleepy' ? FLOOR_Y + BODY_BOTTOM : HOVER_Y + Math.sin(t * 1.6) * bob;
 
     updateIntro(dt);
+    updateOutro(dt);
     acc += dt;
     while (acc >= H) { stepMotion(H); acc -= H; }
     updateGaze(dt);
@@ -506,20 +537,30 @@ export function createNoonBot({ canvas, reduceMotion = false }) {
 
   let raf = 0;
   let last = performance.now();
+  let paused = false;
+  let cleared = false; // away and settled: the canvas is cleared once, then nothing is drawn until it comes back
   const frame = (now) => {
     update(Math.min(Math.max(0, now - last) / 1000, 1 / 30));
     last = now;
-    renderer.render(scene, camera);
+    const resting = away && !intro.active && !outro.active;
+    if (!resting) {
+      renderer.render(scene, camera);
+      cleared = false;
+    } else if (!cleared) {
+      renderer.clear();
+      cleared = true;
+    }
     raf = requestAnimationFrame(frame);
   };
   drawFace(faceCur, 1);
   setState('idle', { quiet: true });
+  renderer.compileAsync?.(scene, camera).catch(() => {}); // warm the shaders off the first frame where possible
   raf = requestAnimationFrame(frame);
 
   return {
     /** a tap: a little hop + nod (wakes it if asleep) */
     tap() {
-      endIntro();
+      skipIntro();
       if (state === 'sleepy') { setState('idle'); return; }
       hop(2.6);
       m.nodV += reduceMotion ? 0 : 1.2;
@@ -532,7 +573,47 @@ export function createNoonBot({ canvas, reduceMotion = false }) {
       if (vx) m.lastDir = Math.sign(vx);
       m.leanTarget = target;
     },
-    setState(next) { endIntro(); setState(next); },
+    setState(next) { skipIntro(); setState(next); },
+    /** come back (grow in with a full turn) after `hidden` / exit(); true if it had to */
+    enter() {
+      const leaving = outro.active;
+      outro.active = false; outro.done = null;   // a new event cancels a leave in progress
+      if (!away && !leaving) return false;       // already here
+      const from = away ? 0 : intro.scale;
+      away = false;
+      if (reduceMotion) { intro.scale = 1; return true; }
+      // grow back from wherever the leave got to (no snap)
+      intro.active = true; intro.greeted = true; comeback = true;
+      intro.t = INTRO.delay + INTRO.scale * from * 0.45;
+      if (!from) { m.y = m.hoverY - 0.6; m.vy = 0; m.airborne = false; } // rises up into place as it grows
+      return true;
+    },
+    /** leave: shrink away, then call done */
+    exit(done) {
+      endIntro();
+      if (away) { done?.(); return; }
+      if (reduceMotion) { intro.scale = 0; away = true; done?.(); return; }
+      outro.active = true; outro.t = 0; outro.done = done;
+    },
+    get away() { return away; },
+    /** stop rendering (e.g. while covered by an overlay); resumes from where it was */
+    setPaused(on) {
+      if (on === paused) return;
+      paused = on;
+      if (on) cancelAnimationFrame(raf);
+      else { last = performance.now(); raf = requestAnimationFrame(frame); }
+    },
+    /** a joyful hop with a full spin */
+    celebrate() {
+      skipIntro();
+      if (reduceMotion) return;
+      hop(3.6);
+      m.home += m.lastDir >= 0 ? Math.PI * 2 : -Math.PI * 2;
+    },
+    /** look toward (yaw, pitch) for a while, whatever the state */
+    look(yaw, pitch, secs = 1.2) {
+      lookAt.yaw = yaw; lookAt.pitch = pitch; lookAt.until = simT + secs;
+    },
     get state() { return state; },
     dispose() {
       cancelAnimationFrame(raf);

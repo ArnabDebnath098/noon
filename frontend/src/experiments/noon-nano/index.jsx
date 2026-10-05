@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from '../../components/layout/AppShell'
+import FrameBackButton from '../../components/layout/FrameBackButton'
 import useElementWidth from '../../hooks/useElementWidth'
 import { marketplaces } from '../../data/marketplace'
 import MarketplaceSwitcherV8 from '../marketplace-switcher/sections/MarketplaceSwitcherV8'
@@ -9,6 +10,8 @@ import nanoMark from '../../assets/nano/home/sw-nano-mark.svg'
 import NanoBot from './NanoBot'
 import NanoBottomNav, { NAV_SAFE_BOTTOM } from './NanoBottomNav'
 import NanoHomeArt, { NANO_HOME_ART } from './NanoHomeArt'
+import UpdatesOverlay, { preloadUpdates } from './updates/UpdatesOverlay'
+import { SAMPLE_UPDATES } from './updates/updatesData'
 
 /**
  * noon nano — Kids experiment.
@@ -19,7 +22,9 @@ import NanoHomeArt, { NANO_HOME_ART } from './NanoHomeArt'
  * that tab is active. The tab screens are shells (header back to home) until
  * their Figma screens are mapped. Scrolling down compacts the nav: labels fade
  * and the coins settle into their space; scrolling up brings them back.
- * Home also floats the draggable 3D noon bot (./NanoBot) above the nav.
+ * Home also has the draggable 3D noon bot (./NanoBot) above the nav: it shows
+ * up for task / approval notifications (the demo plays each once), pops their
+ * message bubble, reacts, then leaves.
  */
 
 const BASE = '/noon-nano'
@@ -118,6 +123,27 @@ export default function NoonNanoExperiment() {
   const tab = segment in TABS ? segment : null
   const { compact, onScroll, reset } = useScrollCompact()
   useEffect(reset, [tab, reset]) // each screen opens at the top with the labels showing
+  // the bot is the bell: it opens "Updates today" while there are unread updates
+  const [updatesOpen, setUpdatesOpen] = useState(false)
+  const [unread, setUnread] = useState(SAMPLE_UPDATES.length)
+  // the bell's art is ~1 MB of images: fetch it while the browser is idle, before the first tap
+  useEffect(() => {
+    const idle = window.requestIdleCallback ?? ((fn) => window.setTimeout(fn, 1200))
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout
+    const id = idle(preloadUpdates)
+    return () => cancel(id)
+  }, [])
+  const closeUpdates = useCallback((readIds) => {
+    setUpdatesOpen(false)
+    setUnread((n) => Math.max(0, n - readIds.length))
+  }, [])
+  useEffect(() => {
+    if (!import.meta.env.DEV) return undefined
+    window.nanoUpdates = { reset: () => setUnread(SAMPLE_UPDATES.length), open: () => setUpdatesOpen(true) }
+    return () => {
+      delete window.nanoUpdates
+    }
+  }, [])
 
   return (
     <AppShell>
@@ -138,28 +164,30 @@ export default function NoonNanoExperiment() {
         </motion.main>
       </AnimatePresence>
 
-      {/* Floating back-to-experiments button (above the bottom nav) */}
-      <div
-        className="pointer-events-none fixed left-1/2 z-40 flex w-full max-w-md -translate-x-1/2 justify-start px-4"
-        style={{ bottom: `calc(${NAV_PAD} + 16px)` }}
-      >
-        <button
-          type="button"
-          data-id="nano-back"
-          aria-label="Back to experiments"
-          onClick={() => navigate('/')}
-          className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#1D2539] text-white shadow-[0_6px_20px_rgba(0,0,0,0.25)] active:scale-95"
-        >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 5l-7 7 7 7" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      </div>
+      {/* back to experiments: outside the phone on the web, floating above the nav on a phone */}
+      <FrameBackButton dataId="nano-back" onClick={() => navigate('/')} mobile={{ bottom: `calc(${NAV_PAD} + 16px)` }} />
 
-      {/* the 3D noon bot floats on home only; drag it anywhere above the nav */}
-      {!tab && <NanoBot top="calc(var(--sat, 0px) + 8px)" bottom={NAV_PAD} />}
+      {/* the 3D noon bot floats on home only; drag it anywhere above the nav. The 3D scenes
+          pause while the Updates overlay covers them (its backdrop blur would re-blur every frame) */}
+      {!tab && (
+        <NanoBot
+          top="calc(var(--sat, 0px) + 8px)"
+          bottom={NAV_PAD}
+          demo
+          onlyOnNotify
+          paused={updatesOpen}
+          onOpen={unread > 0 ? () => setUpdatesOpen(true) : null}
+        />
+      )}
+      <UpdatesOverlay
+        open={updatesOpen}
+        onClose={closeUpdates}
+        onGo={(u) => {
+          if (u.go) navigate(`${BASE}/${u.go}`)
+        }}
+      />
 
-      <NanoBottomNav activeId={tab} compact={compact} onChange={(id) => navigate(`${BASE}/${id}`)} />
+      <NanoBottomNav activeId={tab} compact={compact} paused={updatesOpen} onChange={(id) => navigate(`${BASE}/${id}`)} />
     </AppShell>
   )
 }

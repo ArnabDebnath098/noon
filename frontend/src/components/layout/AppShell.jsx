@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { Squircle } from 'corner-smoothing'
 
 // iPhone 13 logical size (pt) + its screen corner radius.
-const PHONE_W = 390
-const PHONE_H = 844
+export const PHONE_W = 390
+export const PHONE_H = 844
 const PHONE_RADIUS = 48
 const SAFE_TOP = 47 // status-bar inset
 const SAFE_BOTTOM = 34 // home-indicator inset
@@ -65,7 +65,8 @@ function HomeIndicator() {
   )
 }
 
-function useFramed() {
+/** true on desktop, where pages render inside the phone frame (see DEVICE_QUERY) */
+export function useFramed() {
   const [framed, setFramed] = useState(
     () => typeof window !== 'undefined' && window.matchMedia(DEVICE_QUERY).matches,
   )
