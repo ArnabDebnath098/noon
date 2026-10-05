@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import AppShell from '../../components/layout/AppShell'
 import useElementWidth from '../../hooks/useElementWidth'
-import NanoBottomNav from './NanoBottomNav'
+import NanoBot from './NanoBot'
+import NanoBottomNav, { NAV_SAFE_BOTTOM } from './NanoBottomNav'
 import NanoHomeArt, { NANO_HOME_ART } from './NanoHomeArt'
 
 /**
@@ -15,6 +16,7 @@ import NanoHomeArt, { NANO_HOME_ART } from './NanoHomeArt'
  * that tab is active. The tab screens are shells (header back to home) until
  * their Figma screens are mapped. Scrolling down compacts the nav: labels fade
  * and the coins settle into their space; scrolling up brings them back.
+ * Home also floats the draggable 3D noon bot (./NanoBot) above the nav.
  */
 
 const BASE = '/noon-nano'
@@ -22,7 +24,7 @@ const TABS = { tasks: 'Tasks', wallet: 'Wallet', account: 'Account' }
 const INK = '#1D2539'
 // nav height above the safe-area inset: 24 top + 80 item + 6 bottom (Figma)
 const NAV_H = 110
-const NAV_PAD = `calc(${NAV_H}px + var(--sab, 0px) + var(--sbp, 0px))`
+const NAV_PAD = `calc(${NAV_H}px + ${NAV_SAFE_BOTTOM})`
 // compact needs a little travel in one direction so small jitters don't flicker
 const TRAVEL = 12
 const TOP = 16
@@ -121,7 +123,7 @@ export default function NoonNanoExperiment() {
 
       {/* Floating back-to-experiments button (above the bottom nav) */}
       <div
-        className="pointer-events-none fixed left-1/2 z-40 flex w-full max-w-md -translate-x-1/2 justify-end px-4"
+        className="pointer-events-none fixed left-1/2 z-40 flex w-full max-w-md -translate-x-1/2 justify-start px-4"
         style={{ bottom: `calc(${NAV_PAD} + 16px)` }}
       >
         <button
@@ -136,6 +138,9 @@ export default function NoonNanoExperiment() {
           </svg>
         </button>
       </div>
+
+      {/* the 3D noon bot floats on home only; drag it anywhere above the nav */}
+      {!tab && <NanoBot top="calc(var(--sat, 0px) + 8px)" bottom={NAV_PAD} />}
 
       <NanoBottomNav activeId={tab} compact={compact} onChange={(id) => navigate(`${BASE}/${id}`)} />
     </AppShell>
