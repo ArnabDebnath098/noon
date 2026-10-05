@@ -1,0 +1,23 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="39.8237" height="14.2461" viewBox="0 0 39.8237 14.2461" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Diamond Container">
+<path id="Vector 7771" d="M30.9658 7.12318H8.48311e-07" stroke="url(#paint0_linear_0_227)" stroke-width="0.409867"/>
+<g id="Diamond Icon Container">
+<g id="Vector" filter="url(#filter0_f_0_227)">
+<path d="M37.7744 7.12307C33.3923 7.50541 33.0824 7.81475 32.7006 12.1968C32.3183 7.81475 32.009 7.50487 27.6269 7.12307C32.009 6.74073 32.3188 6.43139 32.7006 2.04934C33.083 6.43139 33.3923 6.74127 37.7744 7.12307Z" fill="white"/>
+</g>
+<path id="Vector_2" d="M37.7744 7.12307C33.3923 7.50541 33.0824 7.81475 32.7006 12.1968C32.3183 7.81475 32.009 7.50487 27.6269 7.12307C32.009 6.74073 32.3188 6.43139 32.7006 2.04934C33.083 6.43139 33.3923 6.74127 37.7744 7.12307Z" fill="white"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_227" x="25.5776" y="4.87853e-08" width="14.2461" height="14.2461" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="1.02467" result="effect1_foregroundBlur_0_227"/>
+</filter>
+<linearGradient id="paint0_linear_0_227" x1="30.9658" y1="7.74744" x2="0" y2="7.74744" gradientUnits="userSpaceOnUse">
+<stop stop-color="white"/>
+<stop offset="1" stop-color="#9BC4FE" stop-opacity="0.01"/>
+<stop offset="1" stop-color="#9BC4FE" stop-opacity="0.01"/>
+</linearGradient>
+</defs>
+</svg>

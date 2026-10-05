@@ -48,4 +48,13 @@ export const experiments = [
     iconColor: '#0F61FF',
     iconBg: '#E4EEFF',
   },
+  {
+    id: 'noon-nano',
+    title: 'noon nano — Kids',
+    description: 'Kids home with a 3D coin bottom nav; each tab opens its own screen.',
+    path: '/noon-nano',
+    icon: 'coin',
+    iconColor: '#7924FF',
+    iconBg: '#EFE7FF',
+  },
 ]
