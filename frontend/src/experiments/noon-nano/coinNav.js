@@ -27,7 +27,9 @@ const BEVEL = 2.6;
 const FACE_R = R - BEVEL + 0.4;
 const LIFT_Y = 4 - (60.48 - 56) / 2; // Figma: active item loses its 4px inset, icon grows
 const ACTIVE_SCALE = 60.48 / 56;
-const MAX_TILT = 0.38;
+// hover: only the coin under the pointer leans, gently, toward it
+const HOVER_TILT = 0.14;
+const HOVER_REACH = R * 2.2; // px from a coin's centre where hover fades out
 const HERO_Z = 2.2; // hero art floats this far off the face at rest
 const SETTLE_PX = 24; // compact: coins drop by the label row's height
 const SCROLL_TILT = 0.32; // rad the coins pitch at full scroll speed (up on scroll down, down on scroll up)
@@ -98,27 +100,107 @@ const SATIN_BODY = `
   col = mix(deep, silk, sweep * 0.75);
   col = mix(col, deep * 0.9, smoothstep(0.75, 1.0, length(p)) * 0.35);`;
 // ─── geometry helpers ───────────────────────────────────────────────────────
-// ExtrudeGeometry is non-indexed, so its normals are per-triangle and bevels
-// shade in facets. Average normals across coincident vertices within one group.
-function smoothGroupNormals(g, groupIndex) {
+/**
+ * Smooth shading with weighted vertex normals: each vertex normal averages the
+ * faces around it (sharing its position), weighted by face area × corner angle,
+ * but only faces within `creaseDeg` of each other — so curved surfaces and
+ * bevels shade smoothly while intended hard edges (a pencil's hex faces, a
+ * slab's corners) stay crisp. Works on indexed or non-indexed geometry.
+ */
+export function weightedNormals(geo, creaseDeg = 40) {
+    const g = geo.index ? geo.toNonIndexed() : geo;
     const pos = g.attributes.position;
-    const nrm = g.attributes.normal;
-    const grp = g.groups[groupIndex];
-    const key = (i) => `${pos.getX(i).toFixed(3)},${pos.getY(i).toFixed(3)},${pos.getZ(i).toFixed(3)}`;
-    const sum = new Map();
-    const n = new THREE.Vector3();
-    for (let i = grp.start; i < grp.start + grp.count; i++) {
+    const n = pos.count;
+    const faceN = new Float32Array(n); // per-corner weight
+    const fn = [];
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+    const e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), cr = new THREE.Vector3();
+    for (let i = 0; i < n; i += 3) {
+        a.fromBufferAttribute(pos, i);
+        b.fromBufferAttribute(pos, i + 1);
+        c.fromBufferAttribute(pos, i + 2);
+        cr.crossVectors(e1.subVectors(b, a), e2.subVectors(c, a));
+        const area = cr.length() / 2;
+        const unit = area > 1e-12 ? cr.clone().divideScalar(area * 2) : new THREE.Vector3(0, 0, 1);
+        fn.push(unit, unit, unit);
+        const corner = (p, q, r) => e1.subVectors(q, p).angleTo(e2.subVectors(r, p)) || 0;
+        faceN[i] = area * corner(a, b, c);
+        faceN[i + 1] = area * corner(b, c, a);
+        faceN[i + 2] = area * corner(c, a, b);
+    }
+    const key = (i) => `${Math.round(pos.getX(i) * 1e4)},${Math.round(pos.getY(i) * 1e4)},${Math.round(pos.getZ(i) * 1e4)}`;
+    const buckets = new Map();
+    for (let i = 0; i < n; i++) {
         const k = key(i);
-        let acc = sum.get(k);
-        if (!acc)
-            sum.set(k, (acc = new THREE.Vector3()));
-        acc.add(n.fromBufferAttribute(nrm, i));
+        let list = buckets.get(k);
+        if (!list)
+            buckets.set(k, (list = []));
+        list.push(i);
     }
-    for (let i = grp.start; i < grp.start + grp.count; i++) {
-        n.copy(sum.get(key(i))).normalize();
-        nrm.setXYZ(i, n.x, n.y, n.z);
+    const cos = Math.cos(THREE.MathUtils.degToRad(creaseDeg));
+    const out = new Float32Array(n * 3);
+    const sum = new THREE.Vector3();
+    for (const list of buckets.values()) {
+        for (const i of list) {
+            sum.set(0, 0, 0);
+            for (const j of list)
+                if (fn[i].dot(fn[j]) >= cos)
+                    sum.addScaledVector(fn[j], faceN[j]);
+            if (sum.lengthSq() < 1e-20)
+                sum.copy(fn[i]);
+            sum.normalize();
+            out.set([sum.x, sum.y, sum.z], i * 3);
+        }
     }
-    nrm.needsUpdate = true;
+    g.setAttribute('normal', new THREE.BufferAttribute(out, 3));
+    return g;
+}
+/** a regular polygon prism with softly rounded corners, along +Y, centred */
+function roundedPrism(sides, circumR, height, cornerR, taperTop = 1) {
+    const s = new THREE.Shape();
+    const inR = circumR - cornerR / Math.cos(Math.PI / sides); // corner arc centres
+    for (let k = 0; k < sides; k++) {
+        const a = (k / sides) * Math.PI * 2 + Math.PI / 2;
+        const a0 = a - Math.PI / sides, a1 = a + Math.PI / sides;
+        const cx = Math.cos(a) * inR, cy = Math.sin(a) * inR;
+        if (k === 0)
+            s.moveTo(cx + Math.cos(a0) * cornerR, cy + Math.sin(a0) * cornerR);
+        s.absarc(cx, cy, cornerR, a0, a1, false);
+    }
+    const g = new THREE.ExtrudeGeometry(s, { depth: height, bevelEnabled: false, curveSegments: 6 });
+    g.translate(0, 0, -height / 2);
+    if (taperTop !== 1) {
+        const p = g.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+            const t = (p.getZ(i) + height / 2) / height; // 0 bottom → 1 top
+            const k = 1 + (taperTop - 1) * t;
+            p.setXY(i, p.getX(i) * k, p.getY(i) * k);
+        }
+    }
+    g.rotateX(-Math.PI / 2); // extrude axis Z → Y (+Z end becomes the top)
+    return weightedNormals(g, 50);
+}
+/** fine paper grain: tiny-scale value noise for a matte roughness / bump (kept very subtle) */
+let paperGrainTex = null;
+function paperGrain() {
+    if (paperGrainTex)
+        return paperGrainTex;
+    const S = 256;
+    const c = document.createElement('canvas');
+    c.width = c.height = S;
+    const g = c.getContext('2d');
+    const img = g.createImageData(S, S);
+    let seed = 9;
+    const r = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    for (let i = 0; i < S * S; i++) {
+        const v = 200 + (r() - 0.5) * 60;
+        img.data.set([v, v, v, 255], i * 4);
+    }
+    g.putImageData(img, 0, 0);
+    paperGrainTex = new THREE.CanvasTexture(c);
+    paperGrainTex.wrapS = paperGrainTex.wrapT = THREE.RepeatWrapping;
+    paperGrainTex.repeat.set(3, 3);
+    return paperGrainTex;
 }
 /** rounded-rectangle Shape centred on the origin */
 function roundedRect(x0, y0, x1, y1, r) {
@@ -175,8 +257,7 @@ function cardGeometry() {
     for (let i = 0; i < pos.count; i++) {
         uv.setXY(i, (pos.getX(i) + BADGE.w / 2) / BADGE.w, (pos.getY(i) + BADGE.h / 2) / BADGE.h);
     }
-    smoothGroupNormals(g, 1); // sides + bevel smooth, caps flat
-    return g;
+    return weightedNormals(g, 55); // bevels roll smoothly into the caps; no faceting
 }
 /** rounded slab lying flat: w along X, d along Z, h tall, bottom at y = 0 */
 function slab(w, d, h, r, bevel) {
@@ -190,19 +271,73 @@ function slab(w, d, h, r, bevel) {
         bevelSize: bevel,
         bevelSegments: 6,
     });
-    for (let i = 1; i < g.groups.length; i++)
-        smoothGroupNormals(g, i);
     g.rotateX(-Math.PI / 2);
     g.translate(0, bevel, 0);
-    return g;
+    return weightedNormals(g, 55); // bevels roll smoothly into the caps; no faceting
+}
+/**
+ * The Tasks pencil, built tip-first along +Y: graphite point, sharpened wood
+ * cone, a hexagonal lacquered barrel (flat faces with softly rounded edges, so
+ * each face still takes its own light — what makes it read as a solid at 56px
+ * — without hard facets), a polished crimped ferrule and a soft eraser. Turned
+ * so two barrel faces and an edge face the camera.
+ */
+function pencilModel() {
+    const RP = 3.8; // barrel circumradius
+    const M = {
+        lead: new THREE.MeshPhysicalMaterial({ color: '#2A2A33', metalness: 0.5, roughness: 0.32, clearcoat: 0.3, clearcoatRoughness: 0.25 }),
+        wood: new THREE.MeshPhysicalMaterial({ color: '#F1C894', roughness: 0.7, sheen: 0.3, sheenColor: '#FFE3BF', sheenRoughness: 0.6 }),
+        // smooth lacquer: a glossy base with a subtle clearcoat on top
+        paint: new THREE.MeshPhysicalMaterial({ color: '#7B3DF5', roughness: 0.24, clearcoat: 0.45, clearcoatRoughness: 0.12, envMapIntensity: 1.1 }),
+        metal: new THREE.MeshPhysicalMaterial({ color: '#E2E5EE', metalness: 1, roughness: 0.12, envMapIntensity: 1.5 }),
+        eraser: new THREE.MeshPhysicalMaterial({ color: '#FF8DB5', roughness: 0.78, sheen: 0.5, sheenColor: '#FFD0E2', sheenRoughness: 0.7 }),
+    };
+    const pencil = new THREE.Group();
+    const part = (geo, mat, y) => {
+        const m = new THREE.Mesh(geo, mat);
+        m.position.y = y;
+        pencil.add(m);
+        return m;
+    };
+    const TIP = 2.2;
+    const WOOD = 6;
+    const BODY = 15;
+    const FERRULE = 3.6;
+    const ERASER = 2.2;
+    const EDGE = 0.55; // barrel corner radius: soft, but the hex still reads
+    part(weightedNormals(new THREE.ConeGeometry(0.9, TIP, 24).rotateX(Math.PI), 60), M.lead, TIP / 2);
+    part(weightedNormals(new THREE.CylinderGeometry(RP * 0.94, 0.9, WOOD, 36), 60), M.wood, TIP + WOOD / 2);
+    // the paint's scalloped edge over the wood: a short taper of the barrel
+    part(roundedPrism(6, RP * 0.8, 1.1, EDGE * 0.8, 1 / 0.8), M.paint, TIP + WOOD + 0.55 - 1.1);
+    part(roundedPrism(6, RP, BODY, EDGE), M.paint, TIP + WOOD + BODY / 2);
+    const fy = TIP + WOOD + BODY;
+    part(new THREE.CylinderGeometry(RP * 0.96, RP * 0.96, FERRULE, 64), M.metal, fy + FERRULE / 2);
+    for (const k of [0.18, 0.5, 0.82]) {
+        const ring = part(new THREE.TorusGeometry(RP * 0.97, 0.26, 16, 64), M.metal, fy + FERRULE * k);
+        ring.rotation.x = Math.PI / 2;
+    }
+    const ey = fy + FERRULE;
+    part(new THREE.CylinderGeometry(RP * 0.88, RP * 0.88, ERASER, 64), M.eraser, ey + ERASER / 2);
+    const cap = part(new THREE.SphereGeometry(RP * 0.88, 64, 24, 0, Math.PI * 2, 0, Math.PI / 2), M.eraser, ey + ERASER);
+    cap.scale.y = 0.45;
+    pencil.rotation.y = Math.PI / 6; // an edge toward the camera: two faces lit, one in shade
+    const turned = new THREE.Group();
+    turned.add(pencil);
+    return turned;
 }
 /** Tasks hero: modelled book & pencil, turned to the icon art's three-quarter view */
 function bookModel() {
     const M = {
-        chrome: new THREE.MeshPhysicalMaterial({ color: '#E4E7EE', metalness: 0.55, roughness: 0.24, clearcoat: 0.4, clearcoatRoughness: 0.2, envMapIntensity: 1.5 }),
-        page: new THREE.MeshPhysicalMaterial({ color: '#F6F7FA', metalness: 0.15, roughness: 0.32, clearcoat: 0.3, clearcoatRoughness: 0.3, envMapIntensity: 1.2 }),
-        purple: new THREE.MeshPhysicalMaterial({ color: '#8048F0', roughness: 0.5, clearcoat: 0.25, clearcoatRoughness: 0.4, sheen: 0.6, sheenColor: '#B79BFF', sheenRoughness: 0.6 }),
-        groove: new THREE.MeshPhysicalMaterial({ color: '#A9ADB8', metalness: 0.3, roughness: 0.4 }),
+        // polished metal tray: clean mirror-ish reflections of the studio softboxes
+        chrome: new THREE.MeshPhysicalMaterial({ color: '#E6E9F0', metalness: 1, roughness: 0.13, envMapIntensity: 1.4 }),
+        // paper: soft matte with a very fine grain (roughness + a barely-there bump)
+        page: new THREE.MeshPhysicalMaterial({
+            color: '#F7F7F4', metalness: 0, roughness: 0.88, roughnessMap: paperGrain(), bumpMap: paperGrain(), bumpScale: 0.02,
+            sheen: 0.2, sheenColor: '#FFFFFF', sheenRoughness: 0.8, envMapIntensity: 0.9,
+        }),
+        // purple cover: smooth lacquer, subtle clearcoat
+        purple: new THREE.MeshPhysicalMaterial({ color: '#8048F0', roughness: 0.3, clearcoat: 0.4, clearcoatRoughness: 0.14, envMapIntensity: 1 }),
+        groove: new THREE.MeshPhysicalMaterial({ color: '#A9ADB8', metalness: 0, roughness: 0.7 }),
         lead: new THREE.MeshStandardMaterial({ color: '#34343B', metalness: 0.4, roughness: 0.35 }),
     };
     const book = new THREE.Group();
@@ -220,7 +355,7 @@ function bookModel() {
         const rows = side < 0 ? [-8.5, -3.2, 2.1, 7.4] : [-8.5, -3.2];
         rows.forEach((z, i) => {
             const len = side < 0 ? 12.5 - (i === 3 ? 2 : 0) : 10;
-            const line = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, len, 6, 12), M.groove);
+            const line = new THREE.Mesh(new THREE.CapsuleGeometry(0.55, len, 8, 16), M.groove);
             line.rotation.z = Math.PI / 2;
             line.scale.set(0.45, 1, 1); // flattened: a groove, not a rod
             line.position.set(side * 0.2, 3.45, z);
@@ -228,33 +363,99 @@ function bookModel() {
         });
     }
     // pencil: tip on the right page, rising up and back to the right
-    const pencil = new THREE.Group();
-    const seg = (geo, mat, y) => {
-        const m = new THREE.Mesh(geo, mat);
-        m.position.y = y;
-        pencil.add(m);
-    };
-    const RP = 3.5;
-    seg(new THREE.ConeGeometry(0.85, 1.8, 32).rotateX(Math.PI), M.lead, 0.9);
-    seg(new THREE.CylinderGeometry(RP, 0.85, 5, 48), M.chrome, 4.3);
-    seg(new THREE.CylinderGeometry(RP, RP, 14.5, 48), M.purple, 14.05);
-    seg(new THREE.CylinderGeometry(RP + 0.2, RP + 0.2, 3.4, 48), M.chrome, 23);
-    seg(new THREE.CylinderGeometry(RP - 0.1, RP - 0.1, 2.4, 48), M.purple, 25.9);
-    seg(new THREE.SphereGeometry(RP - 0.1, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2), M.purple, 27.1);
+    const pencil = pencilModel();
     pencil.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0.42, 0.72, -0.55).normalize());
     pencil.position.set(5.5, 6.7, 3.5);
     book.add(pencil);
     book.rotation.set(0.62, -0.36, 0, 'XYZ');
     const view = new THREE.Group();
     view.add(book);
-    // fit inside the Figma 53.2px box and centre; depth compressed so the far edge stays off the face
+    // fit inside the Figma 53.2px box and centre; depth eased (×0.72) so it stays a low relief off the face
+    // without flattening the pencil
     const box = new THREE.Box3().setFromObject(book);
     const size = box.getSize(new THREE.Vector3());
     const mid = box.getCenter(new THREE.Vector3());
     const k = (BOOK.w * 0.94) / Math.max(size.x, size.y);
     book.position.set(-mid.x, -mid.y, -box.min.z);
-    view.scale.set(k, k, k * 0.5);
+    view.scale.set(k, k, k * 0.72);
     return view;
+}
+// ─── Account avatar: 2.5D relief ─────────────────────────────────────────────
+// Figma: 46.905 × 58.611 at (4.54, 2.6) in the 57 × 56 circle → centre offset (−0.51, −3.91)
+const AVATAR = { w: 46.905, h: 58.611, x: -0.51, y: -3.91, depth: 10, seg: [72, 90] };
+/**
+ * Lift the flat avatar into a relief: a height map from its own alpha — a
+ * pillowy inflate (blurred alpha), the TV headset pushed further forward than
+ * the body so it reads in front when the coin tilts, plus a faint luminance
+ * emboss — displaced onto a subdivided plane, so it takes real light.
+ */
+function avatarReliefGeometry(img) {
+    const [GW, GH] = AVATAR.seg;
+    const S = 2; // height map samples per grid cell
+    const w = GW * S + 1;
+    const h = GH * S + 1;
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(img, 0, 0, w, h);
+    const sharp = g.getImageData(0, 0, w, h).data;
+    g.clearRect(0, 0, w, h);
+    g.filter = `blur(${Math.round(w * 0.06)}px)`;
+    g.drawImage(img, 0, 0, w, h);
+    const soft = g.getImageData(0, 0, w, h).data;
+    const height = (x, y) => {
+        const i = (y * w + x) * 4;
+        const a = sharp[i + 3] / 255;
+        if (a < 0.02)
+            return 0;
+        // blurred alpha is ~0.5 on the silhouette edge: remap so the relief starts at 0
+        // there and rounds up inward (no steep side walls to stretch the edge pixels)
+        const pillow = Math.pow(THREE.MathUtils.clamp((soft[i + 3] / 255 - 0.5) * 2, 0, 1), 0.65);
+        const v = y / (h - 1); // 0 = top of the art
+        const head = 1 - THREE.MathUtils.smoothstep(v, 0.4, 0.56); // the headset sits in the top ~45%
+        const lum = (0.3 * sharp[i] + 0.59 * sharp[i + 1] + 0.11 * sharp[i + 2]) / 255;
+        return pillow * (0.6 + 0.8 * head + (lum - 0.5) * 0.12);
+    };
+    const geo = new THREE.PlaneGeometry(AVATAR.w, AVATAR.h, GW, GH);
+    const pos = geo.attributes.position;
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < pos.count; i++) {
+        const x = Math.round(uv.getX(i) * (w - 1));
+        const y = Math.round((1 - uv.getY(i)) * (h - 1));
+        pos.setZ(i, Math.max(0, height(x, y)) * AVATAR.depth);
+    }
+    geo.computeVertexNormals();
+    return geo;
+}
+/** lit avatar: keeps its art's colour (emissive map) and adds shading + gloss; clipped to the face like the decals */
+function avatarMaterial(map) {
+    const uniforms = { uToCoin: { value: new THREE.Matrix4() }, uCut: { value: 999 } };
+    const m = new THREE.MeshPhysicalMaterial({
+        map,
+        emissiveMap: map,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.36,
+        roughness: 0.4,
+        clearcoat: 0.55,
+        clearcoatRoughness: 0.22,
+        envMapIntensity: 0.75,
+        transparent: true,
+        alphaTest: 0.4,
+        toneMapped: false,
+    });
+    m.onBeforeCompile = (sh) => {
+        Object.assign(sh.uniforms, uniforms);
+        sh.vertexShader = sh.vertexShader
+            .replace('#include <common>', '#include <common>\nuniform mat4 uToCoin;\nvarying vec2 vCoin;')
+            .replace('#include <begin_vertex>', '#include <begin_vertex>\nvCoin = (uToCoin * vec4(position.xy, 0.0, 1.0)).xy;');
+        sh.fragmentShader = sh.fragmentShader
+            .replace('#include <common>', '#include <common>\nuniform float uCut;\nvarying vec2 vCoin;')
+            .replace('#include <map_fragment>', `#include <map_fragment>
+          float inside = 1.0 - smoothstep(${(FACE_R - 0.8).toFixed(2)}, ${(FACE_R + 0.2).toFixed(2)}, length(vCoin));
+          diffuseColor.a *= max(inside, smoothstep(uCut - 1.0, uCut + 1.0, vCoin.y));`);
+    };
+    return { material: m, uniforms };
 }
 // ─── canvas textures ────────────────────────────────────────────────────────
 /** disc with a Gaussian-blurred edge, computed per pixel: white, falloff in alpha */
@@ -329,7 +530,7 @@ function studioEnvironment() {
         fragmentShader: `varying vec3 vP;
           void main(){
             float h = normalize(vP).y;
-            gl_FragColor = vec4(mix(vec3(0.03), vec3(0.38, 0.38, 0.40), smoothstep(-0.2, 0.95, h)), 1.0);
+            gl_FragColor = vec4(mix(vec3(0.16, 0.16, 0.18), vec3(0.4, 0.4, 0.42), smoothstep(-0.2, 0.95, h)), 1.0); // a lifted floor: polished metal reads silver, not black
           }`,
     })));
     const panel = (w, h, k, pos) => {
@@ -338,10 +539,11 @@ function studioEnvironment() {
         p.lookAt(0, 0, 0);
         env.add(p);
     };
-    panel(16, 16, 3.0, [0, 12, 2]); // overhead key softbox
-    panel(12, 4, 0.9, [0, 4, 11]); // front-top card: face sheen
-    panel(3, 8, 0.35, [-11, 2, 3]); // faint side kicks
-    panel(3, 8, 0.35, [11, 2, 3]);
+    // large, soft sources: clean broad highlights instead of small hot spots
+    panel(24, 22, 2.2, [0, 12, 2]); // overhead key softbox
+    panel(20, 7, 0.75, [0, 4, 11]); // front-top card: face sheen
+    panel(7, 12, 0.4, [-11, 2, 4]); // soft side fills
+    panel(7, 12, 0.4, [11, 2, 4]);
     return env;
 }
 const spring = (s, target, k, d, dt) => {
@@ -353,7 +555,7 @@ const easeOutBack = (p) => 1 + 2.25 * Math.pow(p - 1, 3) + 1.25 * Math.pow(p - 1
 export function createCoinNav({ canvas, slots, active = null, reduceMotion = false }) {
     let W = canvas.clientWidth || 375;
     let H = canvas.clientHeight || 240;
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' });
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.setClearColor(0x000000, 0);
     const scene = new THREE.Scene();
@@ -361,7 +563,7 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
     const envRT = pmrem.fromScene(studioEnvironment(), 0.04);
     scene.environment = envRT.texture;
     pmrem.dispose();
-    const sun = new THREE.DirectionalLight(0xffffff, 1.1);
+    const sun = new THREE.DirectionalLight(0xffffff, 0.8); // the environment's softboxes do most of the work
     sun.position.set(0, 1, 0.35);
     scene.add(sun, new THREE.HemisphereLight(0xffffff, 0x6d6f78, 0.6));
     // long lens framed so the z = 0 plane maps 1:1 onto canvas CSS pixels
@@ -372,9 +574,10 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
         camera.lookAt(W / 2, H / 2, 0);
         camera.updateProjectionMatrix();
     }
-    // supersample: the canvas is small, so 1.5× display density (capped) keeps edges crisp
+    // display density, capped at 2×: MSAA keeps the edges crisp, and 3–4× was burning
+    // 2–4× the fill (physical materials, iridescence) for no visible gain at 56px
     function fitRenderer() {
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio * 1.5, 4));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.setSize(W, H, false);
     }
     fitCamera();
@@ -394,7 +597,15 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
     });
     walletBadge.repeat.set(1, BADGE_SHOWN);
     walletBadge.offset.set(0, (1 - BADGE_SHOWN) / 2);
-    const avatarTex = loader.load(avatarUrl);
+    const avatarShadow = silhouette(AVATAR.w, AVATAR.h, 2.4);
+    let avatarMesh = null; // set when the Account coin is built; gets its relief once the art decodes
+    const avatarTex = loader.load(avatarUrl, (t) => {
+        avatarShadow.draw(t.image, 0, 0, t.image.width, t.image.height);
+        if (!avatarMesh)
+            return;
+        avatarMesh.geometry.dispose();
+        avatarMesh.geometry = avatarReliefGeometry(t.image);
+    });
     for (const t of [walletBadge, avatarTex]) {
         t.colorSpace = THREE.SRGBColorSpace;
         t.anisotropy = maxAniso;
@@ -468,10 +679,11 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
         root.add(coin);
         scene.add(root);
         coin.add(new THREE.Mesh(BODY_GEO, new THREE.MeshPhysicalMaterial({
-            roughness: 0.34,
+            // smooth lacquer rim with a subtle clearcoat
+            roughness: 0.28,
             metalness: 0,
-            clearcoat: 0.55,
-            clearcoatRoughness: 0.18,
+            clearcoat: 0.5,
+            clearcoatRoughness: 0.1,
             ...style.rim,
             color: new THREE.Color(style.rim.color),
             emissive: new THREE.Color(style.rim.color).multiplyScalar(0.18),
@@ -544,9 +756,16 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
             coin.add(hero);
         }
         else {
-            // Figma: 46.905 × 58.611 at (4.54, 2.6) in the 57 × 56 circle → centre offset (−0.51, −3.91)
-            avatar = new THREE.Mesh(new THREE.PlaneGeometry(46.905, 58.611), decalMaterial(avatarTex));
+            // soft shadow of the avatar on the face, so the relief floats off it
+            heroShadow = new THREE.Mesh(new THREE.PlaneGeometry(avatarShadow.w, avatarShadow.h), decalMaterial(avatarShadow.texture, { shadow: true, opacity: 0.42 }));
+            heroShadow.renderOrder = 3;
+            coin.add(heroShadow);
+            decals.push(heroShadow);
+            const { material, uniforms } = avatarMaterial(avatarTex);
+            avatar = new THREE.Mesh(new THREE.PlaneGeometry(AVATAR.w, AVATAR.h), material);
+            avatar.userData.uniforms = uniforms;
             avatar.renderOrder = 4;
+            avatarMesh = avatar;
             coin.add(avatar);
             decals.push(avatar);
         }
@@ -649,6 +868,8 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
     // ─── frame loop ───────────────────────────────────────────────────────────
     const clock = new THREE.Clock();
     let raf = 0;
+    let paused = false;
+    const INV = new THREE.Matrix4(); // reused per coin per frame (no allocation in the loop)
     function frame() {
         raf = requestAnimationFrame(frame);
         const dt = Math.min(clock.getDelta(), 1 / 30);
@@ -664,21 +885,29 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
             const on = c.id === selected;
             spring(c.lift, on ? 1 : 0, 170, 18, dt);
             spring(c.press, c.pressed ? 1 : 0, 520, 30, dt);
-            spring(c.pop, on && c.avatar ? 1 : 0, 140, 15, dt);
+            spring(c.pop, on && c.avatar ? 1 : 0, 260, 14, dt); // ζ ≈ 0.43: springs out with an overshoot
             // each coin follows a touch later than the one before, so the tilt ripples across
             spring(c.scroll, reduceMotion ? 0 : scrollKick, 150 - coins.indexOf(c) * 25, 12, dt);
             let tx = 0;
             let ty = 0;
-            if (pointer && !reduceMotion) {
-                ty = THREE.MathUtils.clamp((pointer.x - c.x) / 140, -1, 1) * MAX_TILT;
-                tx = -THREE.MathUtils.clamp((pointer.y - (c.y + LIFT_Y * c.lift.v)) / 140, -1, 1) * MAX_TILT;
+            if (!reduceMotion) {
+                // idle sway, quieted on the hovered coin
+                let near = 0;
+                let hx = 0;
+                let hy = 0;
+                if (pointer) {
+                    const dx = pointer.x - c.x;
+                    const dy = pointer.y - (c.y + LIFT_Y * c.lift.v);
+                    near = 1 - THREE.MathUtils.smoothstep(Math.hypot(dx, dy), R * 1.1, HOVER_REACH);
+                    hx = THREE.MathUtils.clamp(dx / (R * 1.4), -1, 1);
+                    hy = THREE.MathUtils.clamp(dy / (R * 1.4), -1, 1);
+                }
+                ty = Math.sin(t * 0.9 + c.phase) * 0.12 * (1 - near) + hx * HOVER_TILT * near;
+                tx = Math.sin(t * 0.7 + c.phase * 1.3) * 0.06 * (1 - near) - hy * HOVER_TILT * near;
             }
-            else if (!reduceMotion) {
-                ty = Math.sin(t * 0.9 + c.phase) * 0.12;
-                tx = Math.sin(t * 0.7 + c.phase * 1.3) * 0.06;
-            }
-            spring(c.tiltX, tx, 90, 14, dt);
-            spring(c.tiltY, ty, 90, 14, dt);
+            // softer than before: the coin eases into a hover rather than snapping to it
+            spring(c.tiltX, tx, 60, 13, dt);
+            spring(c.tiltY, ty, 60, 13, dt);
             let flip = 0;
             if (c.flipT >= 0) {
                 c.flipT += dt / FLIP_DUR;
@@ -710,16 +939,28 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
                 c.heroShadow.material.uniforms.uOpacity.value = Math.max(0.34 - gap * 0.025, 0.06);
             }
             if (c.avatar) {
+                // selected: she springs up and out of the coin, leaning forward, head breaking past the rim
                 const pop = c.pop.v;
-                c.avatar.scale.setScalar(1 + 0.14 * pop);
-                c.avatar.position.set(-0.51, -3.91 + 4 * pop, 0.3 + 6 * pop);
-                c.avatar.material.uniforms.uCut.value = THREE.MathUtils.lerp(999, 4, Math.min(pop * 2, 1));
+                const held = THREE.MathUtils.clamp(pop, 0, 1);
+                // while selected she sways and breathes in front of the coin, so the relief reads as 3D
+                const sway = reduceMotion ? 0 : Math.sin(t * 1.3 + c.phase) * (0.04 + 0.1 * held);
+                const breathe = reduceMotion ? 0 : Math.sin(t * 2.1 + c.phase) * 0.7 * held;
+                c.avatar.scale.setScalar(1 + 0.22 * pop);
+                c.avatar.position.set(AVATAR.x, AVATAR.y + 7 * pop + breathe, 0.4 + 9 * pop);
+                c.avatar.rotation.set(0.14 * pop, sway, -sway * 0.3);
+                c.avatar.userData.uniforms.uCut.value = THREE.MathUtils.lerp(999, 2, THREE.MathUtils.clamp(pop * 2, 0, 1));
+                if (c.heroShadow) {
+                    c.heroShadow.position.set(AVATAR.x + 0.6 * pop, AVATAR.y - 1.4 - 2.6 * pop, 0.12);
+                    c.heroShadow.scale.setScalar(1 + 0.1 * pop);
+                    c.heroShadow.position.x += sway * 6;
+                    c.heroShadow.material.uniforms.uOpacity.value = 0.42 - 0.14 * held;
+                }
             }
             if (c.decals.length) {
                 c.coin.updateMatrixWorld(true);
-                const inv = c.coin.matrixWorld.clone().invert();
+                const inv = INV.copy(c.coin.matrixWorld).invert();
                 for (const d of c.decals)
-                    d.material.uniforms.uToCoin.value.multiplyMatrices(inv, d.matrixWorld);
+                    (d.userData.uniforms ?? d.material.uniforms).uToCoin.value.multiplyMatrices(inv, d.matrixWorld);
             }
             // drop shadow: the coin's silhouette narrows as it turns edge-on
             const s = c.root.scale.x;
@@ -739,9 +980,22 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
                 m.uniforms.uTime.value = t;
         renderer.render(scene, camera);
     }
+    renderer.compileAsync?.(scene, camera).catch(() => { }); // warm the shaders off the first frame where possible
     raf = requestAnimationFrame(frame);
     return {
         select,
+        /** stop rendering (e.g. while covered by an overlay); resumes from where it was */
+        setPaused(on) {
+            if (on === paused)
+                return;
+            paused = on;
+            if (on)
+                cancelAnimationFrame(raf);
+            else {
+                clock.getDelta(); // drop the time spent paused
+                raf = requestAnimationFrame(frame);
+            }
+        },
         setCompact(on) {
             settleTarget = on ? 1 : 0;
         },
@@ -769,10 +1023,51 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
                 for (const mat of mats)
                     mat.dispose();
             });
-            for (const t of [walletBadge, avatarTex, badgeShadow.texture, CONTACT.texture, PENUMBRA.texture, FALLOFF])
+            for (const t of [walletBadge, avatarTex, avatarShadow.texture, badgeShadow.texture, CONTACT.texture, PENUMBRA.texture, FALLOFF])
                 t.dispose();
             envRT.dispose();
             renderer.dispose();
         },
     };
+}
+/**
+ * The nav's 3D objects as standalone, export-ready models (GLB): the Tasks book
+ * & pencil, the Wallet nano card and the three coins. Everything uses glTF-
+ * compatible PBR (MeshPhysicalMaterial → metallic-roughness + clearcoat / sheen
+ * / iridescence extensions); the coins' animated shader faces become their
+ * closest static PBR equivalents (pearl iridescent foil, purple satin, orange).
+ */
+export async function navModels() {
+    const tex = await new THREE.TextureLoader().loadAsync(walletBadgeUrl);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.repeat.set(1, BADGE_SHOWN);
+    tex.offset.set(0, (1 - BADGE_SHOWN) / 2);
+    const card = new THREE.Mesh(cardGeometry(), [
+        new THREE.MeshPhysicalMaterial({ map: tex, roughness: 0.45, clearcoat: 0.3, clearcoatRoughness: 0.2 }),
+        new THREE.MeshPhysicalMaterial({ color: '#CFCBF6', roughness: 0.32, clearcoat: 0.4, clearcoatRoughness: 0.15, iridescence: 0.35, iridescenceIOR: 1.3 }),
+    ]);
+    card.name = 'nano-card';
+    const book = bookModel();
+    book.name = 'book-and-pencil';
+    const face = {
+        tasks: new THREE.MeshPhysicalMaterial({ color: '#F1EEFB', roughness: 0.25, clearcoat: 0.5, clearcoatRoughness: 0.1, iridescence: 1, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 620] }),
+        wallet: new THREE.MeshPhysicalMaterial({ color: '#6A35F5', roughness: 0.35, sheen: 0.6, sheenColor: '#9F7BFF', sheenRoughness: 0.4, clearcoat: 0.3, clearcoatRoughness: 0.15 }),
+        account: new THREE.MeshPhysicalMaterial({ color: '#FF6301', roughness: 0.3, clearcoat: 0.45, clearcoatRoughness: 0.12 }),
+    };
+    const coins = {};
+    for (const id of ['tasks', 'wallet', 'account']) {
+        const style = TAB_STYLE[id];
+        const coin = new THREE.Group();
+        coin.name = `coin-${id}`;
+        const { color, ...rim } = style.rim;
+        coin.add(new THREE.Mesh(coinBodyGeometry(), new THREE.MeshPhysicalMaterial({ roughness: 0.28, clearcoat: 0.5, clearcoatRoughness: 0.1, ...rim, color: new THREE.Color(color) })));
+        const front = new THREE.Mesh(new THREE.CircleGeometry(FACE_R, 128), face[id]);
+        front.position.z = 0.05;
+        const back = front.clone();
+        back.position.z = -THICK - 0.05;
+        back.rotation.y = Math.PI;
+        coin.add(front, back);
+        coins[id] = coin;
+    }
+    return { 'nav-tasks-book-pencil': book, 'nav-wallet-card': card, 'nav-coin-tasks': coins.tasks, 'nav-coin-wallet': coins.wallet, 'nav-coin-account': coins.account };
 }

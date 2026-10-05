@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { createCoinNav } from './coinNav'
 import tasksWordmark from '../../assets/nano/nav/label-tasks-88.svg'
 import walletWordmark from '../../assets/nano/nav/label-wallet-88.svg'
@@ -20,7 +20,7 @@ import accountWordmark from '../../assets/nano/nav/label-account-88.svg'
  * beat so the flip reads before the screen changes. `compact` (while scrolling
  * down) fades the labels and settles the coins into their space; scrolling
  * tilts the coins by scroll speed (up going down, down going up) and they
- * spring back after.
+ * spring back after. `paused` stops the 3D loop while the nav is covered.
  */
 
 export const nanoBottomNavTabs = [
@@ -42,12 +42,17 @@ export const NAV_SAFE_BOTTOM = 'calc(max(16px, var(--sab, 0px), env(safe-area-in
 // ms between the tap (flip starts) and onChange, so the flip reads first
 const FLIP_THEN_CHANGE = 420
 
-export default function NanoBottomNav({ activeId, onChange, compact = false }) {
+export default function NanoBottomNav({ activeId, onChange, compact = false, paused = false }) {
   const reduceMotion = useReducedMotion() ?? false
   const canvasRef = useRef(null)
   const slotRefs = useRef({})
   const engineRef = useRef(null)
   const timerRef = useRef(0)
+  // a tapped tab shows selected at once (label, wordmark, glow) while its coin
+  // flips; the route catches up after FLIP_THEN_CHANGE
+  const [pending, setPending] = useState(null)
+  const shownId = pending ?? activeId
+  const engineId = useRef(activeId) // what the 3D scene has selected
 
   // the scene mounts once; the initial tab shows settled (no flip)
   const initialActive = useRef(activeId)
@@ -69,14 +74,25 @@ export default function NanoBottomNav({ activeId, onChange, compact = false }) {
     }
   }, [reduceMotion])
 
-  // follow an externally changed tab (route change, back button) without replaying the flip
+  // follow an externally changed tab (back button, link) without replaying the flip.
+  // When the route catches up with a tap, the scene already has it: re-selecting
+  // would cut the flip short mid-spin.
   useEffect(() => {
+    setPending(null)
+    if (engineId.current === activeId) return
+    engineId.current = activeId
     engineRef.current?.select(activeId, { animate: false })
   }, [activeId])
 
   useEffect(() => {
     engineRef.current?.setCompact(compact)
   }, [compact])
+
+  // covered (e.g. by the Updates overlay): stop rendering, so the GPU and the
+  // overlay's backdrop blur aren't redoing the coins every frame for nothing
+  useEffect(() => {
+    engineRef.current?.setPaused(paused)
+  }, [paused])
 
   // any scroll on the page tilts the coins a touch (scroll doesn't bubble, so listen in capture)
   useEffect(() => {
@@ -93,9 +109,14 @@ export default function NanoBottomNav({ activeId, onChange, compact = false }) {
   }, [])
 
   const handleTap = (id) => {
+    engineId.current = id
     engineRef.current?.select(id) // plays the flip
-    if (id === activeId) return // already here: just the flip
     window.clearTimeout(timerRef.current)
+    if (id === activeId) {
+      setPending(null) // already here (or tapped back before the route changed): just the flip
+      return
+    }
+    setPending(id)
     timerRef.current = window.setTimeout(() => onChange?.(id), reduceMotion ? 0 : FLIP_THEN_CHANGE)
   }
 
@@ -125,21 +146,21 @@ export default function NanoBottomNav({ activeId, onChange, compact = false }) {
       />
       <div className="relative flex items-end justify-center gap-5 pb-1.5 pt-6">
         {nanoBottomNavTabs.map((item) => {
-          const active = item.id === activeId
+          const active = item.id === shownId
           return (
             <button
               key={item.id}
               type="button"
               data-id={`nano-bottomnav-tab-${item.id}`}
               data-active={active || undefined}
-              aria-current={active ? 'page' : undefined}
+              aria-current={item.id === activeId ? 'page' : undefined}
               aria-label={item.label}
               onClick={() => handleTap(item.id)}
               onPointerDown={() => press(item.id, true)}
               onPointerUp={() => press(item.id, false)}
               onPointerLeave={() => press(item.id, false)}
               onPointerCancel={() => press(item.id, false)}
-              className="flex h-20 w-[88px] flex-col items-center gap-1 rounded-[16px] pt-1 outline-none focus-visible:ring-2"
+              className="flex h-20 w-[88px] touch-manipulation select-none flex-col items-center gap-1 rounded-[16px] pt-1 outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-2"
               style={{ '--tw-ring-color': FOCUS }}
             >
               {/* 56px icon box — the coin is drawn here in 3D; the box never moves so labels don't shift */}
@@ -154,36 +175,37 @@ export default function NanoBottomNav({ activeId, onChange, compact = false }) {
                 data-id={`nano-bottomnav-label-${item.id}`}
                 animate={compact ? { opacity: 0, y: 6 } : { opacity: 1, y: 0 }}
                 transition={reduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                className={`relative flex h-6 w-[88px] items-center justify-center ${active ? '' : 'overflow-hidden'}`}
+                className="relative flex h-6 w-[88px] items-center justify-center"
               >
-                <AnimatePresence initial={false} mode="popLayout">
-                  {active ? (
-                    <motion.img
-                      key="wordmark"
-                      src={item.wordmark}
-                      width={88}
-                      height={24}
-                      alt=""
-                      className="absolute inset-0 h-6 w-[88px]"
-                      initial={reduceMotion ? false : { opacity: 0, scale: 0.4 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 26 }}
-                    />
-                  ) : (
-                    <motion.span
-                      key="text"
-                      className="whitespace-nowrap font-noontree text-[13px] font-medium"
-                      style={{ color: LABEL }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
+                {/* both stay mounted and cross-fade in place: nothing pops in or doubles up,
+                    and the wordmark is already decoded when its tab is picked */}
+                <motion.span
+                  className="whitespace-nowrap font-noontree text-[13px] font-medium"
+                  style={{ color: LABEL }}
+                  initial={false}
+                  animate={{ opacity: active ? 0 : 1, scale: active ? 0.85 : 1 }}
+                  transition={reduceMotion ? { duration: 0 } : { duration: 0.12, ease: [0.4, 0, 0.2, 1] }}
+                >
+                  {item.label}
+                </motion.span>
+                <motion.img
+                  src={item.wordmark}
+                  width={88}
+                  height={24}
+                  alt=""
+                  aria-hidden="true"
+                  draggable={false}
+                  className="pointer-events-none absolute inset-0 h-6 w-[88px]"
+                  initial={false}
+                  animate={active ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : active
+                        ? { type: 'spring', stiffness: 520, damping: 24, delay: 0.04 }
+                        : { duration: 0.1, ease: [0.4, 0, 1, 1] }
+                  }
+                />
               </motion.span>
             </button>
           )
