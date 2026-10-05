@@ -30,6 +30,7 @@ const ACTIVE_SCALE = 60.48 / 56;
 const MAX_TILT = 0.38;
 const HERO_Z = 2.2; // hero art floats this far off the face at rest
 const SETTLE_PX = 24; // compact: coins drop by the label row's height
+const SCROLL_TILT = 0.32; // rad the coins pitch at full scroll speed (up on scroll down, down on scroll up)
 const FLIP_DUR = 0.85;
 const BACKPLATE_Z = -16;
 const FOV = 16;
@@ -591,6 +592,7 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
             tiltY: sp(),
             press: sp(),
             pop: sp(),
+            scroll: sp(),
             pressed: false,
             flipT: -1,
             flipBase: 0,
@@ -631,6 +633,7 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
     let selected = null;
     const settle = sp();
     let settleTarget = 0;
+    let scrollKick = 0; // -1..1 from scroll speed (+ down, - up), decays when scrolling stops
     function select(id, { animate = true } = {}) {
         selected = id;
         const c = coins.find((x) => x.id === id);
@@ -655,12 +658,15 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
         else
             spring(settle, settleTarget, 200, 22, dt);
         const drop = SETTLE_PX * settle.v;
+        scrollKick *= Math.exp(-dt * 7);
         const shown = ready ? 1 : 0;
         for (const c of coins) {
             const on = c.id === selected;
             spring(c.lift, on ? 1 : 0, 170, 18, dt);
             spring(c.press, c.pressed ? 1 : 0, 520, 30, dt);
             spring(c.pop, on && c.avatar ? 1 : 0, 140, 15, dt);
+            // each coin follows a touch later than the one before, so the tilt ripples across
+            spring(c.scroll, reduceMotion ? 0 : scrollKick, 150 - coins.indexOf(c) * 25, 12, dt);
             let tx = 0;
             let ty = 0;
             if (pointer && !reduceMotion) {
@@ -689,7 +695,7 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
             c.root.scale.setScalar(Math.max(shown, 0.0001) * (1 + (ACTIVE_SCALE - 1) * lift));
             const cardFlip = c.flipHero ? flip : 0;
             const yaw = c.tiltY.v + (c.flipHero ? 0 : flip);
-            c.coin.rotation.set(c.tiltX.v, yaw, reduceMotion ? 0 : Math.sin(t * 1.1 + c.phase) * 0.03);
+            c.coin.rotation.set(c.tiltX.v - SCROLL_TILT * c.scroll.v, yaw, reduceMotion ? 0 : Math.sin(t * 1.1 + c.phase) * 0.03);
             c.coin.scale.set(1 + c.press.v * 0.06, 1 - c.press.v * 0.1, 1 - c.press.v * 0.2);
             if (c.hero && c.heroArt && c.heroShadow) {
                 const { x, y } = c.hero.userData;
@@ -738,6 +744,12 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
         select,
         setCompact(on) {
             settleTarget = on ? 1 : 0;
+        },
+        /** scroll delta (px) since the last event: scrolling down tilts the coins up, scrolling up tilts them down; faster tilts further */
+        scroll(dy) {
+            const k = THREE.MathUtils.clamp(dy / 40, -1, 1);
+            if (Math.sign(k) !== Math.sign(scrollKick) || Math.abs(k) > Math.abs(scrollKick))
+                scrollKick = k;
         },
         setPressed(id, down) {
             const c = coins.find((x) => x.id === id);

@@ -18,7 +18,9 @@ import accountWordmark from '../../assets/nano/nav/label-account-88.svg'
  * modelled book & pencil, an extruded glass nano card and the avatar. Tapping a
  * tab plays its flip (Wallet spins only the card), then calls onChange after a
  * beat so the flip reads before the screen changes. `compact` (while scrolling
- * down) fades the labels and settles the coins into their space.
+ * down) fades the labels and settles the coins into their space; scrolling
+ * tilts the coins by scroll speed (up going down, down going up) and they
+ * spring back after.
  */
 
 export const nanoBottomNavTabs = [
@@ -29,8 +31,14 @@ export const nanoBottomNavTabs = [
 
 const LABEL = 'rgba(29, 37, 57, 0.62)' // Figma default label colour
 const FOCUS = '#7924FF'
-// Figma: white fade, 0 → 92% at 35% → 100%
-const FADE = 'linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.92) 35%, #FFFFFF)'
+// white fade on an eased (scrim) curve so there's no visible band where it
+// turns solid: 0 at the top → opaque by 75%, solid through the safe area
+const SCRIM = [0, 0.013, 0.049, 0.104, 0.175, 0.259, 0.352, 0.45, 0.55, 0.648, 0.741, 0.825, 0.896, 0.951, 0.987, 1]
+const SCRIM_AT = [0, 8.1, 15.5, 22.5, 29, 35.3, 41.2, 47.1, 52.9, 58.8, 64.7, 71, 77.5, 84.5, 91.9, 100]
+const FADE = `linear-gradient(to bottom, ${SCRIM.map((a, i) => `rgba(255,255,255,${a}) ${(SCRIM_AT[i] * 0.75).toFixed(1)}%`).join(', ')}, #FFFFFF)`
+// space below the tab row: the home-indicator inset (web frame / real device),
+// at least 16px so the labels never hug the edge, plus the mobile gap (--sbp)
+export const NAV_SAFE_BOTTOM = 'calc(max(16px, var(--sab, 0px), env(safe-area-inset-bottom, 0px)) + var(--sbp, 0px))'
 // ms between the tap (flip starts) and onChange, so the flip reads first
 const FLIP_THEN_CHANGE = 420
 
@@ -70,6 +78,20 @@ export default function NanoBottomNav({ activeId, onChange, compact = false }) {
     engineRef.current?.setCompact(compact)
   }, [compact])
 
+  // any scroll on the page tilts the coins a touch (scroll doesn't bubble, so listen in capture)
+  useEffect(() => {
+    const last = new WeakMap()
+    const onScroll = (e) => {
+      const el = e.target === document ? document.scrollingElement : e.target
+      if (!el || typeof el.scrollTop !== 'number') return
+      const prev = last.get(el) ?? el.scrollTop
+      last.set(el, el.scrollTop)
+      engineRef.current?.scroll(el.scrollTop - prev)
+    }
+    window.addEventListener('scroll', onScroll, { capture: true, passive: true })
+    return () => window.removeEventListener('scroll', onScroll, { capture: true })
+  }, [])
+
   const handleTap = (id) => {
     engineRef.current?.select(id) // plays the flip
     if (id === activeId) return // already here: just the flip
@@ -85,8 +107,15 @@ export default function NanoBottomNav({ activeId, onChange, compact = false }) {
       data-state={compact ? 'compact' : 'expanded'}
       aria-label="Main"
       className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2"
-      style={{ background: FADE, paddingBottom: 'calc(var(--sab, 0px) + var(--sbp, 0px))' }}
+      style={{ paddingBottom: NAV_SAFE_BOTTOM }}
     >
+      {/* the fade starts 32px above the bar so it eases in over a longer run */}
+      <div
+        data-id="nano-bottom-nav-fade"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 -top-8 bottom-0"
+        style={{ background: FADE }}
+      />
       {/* the 3D canvas reaches above the bar so flipping coins don't clip */}
       <canvas
         ref={canvasRef}

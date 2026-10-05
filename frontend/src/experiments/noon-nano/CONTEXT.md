@@ -25,8 +25,9 @@ AppShell
  ├─ main (nano-body, scrollbar-hide, keyed per screen → opens at the top)
  │    └─ HomeScreen: NanoHomeArt (375 × 2409) scaled to the frame width
  │       TabScreen:  header (back · title)
- ├─ Floating back-to-experiments FAB (#1D2539)
- └─ NanoBottomNav (fixed, white fade, pads --sab + --sbp)
+ ├─ Floating back-to-experiments FAB (#1D2539, bottom left)
+ ├─ NanoBot (home only; draggable 3D noon bot, starts bottom right above the nav)
+ └─ NanoBottomNav (fixed, eased white fade, safe area ≥ 16px + --sbp)
 ```
 
 ## Files
@@ -39,6 +40,13 @@ AppShell
 - `coinNav.js` — the three.js scene (no React): coins, modelled book & pencil,
   extruded glass nano card, avatar, top-lit two-layer shadows. Placed on the
   nav's DOM slots; `select` / `setCompact` / `setPressed` / `dispose`.
+- `NanoBot.jsx` — the floating bot: pointer drag within the free area
+  (status bar → nav), position kept as fractions and remembered in
+  localStorage (`nano.bot.pos`); tap = hop; arrows / Enter when focused.
+- `bot/noonBot.js` — Bot 2 engine ported from `saswata2002/3D-noon-bot`
+  (main.js @ e1835af), trimmed to Bot 2 with a transparent background:
+  `tap` / `setLean` / `setState` / `dispose`. `bot/robo.js` is the repo's
+  Bot 2 look, copied unchanged.
 
 ## Behaviour
 
