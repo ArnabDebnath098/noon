@@ -9,6 +9,7 @@ const MarketplaceExperiment = lazy(() => import('../experiments/marketplace-swit
 const PriceHistoryExperiment = lazy(() => import('../experiments/price-history/index.jsx'))
 const SearchExperiment = lazy(() => import('../experiments/search/index.jsx'))
 const CartExperiment = lazy(() => import('../experiments/cart/index.jsx'))
+const NoonNanoExperiment = lazy(() => import('../experiments/noon-nano/index.jsx'))
 
 // Minimal route fallback — matches the app background so the swap is invisible.
 function RouteFallback() {
@@ -25,6 +26,8 @@ export default function AppRoutes() {
         <Route path="/price-history" element={<PriceHistoryExperiment />} />
         <Route path="/search" element={<SearchExperiment />} />
         <Route path="/cart" element={<CartExperiment />} />
+        {/* nested: /noon-nano (home) · /noon-nano/tasks · /wallet · /account */}
+        <Route path="/noon-nano/*" element={<NoonNanoExperiment />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
