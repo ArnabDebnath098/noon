@@ -66,7 +66,7 @@ const DEMO = [
   [24000, 'pending'],
   [28600, 'declined'],
 ]
-const ENTER_MS = 560 // bot grows in before the bubble pops
+const SETTLE_MS = 140 // a beat after the bot has faced front, then the bubble scales out of it
 const LEAVE_MS = 320 // bubble shrinks before the bot leaves
 const BUBBLE_H = 124 // px: the bubble strip above (or below) the bot
 const TIP_DY = 3 // px: the tail tip touches the head this far inside the handle (crown / chin)
@@ -225,11 +225,12 @@ export default function NanoBot({ top, bottom, notification = null, demo = false
     clearEventTimers()
     eventRef.current.kind = kind
     // bring it in (or back, if it was on its way out)
-    const fromAway = engine.away
     setShown(true)
-    const arriving = engine.enter()
-    const lead = !arriving || reduceMotion ? 0 : fromAway ? ENTER_MS : ENTER_MS / 2
-    later(lead * 0.55, () => {
+    engine.enter()
+    // the bot comes first: its bubble (and its reaction) wait until it has grown in and turned to
+    // face front — then the bubble scales out of its head
+    const lead = reduceMotion ? 0 : engine.settleIn > 0 ? engine.settleIn + SETTLE_MS : 0
+    later(lead, () => {
       const bot = engineRef.current
       if (!bot) return
       switch (kind) {
@@ -246,7 +247,7 @@ export default function NanoBot({ top, bottom, notification = null, demo = false
         case 'approved':
           bot.setState('greeting')
           // the spin waits for the grow-in turn to finish, so it reads as its own moment
-          later(lead * 0.45 + 220, () => engineRef.current?.celebrate())
+          later(220, () => engineRef.current?.celebrate())
           break
         case 'declined':
           bot.setState('error') // flinch

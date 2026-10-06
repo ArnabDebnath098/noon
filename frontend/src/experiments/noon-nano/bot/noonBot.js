@@ -596,6 +596,11 @@ export function createNoonBot({ canvas, reduceMotion = false, hidden = false }) 
       outro.active = true; outro.t = 0; outro.done = done;
     },
     get away() { return away; },
+    /** ms until the grow-in (first run or comeback) has finished its turn and faces front; 0 when settled */
+    get settleIn() {
+      if (!intro.active) return 0;
+      return Math.max(0, (INTRO.delay + Math.max(INTRO.scale, INTRO.spin) - intro.t) * 1000);
+    },
     /** stop rendering (e.g. while covered by an overlay); resumes from where it was */
     setPaused(on) {
       if (on === paused) return;

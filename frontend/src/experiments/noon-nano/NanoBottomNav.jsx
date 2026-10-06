@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { createCoinNav } from './coinNav'
-import tasksWordmark from '../../assets/nano/nav/label-tasks-88.svg'
-import walletWordmark from '../../assets/nano/nav/label-wallet-88.svg'
-import accountWordmark from '../../assets/nano/nav/label-account-88.svg'
+// the wordmarks are inlined (?raw), not <img>s: Safari rasterises an SVG image that
+// contains a <filter> at its intrinsic 88 × 24, so on a 3× phone the selected label
+// came out blocky. Inline, it stays vector at any density.
+import tasksWordmark from '../../assets/nano/nav/label-tasks-88.svg?raw'
+import walletWordmark from '../../assets/nano/nav/label-wallet-88.svg?raw'
+import accountWordmark from '../../assets/nano/nav/label-account-88.svg?raw'
 
 /**
  * NanoBottomNav — the noon nano (Kids) bottom nav with 3D coin icons.
@@ -29,13 +32,29 @@ export const nanoBottomNavTabs = [
   { id: 'account', label: 'Account', wordmark: accountWordmark },
 ]
 
-const LABEL = 'rgba(29, 37, 57, 0.62)' // Figma default label colour
+// Figma default label colour (#1D2539 at 62%) flattened onto the nav's light glass: an opaque
+// colour keeps Noontree Medium's full stroke (translucent text renders thinner)
+const LABEL = '#6B7080'
 const FOCUS = '#7924FF'
 // white fade on an eased (scrim) curve so there's no visible band where it
 // turns solid: 0 at the top → opaque by 75%, solid through the safe area
 const SCRIM = [0, 0.013, 0.049, 0.104, 0.175, 0.259, 0.352, 0.45, 0.55, 0.648, 0.741, 0.825, 0.896, 0.951, 0.987, 1]
 const SCRIM_AT = [0, 8.1, 15.5, 22.5, 29, 35.3, 41.2, 47.1, 52.9, 58.8, 64.7, 71, 77.5, 84.5, 91.9, 100]
-const FADE = `linear-gradient(to bottom, ${SCRIM.map((a, i) => `rgba(255,255,255,${a}) ${(SCRIM_AT[i] * 0.75).toFixed(1)}%`).join(', ')}, #FFFFFF)`
+/** the eased scrim as a gradient of `rgba(r,g,b, a × max)` stops, compressed into the top `span` % */
+const scrim = (rgb, max, span) =>
+  `linear-gradient(to bottom, ${SCRIM.map((a, i) => `rgba(${rgb},${(a * max).toFixed(3)}) ${(SCRIM_AT[i] * span).toFixed(1)}%`).join(', ')}, rgba(${rgb},${max}))`
+// Progressive frosted glass instead of a white sheet: the content behind goes from sharp at the
+// top of the fade to fully frosted at the bottom (stacked backdrop blurs, each masked to its own
+// band), the blur lifts saturation so the art melts into colour rather than milk, and a soft
+// lavender-white tint builds only near the bottom so the labels stay legible.
+const GLASS_BANDS = [
+  // [blur px, mask: where this layer fades in → is fully on]
+  [2, 'linear-gradient(to bottom, transparent 0%, #000 22%, #000 100%)'],
+  [6, 'linear-gradient(to bottom, transparent 18%, #000 42%, #000 100%)'],
+  [14, 'linear-gradient(to bottom, transparent 36%, #000 62%, #000 100%)'],
+  [26, 'linear-gradient(to bottom, transparent 55%, #000 80%, #000 100%)'],
+]
+const GLASS_TINT = scrim('248,246,255', 0.82, 0.92)
 // space below the tab row: the home-indicator inset (web frame / real device),
 // at least 16px so the labels never hug the edge, plus the mobile gap (--sbp)
 export const NAV_SAFE_BOTTOM = 'calc(max(16px, var(--sab, 0px), env(safe-area-inset-bottom, 0px)) + var(--sbp, 0px))'
@@ -130,13 +149,22 @@ export default function NanoBottomNav({ activeId, onChange, compact = false, pau
       className="fixed bottom-0 left-1/2 z-30 w-full max-w-md -translate-x-1/2"
       style={{ paddingBottom: NAV_SAFE_BOTTOM }}
     >
-      {/* the fade starts 32px above the bar so it eases in over a longer run */}
-      <div
-        data-id="nano-bottom-nav-fade"
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 -top-8 bottom-0"
-        style={{ background: FADE }}
-      />
+      {/* the frosted-glass fade starts 40px above the bar so it eases in over a longer run */}
+      <div data-id="nano-bottom-nav-fade" aria-hidden="true" className="pointer-events-none absolute inset-x-0 -top-10 bottom-0">
+        {GLASS_BANDS.map(([blur, mask]) => (
+          <div
+            key={blur}
+            className="absolute inset-0"
+            style={{
+              backdropFilter: `blur(${blur}px) saturate(1.5)`,
+              WebkitBackdropFilter: `blur(${blur}px) saturate(1.5)`,
+              maskImage: mask,
+              WebkitMaskImage: mask,
+            }}
+          />
+        ))}
+        <div className="absolute inset-0" style={{ background: GLASS_TINT }} />
+      </div>
       {/* the 3D canvas reaches above the bar so flipping coins don't clip */}
       <canvas
         ref={canvasRef}
@@ -188,14 +216,10 @@ export default function NanoBottomNav({ activeId, onChange, compact = false, pau
                 >
                   {item.label}
                 </motion.span>
-                <motion.img
-                  src={item.wordmark}
-                  width={88}
-                  height={24}
-                  alt=""
+                <motion.span
                   aria-hidden="true"
-                  draggable={false}
-                  className="pointer-events-none absolute inset-0 h-6 w-[88px]"
+                  className="pointer-events-none absolute inset-0 block h-6 w-[88px] [&>svg]:block [&>svg]:h-6 [&>svg]:w-[88px]"
+                  dangerouslySetInnerHTML={{ __html: item.wordmark }}
                   initial={false}
                   animate={active ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
                   transition={

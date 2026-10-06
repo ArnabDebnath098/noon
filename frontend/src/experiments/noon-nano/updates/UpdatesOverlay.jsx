@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useAnimate, useReducedMotion } from 'framer-motion'
 import CardDeck from './CardDeck'
+import SparkleField from './SparkleField'
 import { CARD_ART } from './NotificationCard'
 import { createBell3D } from './bell3d'
 import { loadUpdates } from './updatesData'
@@ -641,6 +642,8 @@ export default function UpdatesOverlay({ open, onClose, onGo }) {
         onClick={close}
         className="absolute inset-0 cursor-default bg-gradient-to-b from-[rgba(0,0,0,0.6)] to-[rgba(47,41,57,0.93)] to-[41%] backdrop-blur-[10px] outline-none [-webkit-tap-highlight-color:transparent]"
       />
+      {/* stars and dots through the middle of the screen: they burst out with the title, then twinkle */}
+      <SparkleField key={`sparkles-${plays}`} reduceMotion={reduceMotion} />
       {/* the swoosh behind the stack */}
       <div aria-hidden className="pointer-events-none absolute bottom-[-150px] left-[-144px] flex h-[418px] w-[413px] items-center justify-center">
         <img src={swoosh} alt="" className="h-[328.247px] w-[336.846px] max-w-none rotate-[72.91deg]" />

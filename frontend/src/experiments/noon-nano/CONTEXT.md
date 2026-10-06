@@ -24,11 +24,11 @@ until their Figma screens are mapped.
 AppShell
  ├─ main (nano-body, scrollbar-hide, keyed per screen → opens at the top)
  │    └─ HomeScreen: NanoHomeArt (375 × 2409) scaled to the frame width
- │         └─ switcher slot: MarketplaceSwitcherV8 (search's), nano first
+ │         └─ switcher slot: NanoAppSwitcher (Figma App switcher 345:3641)
  │       TabScreen:  header (back · title)
  ├─ Floating back-to-experiments FAB (#1D2539, bottom left)
  ├─ NanoBot (home only; draggable 3D noon bot, starts bottom right above the nav)
- └─ NanoBottomNav (fixed, eased white fade, safe area ≥ 16px + --sbp)
+ └─ NanoBottomNav (fixed, progressive frosted glass, safe area ≥ 16px + --sbp)
 ```
 
 ## Files
@@ -41,10 +41,11 @@ AppShell
 - `coinNav.js` — the three.js scene (no React): coins, modelled book & pencil,
   extruded glass nano card, avatar, top-lit two-layer shadows. Placed on the
   nav's DOM slots; `select` / `setCompact` / `setPressed` / `dispose`.
-- Marketplace switcher — the search experiment's `MarketplaceSwitcherV8` with
-  the shared `marketplaces`, plus a nano tile first (`index.jsx`
-  `NANO_MARKETPLACE`: always Figma purple, `sw-nano-mark.svg` = the Figma
-  noon / nano marks combined). Tiles only highlight; the home stays nano.
+- `NanoAppSwitcher.jsx` — the Figma App switcher (345:3641) mapped 1:1 in
+  the home art's switcher slot: 375 × 92, 12/8 padding, 6px gaps; nano 76 × 76
+  #7924FF, noon / supermall / FOOD / Minutes 73 × 76 white (95% but noon),
+  marks at their Figma frames; scrolls sideways (the row is 416px). Assets in
+  `assets/nano/switcher`.
 - `updates/` — "Updates today", the bell's stack (Figma 36:10275); the bot is
   the bell. `UpdatesOverlay.jsx`: blurred overlay, header art, swipeable stack
   (read cards stack above), pager, first-view swipe hint, loading / single /
@@ -65,6 +66,9 @@ AppShell
   to its slot with a squash & stretch (leading edge anchored, tail streaks
   back so it never leaves the groove), dots slide aside, a newly read dot pops
   in as a chrome bead. Stops are absolutely placed so they can move.
+  `SparkleField.jsx`: colourful twinkling stars + floating glow dots through
+  the middle of the screen (bell area kept clear); they burst out of the
+  centre with the title on open, then loop (CSS transform / opacity only).
   `CardDeck.jsx`: the swipe deck on GSAP Draggable + InertiaPlugin — top
   card + next two as real cards in the sliver slots (frosted); drag follows
   1:1 with tilt while the next card rises (anticipation); release throws on a

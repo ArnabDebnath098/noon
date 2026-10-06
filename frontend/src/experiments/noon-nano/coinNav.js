@@ -546,6 +546,63 @@ function studioEnvironment() {
     panel(7, 12, 0.4, [11, 2, 4]);
     return env;
 }
+/** the animated procedural coin face (holo foil / purple satin), as a shader material */
+function faceShaderMaterial(body) {
+    return new THREE.ShaderMaterial({
+        uniforms: { uTime: { value: 0 } },
+        toneMapped: false,
+        vertexShader: FACE_VERT,
+        fragmentShader: `
+        uniform float uTime; varying vec2 vUv; varying vec3 vN;
+        ${NOISE_GLSL}
+        void main() {
+          vec2 p = vUv * 2.0 - 1.0;
+          vec2 tilt = vN.xy;
+          vec3 col;
+          ${body}
+          col *= mix(0.86, 1.03, smoothstep(-1.0, 0.8, p.y));
+          gl_FragColor = vec4(pow(col, vec3(2.2)), 1.0);
+          #include <colorspace_fragment>
+        }`,
+    });
+}
+/**
+ * Bake a coin face for export: the procedural shader at rest (t = 0, no tilt)
+ * rendered to a disc, with the top-lit falloff layer multiplied over it — a
+ * still of exactly what the app shows.
+ */
+function bakeFaceTexture(body, size = 1024) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    r.setPixelRatio(1);
+    r.setSize(size, size, false);
+    r.setClearColor(0x000000, 0);
+    const sc = new THREE.Scene();
+    const cam = new THREE.OrthographicCamera(-FACE_R, FACE_R, FACE_R, -FACE_R, 0.1, 10);
+    cam.position.z = 1;
+    const mat = faceShaderMaterial(body);
+    sc.add(new THREE.Mesh(new THREE.CircleGeometry(FACE_R, 128), mat));
+    r.render(sc, cam);
+    const out = document.createElement('canvas');
+    out.width = out.height = size;
+    const g = out.getContext('2d');
+    g.drawImage(canvas, 0, 0);
+    g.globalCompositeOperation = 'multiply'; // the FALLOFF layer: white → #c9c9cf, top → bottom
+    const grad = g.createLinearGradient(0, 0, 0, size);
+    grad.addColorStop(0, '#ffffff');
+    grad.addColorStop(0.45, '#f7f7f7');
+    grad.addColorStop(1, '#c9c9cf');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, size, size);
+    g.globalCompositeOperation = 'destination-in'; // keep the disc's alpha
+    g.drawImage(canvas, 0, 0);
+    mat.dispose();
+    r.dispose();
+    const tex = new THREE.CanvasTexture(out);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+}
 const spring = (s, target, k, d, dt) => {
     s.vel += ((target - s.v) * k - s.vel * d) * dt;
     s.v += s.vel * dt;
@@ -617,23 +674,7 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
     const FACE_GEO = new THREE.CircleGeometry(FACE_R, 128);
     const faceMats = [];
     const proceduralFace = (body) => {
-        const m = new THREE.ShaderMaterial({
-            uniforms: { uTime: { value: 0 } },
-            toneMapped: false,
-            vertexShader: FACE_VERT,
-            fragmentShader: `
-        uniform float uTime; varying vec2 vUv; varying vec3 vN;
-        ${NOISE_GLSL}
-        void main() {
-          vec2 p = vUv * 2.0 - 1.0;
-          vec2 tilt = vN.xy;
-          vec3 col;
-          ${body}
-          col *= mix(0.86, 1.03, smoothstep(-1.0, 0.8, p.y));
-          gl_FragColor = vec4(pow(col, vec3(2.2)), 1.0);
-          #include <colorspace_fragment>
-        }`,
-        });
+        const m = faceShaderMaterial(body);
         faceMats.push(m);
         return m;
     };
@@ -1032,7 +1073,7 @@ export function createCoinNav({ canvas, slots, active = null, reduceMotion = fal
 }
 /**
  * The nav's 3D objects as standalone, export-ready models (GLB): the Tasks book
- * & pencil, the Wallet nano card and the three coins. Everything uses glTF-
+ * & pencil, the Wallet nano card, the Account avatar relief and the three coins. Everything uses glTF-
  * compatible PBR (MeshPhysicalMaterial → metallic-roughness + clearcoat / sheen
  * / iridescence extensions); the coins' animated shader faces become their
  * closest static PBR equivalents (pearl iridescent foil, purple satin, orange).
@@ -1049,10 +1090,18 @@ export async function navModels() {
     card.name = 'nano-card';
     const book = bookModel();
     book.name = 'book-and-pencil';
+    // faces: the app draws them unlit (shader / flat orange) with a glossy clearcoat layer on top.
+    // glTF can't do that stack, so: the baked colour as both albedo and emissive (so it keeps its
+    // colour under any light) with the gloss as clearcoat.
+    const facePBR = (extra) => new THREE.MeshPhysicalMaterial({
+        emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.22, clearcoat: 0.6, clearcoatRoughness: 0.14, ...extra,
+    });
+    const holo = bakeFaceTexture(HOLO_BODY);
+    const satin = bakeFaceTexture(SATIN_BODY);
     const face = {
-        tasks: new THREE.MeshPhysicalMaterial({ color: '#F1EEFB', roughness: 0.25, clearcoat: 0.5, clearcoatRoughness: 0.1, iridescence: 1, iridescenceIOR: 1.35, iridescenceThicknessRange: [180, 620] }),
-        wallet: new THREE.MeshPhysicalMaterial({ color: '#6A35F5', roughness: 0.35, sheen: 0.6, sheenColor: '#9F7BFF', sheenRoughness: 0.4, clearcoat: 0.3, clearcoatRoughness: 0.15 }),
-        account: new THREE.MeshPhysicalMaterial({ color: '#FF6301', roughness: 0.3, clearcoat: 0.45, clearcoatRoughness: 0.12 }),
+        tasks: facePBR({ map: holo, emissiveMap: holo }),
+        wallet: facePBR({ map: satin, emissiveMap: satin }),
+        account: facePBR({ color: 0xff6301, emissive: 0xff6301 }),
     };
     const coins = {};
     for (const id of ['tasks', 'wallet', 'account']) {
@@ -1069,5 +1118,32 @@ export async function navModels() {
         coin.add(front, back);
         coins[id] = coin;
     }
-    return { 'nav-tasks-book-pencil': book, 'nav-wallet-card': card, 'nav-coin-tasks': coins.tasks, 'nav-coin-wallet': coins.wallet, 'nav-coin-account': coins.account };
+    // the Account avatar: its relief geometry (from the art's alpha) with the art as colour + emissive
+    const avatarSrc = await new THREE.TextureLoader().loadAsync(avatarUrl);
+    // the app clips the avatar to the coin face (a shader test); bake that clip into the art's alpha
+    const img = avatarSrc.image;
+    const clipped = document.createElement('canvas');
+    clipped.width = img.width;
+    clipped.height = img.height;
+    const g = clipped.getContext('2d');
+    g.drawImage(img, 0, 0);
+    const k = img.width / AVATAR.w; // image px per CSS px
+    const cx = (AVATAR.w / 2 - AVATAR.x) * k, cy = (AVATAR.h / 2 + AVATAR.y) * k; // the coin's centre, in image px
+    const mask = g.createRadialGradient(cx, cy, (FACE_R - 0.8) * k, cx, cy, (FACE_R + 0.2) * k);
+    mask.addColorStop(0, 'rgba(0,0,0,1)');
+    mask.addColorStop(1, 'rgba(0,0,0,0)');
+    g.globalCompositeOperation = 'destination-in';
+    g.fillStyle = mask;
+    g.fillRect(0, 0, clipped.width, clipped.height);
+    const avatarTexture = new THREE.CanvasTexture(clipped);
+    avatarTexture.colorSpace = THREE.SRGBColorSpace;
+    const avatar = new THREE.Mesh(avatarReliefGeometry(img), new THREE.MeshPhysicalMaterial({
+        map: avatarTexture, emissiveMap: avatarTexture, emissive: 0xffffff, emissiveIntensity: 0.36,
+        roughness: 0.4, clearcoat: 0.55, clearcoatRoughness: 0.22, transparent: true, alphaTest: 0.4,
+    }));
+    avatar.name = 'avatar';
+    return {
+        'nav-tasks-book-pencil': book, 'nav-wallet-card': card, 'nav-account-avatar': avatar,
+        'nav-coin-tasks': coins.tasks, 'nav-coin-wallet': coins.wallet, 'nav-coin-account': coins.account,
+    };
 }
